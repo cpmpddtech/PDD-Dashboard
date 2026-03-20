@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDP Finance</title>
+<style>
+  /* ── Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #0f1f3d;
+    --navy2:   #1a2e52;
+    --blue:    #2563eb;
+    --blue-lt: #eff6ff;
+    --green:   #15803d;
+    --green-lt:#f0fdf4;
+    --amber:   #b45309;
+    --amber-lt:#fffbeb;
+    --red:     #dc2626;
+    --red-lt:  #fef2f2;
+    --purple:  #7c3aed;
+    --purple-lt:#f5f3ff;
+    --gray-50: #f9fafb;
+    --gray-100:#f3f4f6;
+    --gray-200:#e5e7eb;
+    --gray-300:#d1d5db;
+    --gray-400:#9ca3af;
+    --gray-500:#6b7280;
+    --gray-600:#4b5563;
+    --gray-700:#374151;
+    --gray-800:#1f2937;
+    --gray-900:#111827;
+    --radius:  8px;
+    --shadow:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--navy);
+    color: #fff;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-back {
+    background: rgba(255,255,255,.1);
+    border: none;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .header-back:hover { background: rgba(255,255,255,.18); }
+  .header-title { font-size: 16px; font-weight: 600; }
+  .header-subtitle { font-size: 12px; opacity: .6; }
+  .user-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.1);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+  }
+  .user-badge .role {
+    background: rgba(255,255,255,.15);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  /* ── Layout ── */
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* ── Access denied ── */
+  #access-denied {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    gap: 12px;
+    color: var(--gray-500);
+  }
+  #access-denied .icon { font-size: 48px; }
+  #access-denied h2 { font-size: 18px; color: var(--gray-700); }
+
+  /* ── Stat cards ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--gray-500);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-sub { font-size: 11px; color: var(--gray-400); }
+
+  /* ── Sub-tabs ── */
+  .subtab-bar {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: 20px;
+  }
+  .subtab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-500);
+    cursor: pointer;
+    margin-bottom: -1px;
+    transition: color .15s, border-color .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .subtab:hover { color: var(--gray-800); }
+  .subtab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .subtab-pane { display: none; }
+  .subtab-pane.active { display: block; animation: fadeIn .15s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .badge {
+    background: var(--red);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background .15s, opacity .15s;
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+  .btn-secondary { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-200); }
+  .btn-secondary:hover:not(:disabled) { background: var(--gray-50); }
+  .btn-danger { background: var(--red-lt); color: var(--red); border: 1px solid #fecaca; }
+  .btn-danger:hover:not(:disabled) { background: #fecaca; }
+  .btn-success { background: var(--green-lt); color: var(--green); border: 1px solid #bbf7d0; }
+  .btn-success:hover:not(:disabled) { background: #bbf7d0; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ── Select / Input ── */
+  select, input, textarea {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--gray-800);
+    background: #fff;
+    width: 100%;
+    outline: none;
+    transition: border-color .15s;
+    font-family: inherit;
+  }
+  select:focus, input:focus, textarea:focus { border-color: var(--blue); }
+  label { font-size: 12px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 4px; }
+
+  /* ── Card ── */
+  .card {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 600; font-size: 14px; color: var(--gray-800);
+  }
+
+  /* ── Table ── */
+  .fin-table { width: 100%; border-collapse: collapse; }
+  .fin-table th {
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .fin-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+    vertical-align: middle;
+  }
+  .fin-table tr:last-child td { border-bottom: none; }
+  .fin-table tr:hover td { background: var(--gray-50); }
+  .fin-table .actions { display: flex; gap: 6px; }
+
+  /* ── Status pills ── */
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill-pending  { background: var(--amber-lt); color: var(--amber); border: 1px solid #fde68a; }
+  .pill-draft    { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
+  .pill-submitted{ background: var(--amber-lt); color: var(--amber); border: 1px solid #fde68a; }
+  .pill-approved { background: var(--green-lt); color: var(--green); border: 1px solid #bbf7d0; }
+  .pill-rejected { background: var(--red-lt);   color: var(--red);   border: 1px solid #fecaca; }
+
+  /* ── Program summary cards ── */
+  .proj-summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-bottom:16px; }
+  .proj-summary-card { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius); padding:12px 14px; }
+  .proj-summary-name { font-size:12px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px; }
+
+  /* ── Progress bar ── */
+  .progress-wrap { min-width: 100px; }
+  .progress-label { font-size: 11px; color: var(--gray-500); margin-bottom: 3px; }
+  .progress-bar { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width .4s; background: var(--blue); }
+  .progress-fill.warn { background: var(--amber); }
+  .progress-fill.over { background: var(--red); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 440px;
+    max-width: 95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    transform: translateY(8px);
+    transition: transform .2s;
+  }
+  .modal-overlay.open .modal { transform: none; }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px;
+  }
+  .modal-title { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+  .modal-close {
+    background: none; border: none; font-size: 22px;
+    color: var(--gray-400); cursor: pointer; line-height: 1;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .modal-close:hover { background: var(--gray-100); color: var(--gray-600); }
+  .form-group { margin-bottom: 14px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .25s, transform .25s;
+    z-index: 300;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: none; }
+  #toast.green { background: #15803d; }
+  #toast.red   { background: #dc2626; }
+  #toast.blue  { background: var(--blue); }
+
+  /* ── Empty state ── */
+  .empty {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--gray-400);
+  }
+  .empty-icon { font-size: 32px; margin-bottom: 8px; }
+  .empty-text { font-size: 13px; }
+
+  /* ── Loading ── */
+  .loading { padding: 32px; text-align: center; color: var(--gray-400); font-size: 13px; }
+
+  /* ── Budget category label ── */
+  .cat-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--blue-lt);
+    color: var(--blue);
+  }
+
+  /* ── Program summary cards ── */
+  .proj-summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-bottom:20px; }
+  .proj-summary-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); }
+  .proj-summary-name { font-size:13px; font-weight:600; color:var(--gray-800); margin-bottom:2px; }
+  .proj-summary-id   { font-size:11px; color:var(--gray-400); margin-bottom:10px; }
+  .proj-summary-bar  { height:6px; background:var(--gray-100); border-radius:3px; margin:6px 0 4px; overflow:hidden; }
+  .proj-summary-fill { height:100%; border-radius:3px; transition:width .4s; }
+  .proj-summary-row  { display:flex; justify-content:space-between; font-size:11px; color:var(--gray-500); }
+  .proj-summary-pct  { font-size:12px; font-weight:700; }
+
+  /* ── Section labels ── */
+  .section-heading {
+    font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--gray-400);
+    padding:0 0 8px; margin-bottom:12px;
+    border-bottom:1px solid var(--gray-100);
+    display:flex; align-items:center; gap:8px;
+  }
+  .section-heading::before { content:''; display:inline-block; width:3px; height:14px; border-radius:2px; background:var(--blue); }
+
+  /* ── Color-coded status ── */
+  .stat-value-red   { color:var(--red) !important; }
+  .stat-value-amber { color:var(--amber) !important; }
+  .stat-value-green { color:var(--green) !important; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .main { padding: 16px 12px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .proj-summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .fin-table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar-right { width: 100%; }
+    .toolbar-right .btn { width: 100%; justify-content: center; }
+    #add-budget-grid { grid-template-columns: 1fr !important; }
+    .modal { width: 95vw !important; padding: 16px; }
+    .subtab { padding: 8px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-left">
+    <button class="header-back" onclick="window.location.href='index.html'">
+      ← Dashboard
+    </button>
+    <div>
+      <div class="header-title">Finance</div>
+      <div class="header-subtitle">PDP Digital Development</div>
+    </div>
+  </div>
+  <div class="user-badge">
+    <span id="hdr-name">—</span>
+    <span class="role" id="hdr-role">—</span>
+  </div>
+</header>
+
+<!-- ── MAIN ── -->
+<main class="main">
+
+  <!-- Access denied -->
+  <div id="access-denied">
+    <div class="icon">🔒</div>
+    <h2>Access Denied</h2>
+    <p>This module is only accessible to Finance, Manager, and Admin users.</p>
+    <button class="btn btn-secondary" style="margin-top:12px;" onclick="window.location.href='index.html'">← Back to Dashboard</button>
+  </div>
+
+  <!-- Finance content -->
+  <div id="finance-content">
+
+    <!-- Overview summary -->
+    <div style="margin-bottom:6px;">
+      <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-400);">Overview</span>
+    </div>
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Budget</div><div class="stat-value" id="st-total">—</div><div class="stat-sub">MMK allocated</div></div>
+      <div class="stat-card"><div class="stat-label">Total Spent</div><div class="stat-value" id="st-spent" >—</div><div class="stat-sub" id="st-pct">—</div></div>
+      <div class="stat-card"><div class="stat-label">Remaining</div><div class="stat-value" id="st-rem"  >—</div><div class="stat-sub">MMK available</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Approvals</div><div class="stat-value" id="st-pending" style="color:var(--amber)">—</div><div class="stat-sub">awaiting review</div></div>
+    </div>
+
+    <!-- Sub-tab bar -->
+    <div class="subtab-bar">
+      <button class="subtab active" id="st-budget"       onclick="switchTab('budget')">Budget Overview</button>
+      <button class="subtab"        id="st-transactions" onclick="switchTab('transactions')">Transactions</button>
+      <button class="subtab"        id="st-queue"        onclick="switchTab('queue')">
+        Approval Queue
+        <span class="badge" id="queue-badge" style="display:none">0</span>
+      </button>
+      <button class="subtab" id="st-manage" onclick="switchTab('manage')" style="display:none">
+        Manage Budgets
+      </button>
+
+      <button class="subtab" id="st-proposals" onclick="switchTab('proposals')">
+        Budget Proposals
+        <span class="badge" id="proposals-badge" style="display:none">0</span>
+      </button>
+    </div>
+
+    <!-- ══ BUDGET TAB ══ -->
+    <div class="subtab-pane active" id="pane-budget">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--gray-800);">Budget Overview</div>
+          <div style="font-size:12px;color:var(--gray-400);margin-top:2px;">Allocated vs spent by program, project and category</div>
+        </div>
+        <button class="btn btn-secondary" onclick="loadAll()">↻ Refresh</button>
+      </div>
+      <!-- Per-program summary cards -->
+      <div class="section-heading">By Program</div>
+      <div class="proj-summary-grid" id="proj-summary-cards"></div>
+      <!-- Full budget lines table -->
+      <div class="section-heading" style="margin-top:8px;">Budget Lines</div>
+      <div class="card">
+        <div id="budget-body"><div class="loading">Loading budget data…</div></div>
+      </div>
+    </div>
+
+    <!-- ══ TRANSACTIONS TAB ══ -->
+    <div class="subtab-pane" id="pane-transactions">
+      <div class="section-heading">Expense Transactions</div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select id="filter-program" onchange="renderTransactions()" style="width:160px;">
+            <option value="">All Programs</option>
+          </select>
+          <select id="filter-category" onchange="renderTransactions()" style="width:140px;">
+            <option value="">All Categories</option>
+          </select>
+          <select id="filter-status" onchange="renderTransactions()" style="width:130px;">
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-primary" id="btn-log-expense" onclick="openExpenseModal()">+ Log Expense</button>
+        </div>
+      </div>
+      <div class="card">
+        <div id="tx-body"><div class="loading">Loading transactions…</div></div>
+      </div>
+    </div>
+
+    <!-- ══ APPROVAL QUEUE TAB ══ -->
+    <div class="subtab-pane" id="pane-queue">
+      <div class="section-heading">Pending Approvals</div>
+      <div class="toolbar">
+        <span style="font-size:13px;font-weight:500;color:var(--gray-600)" id="queue-label">Pending expense requests</span>
+        <button class="btn btn-secondary" onclick="loadAll()">↻ Refresh</button>
+      </div>
+      <div class="card">
+        <div id="queue-body"><div class="loading">Loading queue…</div></div>
+      </div>
+    </div>
+
+    <!-- ══ MANAGE BUDGETS PANE ══ -->
+    <div class="subtab-pane" id="pane-manage">
+
+      <div class="section-heading">Manage Budget Lines</div>
+      <!-- Add Budget Line form -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">Add Budget Line</div>
+        <div style="padding:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;" id="add-budget-grid">
+          <div>
+            <label>Program</label>
+            <select id="nb-program" onchange="loadBudgetProjects()"></select>
+          </div>
+          <div>
+            <label>Category</label>
+            <select id="nb-category">
+              <option value="Travel">Travel</option>
+              <option value="Training">Training</option>
+              <option value="Equipment">Equipment</option>
+              <option value="Supplies">Supplies</option>
+              <option value="Services">Services</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label>Project <span style="font-weight:400;font-size:11px;color:var(--gray-400)">(optional)</span></label>
+            <select id="nb-project-id">
+              <option value="">— Entire program —</option>
+            </select>
+          </div>
+          <div>
+            <label>Allocated Amount (MMK)</label>
+            <input type="number" id="nb-allocated" placeholder="e.g. 500000" min="0">
+          </div>
+          <div>
+            <label>Period</label>
+            <select id="nb-period">
+              <option value="Q1 2026">Q1 2026</option>
+              <option value="Q2 2026">Q2 2026</option>
+              <option value="Q3 2026">Q3 2026</option>
+              <option value="Q4 2026">Q4 2026</option>
+              <option value="Annual 2026">Annual 2026</option>
+              <option value="Q1 2027">Q1 2027</option>
+              <option value="Q2 2027">Q2 2027</option>
+              <option value="Q3 2027">Q3 2027</option>
+              <option value="Q4 2027">Q4 2027</option>
+              <option value="Annual 2027">Annual 2027</option>
+            </select>
+          </div>
+          <div>
+            <label>Notes (optional)</label>
+            <input type="text" id="nb-notes" placeholder="e.g. Approved by Director">
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button class="btn btn-primary" id="nb-submit-btn" onclick="submitAddBudget()" style="width:100%;">+ Add Budget Line</button>
+          </div>
+        </div>
+        <div id="nb-msg" style="display:none;padding:0 18px 14px;font-size:13px;"></div>
+      </div>
+
+      <!-- Existing budget lines table -->
+      <div class="card">
+        <div class="card-header">
+          <span>Existing Budget Lines</span>
+          <button class="btn btn-secondary" style="font-size:12px;padding:4px 10px;" onclick="loadAll()">↻ Refresh</button>
+        </div>
+        <div id="manage-budget-body"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+
+
+        <!-- ══ BUDGET PROPOSALS PANE ══ -->
+    <div class="subtab-pane" id="pane-proposals">
+      <div class="section-heading">Budget Proposals</div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select id="prop-filter-status" onchange="renderProposals()" style="width:150px;">
+            <option value="">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-primary" id="btn-new-proposal" onclick="openProposalModal(null)">+ New Proposal</button>
+        </div>
+      </div>
+      <div class="card">
+        <div id="proposals-body"><div class="loading">Loading…</div></div>
+      </div>
+    </div>
+
+  </div><!-- /finance-content -->
+</main>
+
+<!-- ══ LOG EXPENSE MODAL ══ -->
+<div class="modal-overlay" id="expense-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Log Expense</span>
+      <button class="modal-close" onclick="closeExpenseModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label>Program</label>
+      <select id="exp-program" onchange="loadExpenseProjects()"></select>
+    </div>
+    <div class="form-group">
+      <label>Project <span style="font-weight:400;font-size:11px;color:var(--gray-400)">(optional)</span></label>
+      <select id="exp-project">
+        <option value="">— Select program first —</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="exp-category">
+        <option value="Travel">Travel</option>
+        <option value="Training">Training</option>
+        <option value="Equipment">Equipment</option>
+        <option value="Supplies">Supplies</option>
+        <option value="Services">Services</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Amount (MMK)</label>
+      <input type="number" id="exp-amount" placeholder="0" min="0">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="exp-desc" rows="3" placeholder="Brief description of the expense…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeExpenseModal()">Cancel</button>
+      <button class="btn btn-primary" id="exp-submit-btn" onclick="submitExpense()">Submit for Approval</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REJECT MODAL ══ -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-header">
+      <span class="modal-title">Reject Expense</span>
+      <button class="modal-close" onclick="closeRejectModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label>Reason (optional)</label>
+      <textarea id="reject-notes" rows="3" placeholder="Reason for rejection…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReject()">Reject Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ UPDATE BUDGET MODAL ══ -->
+<div class="modal-overlay" id="budget-modal">
+  <div class="modal" style="width:380px;">
+    <div class="modal-header">
+      <span class="modal-title">Edit Budget Line</span>
+      <button class="modal-close" onclick="closeBudgetModal()">×</button>
+    </div>
+    <div class="form-group">
+      <label>Budget Line</label>
+      <input type="text" id="bm-label" disabled style="background:var(--gray-50);color:var(--gray-500);">
+    </div>
+    <div class="form-group">
+      <label>Allocated Amount (MMK)</label>
+      <input type="number" id="bm-allocated" min="0">
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <input type="text" id="bm-notes" placeholder="Optional notes…">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeBudgetModal()">Cancel</button>
+      <button class="btn btn-primary" id="bm-submit-btn" onclick="submitBudgetUpdate()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════════
+const WORKER_URL = 'https://pdp-dashboard.gamalieltun282.workers.dev/';
+
+// ── Auth (same pattern as dcr_form.html) ──
+const PDP_USER = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
+const PDP_PW   = sessionStorage.getItem('pdp_pw') || '';
+const PDP_ROLE = PDP_USER?.role || '';
+const PDP_NAME = PDP_USER?.name || '';
+
+const ALLOWED_ROLES = ['admin', 'manager', 'finance', 'finance_staff', 'finance_manager'];
+const CAN_APPROVE   = ['admin', 'manager'].includes(PDP_ROLE);
+const CAN_LOG       = ALLOWED_ROLES.includes(PDP_ROLE);
+const CAN_PROPOSE   = ['admin', 'manager', 'finance_staff', 'finance_manager', 'finance'].includes(PDP_ROLE);
+const IS_ADMIN      = PDP_ROLE === 'admin';
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Populate header
+  document.getElementById('hdr-name').textContent = PDP_NAME || PDP_USER?.username || 'Unknown';
+  document.getElementById('hdr-role').textContent = PDP_ROLE || '—';
+
+  // Access gate
+  if (!ALLOWED_ROLES.includes(PDP_ROLE)) {
+    document.getElementById('access-denied').style.display   = 'flex';
+    document.getElementById('finance-content').style.display = 'none';
+    return;
+  }
+
+  // Hide log expense button for non-finance roles (managers/admins can still use it)
+  if (!CAN_LOG) document.getElementById('btn-log-expense').style.display = 'none';
+  const propBtn = document.getElementById('btn-new-proposal');
+  if (propBtn && !CAN_PROPOSE) propBtn.style.display = 'none';
+
+  loadAll();
+});
+
+// ════════════════════════════════════════════════════════════
+//  WORKER CALL
+// ════════════════════════════════════════════════════════════
+async function workerCall(action, extra = {}) {
+  const res = await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action,
+      username: PDP_USER?.username || '',
+      password: PDP_PW,
+      ...extra
+    })
+  });
+  return res.json();
+}
+
+// ════════════════════════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════════════════════════
+let FIN = { budget: [], transactions: [], queue: [], programs: [], proposals: [] };
+let PENDING_REJECT_TX = null;
+let PENDING_BUDGET_ID = null;
+
+async function loadAll() {
+  document.getElementById('budget-body').innerHTML  = '<div class="loading">Loading…</div>';
+  document.getElementById('tx-body').innerHTML      = '<div class="loading">Loading…</div>';
+  document.getElementById('queue-body').innerHTML   = '<div class="loading">Loading…</div>';
+
+  try {
+    const res = await workerCall('get_finance_data');
+    if (!res.ok) {
+      showErr('budget-body',  res.error || 'Failed to load');
+      showErr('tx-body',      res.error || 'Failed to load');
+      showErr('queue-body',   res.error || 'Failed to load');
+      return;
+    }
+    FIN.budget       = res.budget       || [];
+    FIN.transactions = res.transactions || [];
+    FIN.queue        = res.queue        || [];
+    FIN.programs     = res.programs     || [];
+    FIN.proposals    = res.proposals    || [];
+
+    updateStats();
+    renderBudget();
+    populateFilters();
+    renderTransactions();
+    renderQueue();
+    if (document.getElementById('pane-manage')?.classList.contains('active')) renderManageBudget();
+    renderProposals();
+    // Proposals badge — submitted proposals visible to admin
+    const submittedCount = FIN.proposals.filter(p => p['Status'] === 'submitted').length;
+    const propBadge = document.getElementById('proposals-badge');
+    if (propBadge) { propBadge.textContent = submittedCount; propBadge.style.display = submittedCount > 0 ? '' : 'none'; }
+  } catch(e) {
+    showErr('budget-body', 'Network error: ' + e.message);
+    showErr('tx-body',     'Network error: ' + e.message);
+    showErr('queue-body',  'Network error: ' + e.message);
+  }
+}
+
+function showErr(id, msg) {
+  document.getElementById(id).innerHTML =
+    `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text" style="color:var(--red)">${msg}</div></div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  STATS
+// ════════════════════════════════════════════════════════════
+function fmtMMK(v) {
+  const n = parseFloat(v || 0);
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(0) + 'K';
+  return n.toLocaleString();
+}
+
+function updateStats() {
+  const totalAlloc   = FIN.budget.reduce((s,r) => s + parseFloat(r.Allocated || 0), 0);
+  const totalSpent   = FIN.budget.reduce((s,r) => s + parseFloat(r.Spent     || 0), 0);
+  const totalRem     = totalAlloc - totalSpent;
+  const pct          = totalAlloc > 0 ? Math.round(totalSpent / totalAlloc * 100) : 0;
+  const pendingCount = FIN.queue.filter(q => q.Status === 'pending').length;
+
+  document.getElementById('st-total').textContent   = fmtMMK(totalAlloc);
+  document.getElementById('st-spent').textContent   = fmtMMK(totalSpent);
+  document.getElementById('st-spent').style.color   = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
+  document.getElementById('st-pct').textContent     = pct + '% utilised';
+  document.getElementById('st-rem').textContent     = fmtMMK(totalRem);
+  document.getElementById('st-rem').style.color     = totalRem < 0 ? 'var(--red)' : 'inherit';
+  document.getElementById('st-pending').textContent = pendingCount;
+
+  const badge = document.getElementById('queue-badge');
+  badge.textContent   = pendingCount;
+  badge.style.display = pendingCount > 0 ? '' : 'none';
+}
+
+// ════════════════════════════════════════════════════════════
+//  BUDGET
+// ════════════════════════════════════════════════════════════
+function renderBudget() {
+  const el = document.getElementById('budget-body');
+  if (!FIN.budget.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No budget data yet.<br>Use Manage Budgets to add budget lines.</div></div>`;
+    return;
+  }
+
+  // ── Program summary cards ──
+  const byProgram = {};
+  FIN.budget.forEach(r => {
+    const pid = r.Program || 'Unknown';
+    if (!byProgram[pid]) byProgram[pid] = { alloc: 0, spent: 0 };
+    byProgram[pid].alloc += parseFloat(r.Allocated || 0);
+    byProgram[pid].spent += parseFloat(r.Spent     || 0);
+  });
+
+  let summaryHtml = '';
+  Object.entries(byProgram).forEach(([pid, s]) => {
+    const pct = s.alloc > 0 ? Math.min(100, Math.round(s.spent / s.alloc * 100)) : 0;
+    const statusColor = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
+    summaryHtml += `<div class="proj-summary-card">
+      <div class="proj-summary-name">${pid}</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 4px;">
+        <span style="font-size:18px;font-weight:700;">${fmtMMK(s.spent)}</span>
+        <span style="font-size:12px;color:var(--gray-400);">of ${fmtMMK(s.alloc)}</span>
+      </div>
+      <div class="progress-bar" style="margin-bottom:4px;">
+        <div class="progress-fill ${pct>90?'over':pct>70?'warn':''}" style="width:${pct}%"></div>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:${statusColor}">${pct}% utilised</div>
+    </div>`;
+  });
+
+
+  // ── Budget lines table ──
+  let html = `<table class="fin-table"><thead><tr>
+    <th>Program</th><th>Project</th><th>Category</th><th>Allocated</th><th>Spent</th>
+    <th>Remaining</th><th style="min-width:110px">Usage</th>
+    ${PDP_ROLE === 'admin' ? '<th></th>' : ''}
+  </tr></thead><tbody>`;
+
+  FIN.budget.forEach(r => {
+    const alloc  = parseFloat(r.Allocated || 0);
+    const spent  = parseFloat(r.Spent     || 0);
+    const rem    = alloc - spent;
+    const pct    = alloc > 0 ? Math.min(100, Math.round(spent / alloc * 100)) : 0;
+    const cls    = pct > 90 ? 'over' : pct > 70 ? 'warn' : '';
+    const remColor = rem < 0 ? 'var(--red)' : rem === 0 ? 'var(--amber)' : 'inherit';
+    const prog   = r['Project ID'] || '—';
+
+    html += `<tr>
+      <td style="font-weight:500">${r.Program || '—'}</td>
+      <td class="hide-mobile" style="font-size:12px;color:var(--gray-500);font-family:monospace">${prog}</td>
+      <td><span class="cat-pill">${r.Category || '—'}</span></td>
+      <td>${fmtMMK(alloc)}</td>
+      <td style="color:${spent>0?'var(--amber)':'inherit'}">${fmtMMK(spent)}</td>
+      <td style="font-weight:600;color:${remColor}">${fmtMMK(rem)}</td>
+      <td>
+        <div class="progress-wrap">
+          <div class="progress-label" style="color:${pct>90?'var(--red)':pct>70?'var(--amber)':'var(--gray-500)'}">${pct}%</div>
+          <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>
+        </div>
+      </td>
+      ${PDP_ROLE === 'admin' ? `<td><button class="btn btn-secondary btn-sm" onclick="openBudgetModal(this)"
+        data-id="${(r['Budget ID']||'').replace(/"/g,'&quot;')}"
+        data-alloc="${alloc}"
+        data-notes="${(r.Notes||'').replace(/"/g,'&quot;')}"
+        data-label="${(r.Program||'').replace(/"/g,'&quot;')} — ${(r.Category||'').replace(/"/g,'&quot;')}">Edit</button></td>` : ''}
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  // Render summary into separate cards container, table into budget-body
+  const summaryEl = document.getElementById('proj-summary-cards');
+  if (summaryEl) summaryEl.innerHTML = summaryHtml;
+  el.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════
+//  TRANSACTIONS
+// ════════════════════════════════════════════════════════════
+function populateFilters() {
+  const categories = [...new Set(FIN.transactions.map(t => t.Category).filter(Boolean))];
+
+  const pSel = document.getElementById('filter-program');
+  const cSel = document.getElementById('filter-category');
+  const pExp = document.getElementById('exp-program');
+
+  pSel.innerHTML = '<option value="">All Programs</option>';
+  cSel.innerHTML = '<option value="">All Categories</option>';
+  pExp.innerHTML = '<option value="">Select program…</option>';
+
+  // Show manage tab for admin/manager
+  const manageTab = document.getElementById('st-manage');
+  if (manageTab) manageTab.style.display = (PDP_ROLE === 'admin') ? '' : 'none';
+
+  // Populate nb-program (add budget form)
+  const nbProj = document.getElementById('nb-program');
+  if (nbProj) {
+    nbProj.innerHTML = '<option value="">Select program…</option>';
+    if (FIN.programs.length) {
+      FIN.programs.forEach(p => nbProj.add(new Option(`${p.id} — ${p.name}`, p.id)));
+    }
+  }
+
+  // Populate nb-project-id with a note it's optional
+  const nbProg = document.getElementById('nb-project-id');
+  if (nbProg) {
+    nbProg.innerHTML = '<option value="">— Entire program —</option>';
+    // Projects will be loaded when user selects program
+  }
+
+  // Priority: synced programs from Main Programs sheet > budget > transactions
+  let programList = [];
+  if (FIN.programs.length) {
+    programList = FIN.programs.map(p => ({ value: p.id, label: `${p.id} — ${p.name}` }));
+  } else if (FIN.budget.length) {
+    const fromBudget = [...new Set(FIN.budget.map(b => b.Program).filter(Boolean))];
+    programList = fromBudget.map(p => ({ value: p, label: p }));
+  } else {
+    const fromTx = [...new Set(FIN.transactions.map(t => t.Program).filter(Boolean))];
+    programList = fromTx.map(p => ({ value: p, label: p }));
+  }
+
+  programList.forEach(p => {
+    pSel.add(new Option(p.label, p.value));
+    pExp.add(new Option(p.label, p.value));
+  });
+
+  categories.forEach(c => cSel.add(new Option(c, c)));
+}
+
+function renderTransactions() {
+  const el          = document.getElementById('tx-body');
+  const filterProj  = document.getElementById('filter-program')?.value  || '';
+  const filterCat   = document.getElementById('filter-category')?.value || '';
+  const filterSt    = document.getElementById('filter-status')?.value   || '';
+
+  let txs = [...FIN.transactions];
+  if (filterProj) txs = txs.filter(t => t.Program  === filterProj);
+  if (filterCat)  txs = txs.filter(t => t.Category === filterCat);
+  if (filterSt)   txs = txs.filter(t => t.Status   === filterSt);
+  txs.sort((a, b) => (b.Date || '').localeCompare(a.Date || ''));
+
+  if (!txs.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No transactions match your filters.</div></div>`;
+    return;
+  }
+
+  let html = `<table class="fin-table"><thead><tr>
+    <th>Date</th><th>Program</th><th>Project</th><th>Category</th>
+    <th>Amount</th><th>Description</th><th>By</th><th>Status</th>
+    ${CAN_APPROVE ? '<th></th>' : ''}
+  </tr></thead><tbody>`;
+
+  txs.forEach(t => {
+    const st = t.Status || 'pending';
+    html += `<tr>
+      <td class="hide-mobile" style="white-space:nowrap;color:var(--gray-500)">${t.Date || '—'}</td>
+      <td style="font-weight:500">${t.Program || '—'}</td>
+      <td class="hide-mobile" style="font-size:12px;color:var(--gray-500)">${t['Project ID'] || '—'}</td>
+      <td><span class="cat-pill">${t.Category || '—'}</span></td>
+      <td style="font-weight:600">${parseFloat(t.Amount || 0).toLocaleString()}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.Description || ''}">${t.Description || '—'}</td>
+      <td>${t['Submitted By'] || '—'}</td>
+      <td><span class="pill pill-${st}">${st}</span></td>
+      ${CAN_APPROVE ? `<td><div class="actions">${st === 'pending'
+        ? `<button class="btn btn-success btn-sm" onclick="approveExpense('${t['Tx ID']||''}')">Approve</button>
+           <button class="btn btn-danger btn-sm"  onclick="openRejectModal('${t['Tx ID']||''}')">Reject</button>`
+        : `<span style="font-size:11px;color:var(--gray-400)">${t['Approved By']||'—'}</span>`
+      }</div></td>` : ''}
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════
+//  APPROVAL QUEUE
+// ════════════════════════════════════════════════════════════
+function renderQueue() {
+  const el      = document.getElementById('queue-body');
+  const pending = FIN.queue.filter(q => q.Status === 'pending');
+
+  document.getElementById('queue-label').textContent =
+    pending.length ? `${pending.length} pending approval${pending.length > 1 ? 's' : ''}` : 'No pending approvals';
+
+  if (!pending.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">All clear — no pending approvals.</div></div>`;
+    return;
+  }
+
+  let html = `<table class="fin-table"><thead><tr>
+    <th>Request ID</th><th>Requested By</th><th>Date</th>
+    <th>Amount</th><th>Description</th>
+    ${CAN_APPROVE ? '<th></th>' : ''}
+  </tr></thead><tbody>`;
+
+  pending.forEach(q => {
+    html += `<tr>
+      <td style="font-size:11px;color:var(--gray-400);font-family:monospace">${q['Request ID'] || '—'}</td>
+      <td style="font-weight:500">${q['Requested By'] || '—'}</td>
+      <td style="white-space:nowrap;color:var(--gray-500)">${(q['Requested At'] || '').slice(0, 10)}</td>
+      <td style="font-weight:700;color:var(--amber)">${parseFloat(q.Amount || 0).toLocaleString()}</td>
+      <td>${q.Description || '—'}</td>
+      ${CAN_APPROVE ? `<td><div class="actions">
+        <button class="btn btn-success btn-sm" onclick="approveExpense('${q['Tx ID']||''}')">Approve</button>
+        <button class="btn btn-danger btn-sm"  onclick="openRejectModal('${q['Tx ID']||''}')">Reject</button>
+      </div></td>` : ''}
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════
+//  SUB-TAB SWITCH
+// ════════════════════════════════════════════════════════════
+function switchTab(name) {
+  ['budget', 'transactions', 'queue', 'manage', 'proposals'].forEach(n => {
+    document.getElementById(`pane-${n}`)?.classList.toggle('active', n === name);
+    document.getElementById(`st-${n}`)?.classList.toggle('active', n === name);
+  });
+  if (name === 'manage') renderManageBudget();
+  if (name === 'proposals') renderProposals();
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOG EXPENSE
+// ════════════════════════════════════════════════════════════
+function openExpenseModal() {
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-desc').value   = '';
+  document.getElementById('exp-project').innerHTML = '<option value="">— Select program first —</option>';
+  document.getElementById('exp-submit-btn').disabled = false;
+  document.getElementById('exp-submit-btn').textContent = 'Submit for Approval';
+  document.getElementById('expense-modal').classList.add('open');
+}
+function closeExpenseModal() {
+  document.getElementById('expense-modal').classList.remove('open');
+}
+
+async function loadExpenseProjects() {
+  const projId  = document.getElementById('exp-program').value;
+  const progSel = document.getElementById('exp-project');
+  progSel.innerHTML = '<option value="">— No project —</option>';
+  if (!projId) return;
+  try {
+    const res = await workerCall('get_projects', { programId: projId });
+    (res.projects || []).forEach(p => {
+      progSel.add(new Option(`${p['Project Name']} (${p['Project ID']})`, p['Project ID']));
+    });
+  } catch(_) {}
+}
+
+async function submitExpense() {
+  const program     = document.getElementById('exp-program').value;
+  const projectId   = document.getElementById('exp-project').value;
+  const category    = document.getElementById('exp-category').value;
+  const amount      = document.getElementById('exp-amount').value;
+  const description = document.getElementById('exp-desc').value.trim();
+
+  if (!program || !amount || !description) {
+    toast('Please fill in all required fields', 'red'); return;
+  }
+
+  const btn = document.getElementById('exp-submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+
+  try {
+    const res = await workerCall('log_expense', { program, projectId, category, amount, description });
+    if (res.ok) {
+      toast('Expense logged — pending approval', 'green');
+      closeExpenseModal();
+      await loadAll();
+      switchTab('queue');
+    } else {
+      toast(res.error || 'Failed to log expense', 'red');
+      btn.disabled = false; btn.textContent = 'Submit for Approval';
+    }
+  } catch(e) {
+    toast('Network error', 'red');
+    btn.disabled = false; btn.textContent = 'Submit for Approval';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  APPROVE / REJECT
+// ════════════════════════════════════════════════════════════
+async function approveExpense(txId) {
+  if (!txId || !confirm('Approve this expense?')) return;
+  try {
+    const res = await workerCall('approve_expense', { txId });
+    if (res.ok) { toast('Expense approved', 'green'); await loadAll(); }
+    else toast(res.error || 'Failed to approve', 'red');
+  } catch(e) { toast('Network error', 'red'); }
+}
+
+function openRejectModal(txId) {
+  PENDING_REJECT_TX = txId;
+  document.getElementById('reject-notes').value = '';
+  document.getElementById('reject-modal').classList.add('open');
+}
+function closeRejectModal() {
+  document.getElementById('reject-modal').classList.remove('open');
+  PENDING_REJECT_TX = null;
+}
+async function confirmReject() {
+  if (!PENDING_REJECT_TX) return;
+  const notes = document.getElementById('reject-notes').value.trim();
+  try {
+    const res = await workerCall('reject_expense', { txId: PENDING_REJECT_TX, notes });
+    if (res.ok) { toast('Expense rejected', 'green'); closeRejectModal(); await loadAll(); }
+    else toast(res.error || 'Failed to reject', 'red');
+  } catch(e) { toast('Network error', 'red'); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  UPDATE BUDGET (admin only)
+// ════════════════════════════════════════════════════════════
+function openBudgetModal(btnOrId, allocated, notes, label) {
+  // Support both data-attribute buttons and direct calls
+  let budgetId = btnOrId;
+  if (btnOrId && typeof btnOrId === 'object' && btnOrId.dataset) {
+    budgetId  = btnOrId.dataset.id;
+    allocated = btnOrId.dataset.alloc;
+    notes     = btnOrId.dataset.notes;
+    label     = btnOrId.dataset.label;
+  }
+  PENDING_BUDGET_ID = budgetId;
+  document.getElementById('bm-label').value     = label || '';
+  document.getElementById('bm-allocated').value = allocated || '';
+  document.getElementById('bm-notes').value     = notes || '';
+  document.getElementById('bm-submit-btn').disabled   = false;
+  document.getElementById('bm-submit-btn').textContent = 'Save Changes';
+  document.getElementById('budget-modal').classList.add('open');
+}
+function closeBudgetModal() {
+  document.getElementById('budget-modal').classList.remove('open');
+  PENDING_BUDGET_ID = null;
+}
+async function submitBudgetUpdate() {
+  const allocated = document.getElementById('bm-allocated').value;
+  const notes     = document.getElementById('bm-notes').value.trim();
+  if (!allocated || isNaN(parseFloat(allocated))) { toast('Enter a valid amount', 'red'); return; }
+
+  const btn = document.getElementById('bm-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const res = await workerCall('update_budget', { budgetId: PENDING_BUDGET_ID, allocated, notes });
+    if (res.ok) { toast('Budget updated', 'green'); closeBudgetModal(); await loadAll(); }
+    else toast(res.error || 'Failed to update', 'red');
+  } catch(e) { toast('Network error', 'red'); }
+
+  btn.disabled = false; btn.textContent = 'Save Changes';
+}
+
+// ════════════════════════════════════════════════════════════
+//  MANAGE BUDGETS
+// ════════════════════════════════════════════════════════════
+function renderManageBudget() {
+  const el = document.getElementById('manage-budget-body');
+  if (!el) return;
+  if (!FIN.budget.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No budget lines yet. Use the form above to add the first one.</div></div>';
+    return;
+  }
+
+  let html = `<table class="fin-table"><thead><tr>
+    <th>Budget ID</th><th>Program</th><th>Project</th><th>Category</th>
+    <th>Allocated</th><th>Spent</th><th>Remaining</th><th>Period</th><th>Notes</th><th></th>
+  </tr></thead><tbody>`;
+
+  FIN.budget.forEach(r => {
+    const alloc = parseFloat(r.Allocated || 0);
+    const spent = parseFloat(r.Spent || 0);
+    const rem   = alloc - spent;
+    html += `<tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--gray-400)">${r['Budget ID'] || '—'}</td>
+      <td style="font-weight:500">${r.Program || '—'}</td>
+      <td style="font-size:12px;color:var(--gray-500)">${r['Project ID'] || '<span style="color:var(--gray-300)">All</span>'}</td>
+      <td><span class="cat-pill">${r.Category || '—'}</span></td>
+      <td>${fmtMMK(alloc)}</td>
+      <td>${fmtMMK(spent)}</td>
+      <td style="color:${rem < 0 ? 'var(--red)' : 'inherit'}">${fmtMMK(rem)}</td>
+      <td style="color:var(--gray-500)">${r.Period || '—'}</td>
+      <td style="color:var(--gray-500);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Notes || '—'}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openBudgetModal(this)"
+        data-id="${(r['Budget ID']||'').replace(/"/g,'&quot;')}"
+        data-alloc="${r.Allocated||0}"
+        data-notes="${(r.Notes||'').replace(/"/g,'&quot;')}"
+        data-label="${(r.Program||'').replace(/"/g,'&quot;')} — ${(r.Category||'').replace(/"/g,'&quot;')}">Edit</button></td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+async function loadBudgetProjects() {
+  const projId = document.getElementById('nb-program').value;
+  const progSel = document.getElementById('nb-project-id');
+  if (!progSel) return;
+  progSel.innerHTML = '<option value="">— Entire program —</option>';
+  if (!projId) return;
+  try {
+    const res = await workerCall('get_projects', { programId: projId });
+    (res.projects || []).forEach(p => {
+      progSel.add(new Option(`${p['Project Name']} (${p['Project ID']})`, p['Project ID']));
+    });
+  } catch(_) {}
+}
+
+async function submitAddBudget() {
+  const program   = document.getElementById('nb-program').value;
+  const category  = document.getElementById('nb-category').value;
+  const allocated = document.getElementById('nb-allocated').value;
+  const period    = document.getElementById('nb-period').value;
+  const notes     = document.getElementById('nb-notes').value.trim();
+  const msgEl     = document.getElementById('nb-msg');
+  const btn       = document.getElementById('nb-submit-btn');
+
+  if (!program || !allocated) {
+    msgEl.style.display = 'block';
+    msgEl.style.color   = 'var(--red)';
+    msgEl.textContent   = 'Program and allocated amount are required.';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Adding…';
+  msgEl.style.display = 'none';
+
+  try {
+    const projectId = document.getElementById('nb-project-id')?.value || '';
+    const res = await workerCall('add_budget', { program, projectId, category, allocated, period, notes });
+    if (res.ok) {
+      msgEl.style.display = 'block';
+      msgEl.style.color   = 'var(--green)';
+      msgEl.textContent   = `✓ Budget line added (${res.budgetId})`;
+      // Clear form
+      document.getElementById('nb-program').value   = '';
+      document.getElementById('nb-allocated').value = '';
+      document.getElementById('nb-notes').value     = '';
+      await loadAll();
+      renderManageBudget();
+      toast('Budget line added', 'green');
+    } else {
+      msgEl.style.display = 'block';
+      msgEl.style.color   = 'var(--red)';
+      msgEl.textContent   = res.error || 'Failed to add budget line';
+    }
+  } catch(e) {
+    msgEl.style.display = 'block';
+    msgEl.style.color   = 'var(--red)';
+    msgEl.textContent   = 'Network error: ' + e.message;
+  }
+
+  btn.disabled = false; btn.textContent = '+ Add Budget Line';
+}
+
+// ════════════════════════════════════════════════════════════
+//  PROGRAMS
+// ════════════════════════════════════════════════════════════
+
+function renderProposals() {
+  const el = document.getElementById('proposals-body');
+  if (!el) return;
+  const filterStatus = document.getElementById('prop-filter-status')?.value || '';
+  let props = FIN.proposals || [];
+  if (filterStatus) props = props.filter(p => p['Status'] === filterStatus);
+  props = [...props].sort((a,b) => (b['Proposed At']||'').localeCompare(a['Proposed At']||''));
+
+  if (!props.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No proposals found.</div></div>';
+    return;
+  }
+
+  const statusColor = { draft:'var(--gray-400)', submitted:'var(--amber)', approved:'var(--green)', rejected:'var(--red)' };
+
+  let html = `<table class="fin-table"><thead><tr>
+    <th>ID</th><th>Program</th><th>Project</th><th>Category</th>
+    <th>Amount</th><th>Period</th><th>By</th><th>Status</th><th></th>
+  </tr></thead><tbody>`;
+
+  props.forEach(p => {
+    const st = p['Status'] || 'draft';
+    const projName = FIN.programs.find(pr => pr.id === p['Program ID'])?.name || p['Program ID'] || '—';
+    const canEdit = (st === 'draft') && (IS_ADMIN || p['Proposed By'] === PDP_NAME);
+    const canSubmit = (st === 'draft') && (IS_ADMIN || p['Proposed By'] === PDP_NAME);
+    const canReview = IS_ADMIN && st === 'submitted';
+
+    html += `<tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--gray-400)">${p['Proposal ID']||'—'}</td>
+      <td style="font-weight:500">${projName}</td>
+      <td>${p['Project ID']||'—'}</td>
+      <td><span class="cat-pill">${p['Category']||'—'}</span></td>
+      <td style="font-weight:600">${parseFloat(p['Requested Amount']||0).toLocaleString()}</td>
+      <td style="color:var(--gray-500)">${p['Period']||'—'}</td>
+      <td>${p['Proposed By']||'—'}</td>
+      <td><span class="pill pill-${st}">${st}</span></td>
+      <td><div class="actions">
+        ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="openProposalModal('${p['Proposal ID']}')">Edit</button>` : ''}
+        ${canSubmit ? `<button class="btn btn-primary btn-sm" onclick="quickSubmitProposal('${p['Proposal ID']}')">Submit</button>` : ''}
+        ${canReview ? `<button class="btn btn-success btn-sm" onclick="openReviewModal('${p['Proposal ID']}')">Review</button>` : ''}
+        ${!canEdit && !canSubmit && !canReview ? `<button class="btn btn-secondary btn-sm" onclick="openProposalModal('${p['Proposal ID']}', true)">View</button>` : ''}
+      </div></td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// ── Proposal Modal ──
+function openProposalModal(proposalId, readOnly = false) {
+  CURRENT_PROPOSAL_ID = proposalId;
+  const modal = document.getElementById('proposal-modal');
+  const titleEl = document.getElementById('proposal-modal-title');
+  titleEl.textContent = proposalId ? (readOnly ? 'View Proposal' : 'Edit Proposal') : 'New Budget Proposal';
+
+  // Populate program dropdown
+  const projSel = document.getElementById('prop-program');
+  projSel.innerHTML = '<option value="">Select program…</option>';
+  FIN.programs.forEach(p => projSel.add(new Option(`${p.id} — ${p.name}`, p.id)));
+
+  // Populate with existing data if editing
+  if (proposalId) {
+    const prop = FIN.proposals.find(p => p['Proposal ID'] === proposalId);
+    if (prop) {
+      projSel.value = prop['Program ID'] || '';
+      const isEntire = prop['Project ID'] === 'ALL_PROJECTS';
+      document.getElementById('prop-entire-program').checked = isEntire;
+      if (isEntire) {
+        const progSel = document.getElementById('prop-project');
+        progSel.disabled = true;
+        progSel.innerHTML = '<option value="ALL_PROJECTS">— Entire program —</option>';
+        progSel.value = 'ALL_PROJECTS';
+      } else {
+        loadProposalProjects(prop['Project ID']);
+      }
+      document.getElementById('prop-category').value = prop['Category'] || 'Travel';
+      document.getElementById('prop-period').value   = prop['Period'] || 'Q1 2026';
+      document.getElementById('prop-amount').value   = prop['Requested Amount'] || '';
+      document.getElementById('prop-justification').value = prop['Justification'] || '';
+      document.getElementById('prop-notes').value    = prop['Notes'] || '';
+    }
+  } else {
+    // Reset
+    projSel.value = '';
+    document.getElementById('prop-project').innerHTML = '<option value="">— Select program first —</option>';
+    document.getElementById('prop-project').disabled = false;
+    document.getElementById('prop-entire-program').checked = false;
+    document.getElementById('prop-amount').value   = '';
+    document.getElementById('prop-justification').value = '';
+    document.getElementById('prop-notes').value = '';
+  }
+
+  // Read-only state
+  ['prop-program','prop-project','prop-category','prop-period','prop-amount','prop-justification','prop-notes','prop-entire-program'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = readOnly;
+  });
+  document.getElementById('prop-save-btn').style.display   = readOnly ? 'none' : '';
+  document.getElementById('prop-submit-btn').style.display = readOnly ? 'none' : '';
+  document.getElementById('prop-modal-msg').style.display  = 'none';
+
+  modal.classList.add('open');
+}
+
+function closeProposalModal() {
+  document.getElementById('proposal-modal').classList.remove('open');
+  CURRENT_PROPOSAL_ID = null;
+}
+
+async function toggleEntireProgram(checked) {
+  const progSel = document.getElementById('prop-project');
+  if (checked) {
+    progSel.disabled = true;
+    progSel.innerHTML = '<option value="ALL_PROJECTS">— Entire program —</option>';
+    progSel.value = 'ALL_PROJECTS';
+  } else {
+    progSel.disabled = false;
+    loadProposalProjects();
+  }
+}
+
+async function loadProposalProjects(selectprojectId) {
+  const projId  = document.getElementById('prop-program').value;
+  const progSel = document.getElementById('prop-project');
+  progSel.innerHTML = '<option value="">Loading…</option>';
+  progSel.disabled = true;
+  try {
+    const res = await workerCall('get_projects', { programId: projId });
+    const projects = (res.projects || []).filter(p => !projId || p['Program ID'] === projId);
+    progSel.innerHTML = '<option value="">— Select project —</option>';
+    projects.forEach(p => {
+      progSel.add(new Option(`${p['Project Name']} (${p['Project ID']})`, p['Project ID']));
+    });
+    if (selectprojectId) progSel.value = selectprojectId;
+  } catch(e) {
+    progSel.innerHTML = '<option value="">Error loading projects</option>';
+  }
+  progSel.disabled = false;
+}
+
+async function saveProposal(submitAfter) {
+  const programId = document.getElementById('prop-program').value;
+  const projectId = document.getElementById('prop-project').value;
+  const category  = document.getElementById('prop-category').value;
+  const period    = document.getElementById('prop-period').value;
+  const requestedAmount = document.getElementById('prop-amount').value;
+  const justification   = document.getElementById('prop-justification').value.trim();
+  const notes     = document.getElementById('prop-notes').value.trim();
+  const msgEl     = document.getElementById('prop-modal-msg');
+
+  if (!programId || !projectId || !requestedAmount || !justification) {
+    msgEl.style.display = 'block'; msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Program, Project, Amount and Justification are required.'; return;
+  }
+
+  const saveBtn   = document.getElementById('prop-save-btn');
+  const submitBtn = document.getElementById('prop-submit-btn');
+  saveBtn.disabled = true; submitBtn.disabled = true;
+  saveBtn.textContent = 'Saving…'; msgEl.style.display = 'none';
+
+  try {
+    const saveRes = await workerCall('save_proposal', {
+      proposalId: CURRENT_PROPOSAL_ID, programId, projectId, category,
+      requestedAmount, justification, period, notes
+    });
+
+    if (!saveRes.ok) {
+      msgEl.style.display = 'block'; msgEl.style.color = 'var(--red)';
+      msgEl.textContent = saveRes.error || 'Failed to save';
+      saveBtn.disabled = false; submitBtn.disabled = false;
+      saveBtn.textContent = 'Save Draft'; return;
+    }
+
+    const pid = saveRes.proposalId;
+    if (submitAfter) {
+      const subRes = await workerCall('submit_proposal', { proposalId: pid });
+      if (subRes.ok) {
+        toast('Proposal submitted for approval', 'green');
+      } else {
+        toast(subRes.error || 'Saved but failed to submit', 'blue');
+      }
+    } else {
+      toast('Proposal saved as draft', 'blue');
+    }
+    closeProposalModal();
+    await loadAll();
+    switchTab('proposals');
+  } catch(e) {
+    msgEl.style.display = 'block'; msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'Network error: ' + e.message;
+  }
+  saveBtn.disabled = false; submitBtn.disabled = false;
+  saveBtn.textContent = 'Save Draft';
+}
+
+async function quickSubmitProposal(proposalId) {
+  if (!confirm('Submit this proposal for admin approval?')) return;
+  try {
+    const res = await workerCall('submit_proposal', { proposalId });
+    if (res.ok) { toast('Proposal submitted', 'green'); await loadAll(); renderProposals(); }
+    else toast(res.error || 'Failed to submit', 'red');
+  } catch(e) { toast('Network error', 'red'); }
+}
+
+// ── Review Modal (Admin) ──
+function openReviewModal(proposalId) {
+  PENDING_REVIEW_PROPOSAL_ID = proposalId;
+  const prop = FIN.proposals.find(p => p['Proposal ID'] === proposalId);
+  if (!prop) return;
+  const projName = FIN.programs.find(pr => pr.id === prop['Program ID'])?.name || prop['Program ID'];
+  document.getElementById('review-modal-title').textContent = `Review: ${prop['Proposal ID']}`;
+  document.getElementById('review-proposal-summary').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <div><b>Program:</b> ${projName}</div>
+      <div><b>Project:</b> ${prop['Project ID']}</div>
+      <div><b>Category:</b> ${prop['Category']}</div>
+      <div><b>Period:</b> ${prop['Period']}</div>
+      <div style="grid-column:1/-1"><b>Amount:</b> <span style="font-size:16px;font-weight:700;color:var(--amber)">${parseFloat(prop['Requested Amount']||0).toLocaleString()} MMK</span></div>
+      <div style="grid-column:1/-1"><b>Justification:</b> ${prop['Justification']}</div>
+      ${prop['Notes'] ? `<div style="grid-column:1/-1"><b>Notes:</b> ${prop['Notes']}</div>` : ''}
+      <div><b>Proposed by:</b> ${prop['Proposed By']}</div>
+    </div>`;
+  document.getElementById('review-notes-input').value = '';
+  document.getElementById('review-modal-msg').style.display = 'none';
+  document.getElementById('review-modal').classList.add('open');
+}
+function closeReviewModal() {
+  document.getElementById('review-modal').classList.remove('open');
+  PENDING_REVIEW_PROPOSAL_ID = null;
+}
+async function submitReview(decision) {
+  if (!PENDING_REVIEW_PROPOSAL_ID) return;
+  const reviewNotes = document.getElementById('review-notes-input').value.trim();
+  if (decision === 'approved' && !confirm('Approve this proposal? A Budget line will be created automatically.')) return;
+  try {
+    const res = await workerCall('review_proposal', { proposalId: PENDING_REVIEW_PROPOSAL_ID, decision, reviewNotes });
+    if (res.ok) {
+      const msg = decision === 'approved'
+        ? 'Proposal approved — Budget line created automatically'
+        : 'Proposal rejected';
+      toast(msg, decision === 'approved' ? 'green' : 'blue');
+      closeReviewModal();
+      await loadAll();
+      if (decision === 'approved') switchTab('budget');
+      else renderProposals();
+    } else {
+      document.getElementById('review-modal-msg').style.display = 'block';
+      document.getElementById('review-modal-msg').style.color = 'var(--red)';
+      document.getElementById('review-modal-msg').textContent = res.error || 'Failed';
+    }
+  } catch(e) { toast('Network error', 'red'); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════════
+let _toastTimer;
+function toast(msg, type = 'blue') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `show ${type}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+</script>
+
+<!-- ══ PROPOSAL MODAL ══ -->
+<div class="modal-overlay" id="proposal-modal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header">
+      <span class="modal-title" id="proposal-modal-title">New Budget Proposal</span>
+      <button class="modal-close" onclick="closeProposalModal()">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Program</label>
+        <select id="prop-program" onchange="loadProposalProjects()"></select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Project</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:var(--gray-500);cursor:pointer;">
+            <input type="checkbox" id="prop-entire-program" onchange="toggleEntireProgram(this.checked)" style="width:auto;margin:0;">
+            Apply to entire program
+          </label>
+        </div>
+        <select id="prop-project">
+          <option value="">— Select program first —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="prop-category">
+          <option value="Travel">Travel</option>
+          <option value="Training">Training</option>
+          <option value="Equipment">Equipment</option>
+          <option value="Supplies">Supplies</option>
+          <option value="Services">Services</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Period</label>
+        <select id="prop-period">
+          <option value="Q1 2026">Q1 2026</option>
+          <option value="Q2 2026">Q2 2026</option>
+          <option value="Q3 2026">Q3 2026</option>
+          <option value="Q4 2026">Q4 2026</option>
+          <option value="Annual 2026">Annual 2026</option>
+          <option value="Q1 2027">Q1 2027</option>
+          <option value="Q2 2027">Q2 2027</option>
+          <option value="Q3 2027">Q3 2027</option>
+          <option value="Q4 2027">Q4 2027</option>
+          <option value="Annual 2027">Annual 2027</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Requested Amount (MMK)</label>
+        <input type="number" id="prop-amount" placeholder="e.g. 1500000" min="0">
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Justification <span style="color:var(--red)">*</span></label>
+        <textarea id="prop-justification" rows="3" placeholder="Why is this budget needed?"></textarea>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label>Supporting Notes (optional)</label>
+        <textarea id="prop-notes" rows="2" placeholder="Additional context, references, etc."></textarea>
+      </div>
+    </div>
+    <div id="prop-modal-msg" style="display:none;font-size:13px;margin-top:8px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeProposalModal()">Cancel</button>
+      <button class="btn btn-secondary" id="prop-save-btn" onclick="saveProposal(false)">Save Draft</button>
+      <button class="btn btn-primary" id="prop-submit-btn" onclick="saveProposal(true)">Submit for Approval</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REVIEW PROPOSAL MODAL ══ -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal" style="width:400px;">
+    <div class="modal-header">
+      <span class="modal-title" id="review-modal-title">Review Proposal</span>
+      <button class="modal-close" onclick="closeReviewModal()">×</button>
+    </div>
+    <div id="review-proposal-summary" style="background:var(--gray-50);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--gray-700);"></div>
+    <div class="form-group">
+      <label>Review Notes (optional)</label>
+      <textarea id="review-notes-input" rows="3" placeholder="Reason for decision…"></textarea>
+    </div>
+    <div id="review-modal-msg" style="display:none;font-size:13px;margin-top:8px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeReviewModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="submitReview('rejected')">Reject</button>
+      <button class="btn btn-success" onclick="submitReview('approved')">Approve → Create Budget</button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>

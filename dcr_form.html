@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DCR v3.1.0 — Diocesan Consolidated Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy:   #1a2e4a;
+    --blue:   #2563eb;
+    --lblue:  #eff6ff;
+    --dblue:  #1d4ed8;
+    --green:  #15803d;
+    --lgreen: #f0fdf4;
+    --amber:  #b45309;
+    --lamber: #fffbeb;
+    --red:    #dc2626;
+    --lred:   #fef2f2;
+    --gray9:  #111827;
+    --gray7:  #374151;
+    --gray5:  #6b7280;
+    --gray3:  #d1d5db;
+    --gray2:  #e5e7eb;
+    --gray1:  #f9fafb;
+    --white:  #ffffff;
+    --radius: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,.10), 0 2px 4px -1px rgba(0,0,0,.06);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: #f0f2f5;
+    color: var(--gray9);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: var(--navy);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  }
+  .topbar-logo {
+    width: 32px; height: 32px;
+    background: var(--blue);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px; letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .topbar-title { font-weight: 600; font-size: 15px; }
+  .topbar-sub   { font-size: 11px; color: rgba(255,255,255,.5); margin-left: 2px; }
+  .topbar-gap   { flex: 1; }
+  .topbar-btn {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background .15s;
+  }
+  .topbar-btn:hover { background: rgba(255,255,255,.18); }
+  .topbar-btn.primary { background: var(--blue); border-color: var(--blue); }
+  .topbar-btn.primary:hover { background: var(--dblue); border-color: var(--dblue); }
+  .topbar-btn.success { background: var(--green); border-color: var(--green); }
+
+  /* ── Layout ── */
+  .layout { display: flex; min-height: calc(100vh - 52px); }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--white);
+    border-right: 1px solid var(--gray2);
+    padding: 20px 0;
+    position: sticky;
+    top: 52px;
+    height: calc(100vh - 52px);
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gray5);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 0 16px 8px;
+    margin-top: 16px;
+  }
+  .sidebar-label:first-child { margin-top: 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--gray7);
+    border-left: 3px solid transparent;
+    transition: all .12s;
+  }
+  .nav-item:hover { background: var(--gray1); color: var(--navy); }
+  .nav-item.active { background: var(--lblue); color: var(--blue); border-left-color: var(--blue); font-weight: 500; }
+  .nav-item .nav-num {
+    width: 20px; height: 20px;
+    background: var(--gray2);
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--gray5);
+  }
+  .nav-item.active .nav-num { background: var(--blue); color: #fff; }
+  .nav-item.done .nav-num { background: var(--green); color: #fff; }
+
+  /* ── Main content ── */
+  .main {
+    flex: 1;
+    padding: 28px 32px;
+    max-width: 880px;
+  }
+
+  /* ── Type selector ── */
+  .type-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .type-card {
+    flex: 1;
+    border: 2px solid var(--gray2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    background: var(--white);
+    transition: all .15s;
+    text-align: center;
+  }
+  .type-card:hover { border-color: var(--blue); background: var(--lblue); }
+  .type-card.selected { border-color: var(--blue); background: var(--lblue); }
+  .type-card-icon { font-size: 22px; margin-bottom: 4px; }
+  .type-card-label { font-weight: 600; font-size: 13px; color: var(--navy); }
+  .type-card-sub { font-size: 11px; color: var(--gray5); margin-top: 2px; }
+
+  /* ── Section card ── */
+  .section-card {
+    background: var(--white);
+    border: 1px solid var(--gray2);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    display: none;
+  }
+  .section-card.visible { display: block; }
+  .section-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 12px 20px;
+    border-radius: 7px 7px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-num {
+    width: 24px; height: 24px;
+    background: rgba(255,255,255,.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .section-title { font-weight: 600; font-size: 14px; }
+  .section-body { padding: 20px; overflow-x: auto; }
+
+  /* ── Writing tip ── */
+  .tip {
+    background: var(--lamber);
+    border-left: 3px solid var(--amber);
+    border-radius: 0 4px 4px 0;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .tip b { font-weight: 600; }
+
+  /* ── Form elements ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.span2 { grid-column: span 2; }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray5);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  input[type="text"], input[type="number"], input[type="date"],
+  select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--gray3);
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    color: var(--gray9);
+    background: var(--white);
+    transition: border-color .12s, box-shadow .12s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+  }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  textarea.large { min-height: 150px; }
+  textarea.xlarge { min-height: 200px; }
+
+  /* ── Info table (basic info) ── */
+  .info-table { width: 100%; border-collapse: collapse; }
+  .info-table td {
+    padding: 8px 10px;
+    border: 1px solid var(--gray2);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  .info-table td:first-child {
+    width: 38%;
+    font-weight: 500;
+    color: var(--gray7);
+    background: var(--gray1);
+  }
+  .info-table input, .info-table select {
+    border: none;
+    background: transparent;
+    padding: 2px 4px;
+    font-size: 13px;
+    width: 100%;
+  }
+  .info-table input:focus, .info-table select:focus {
+    outline: none;
+    background: var(--lblue);
+    border-radius: 3px;
+  }
+
+  /* ── Data table ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    background: var(--navy);
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: .03em;
+  }
+  .data-table td {
+    border: 1px solid var(--gray2);
+    padding: 0;
+  }
+  .data-table td input, .data-table td select, .data-table td textarea {
+    border: none;
+    border-radius: 0;
+    padding: 7px 8px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+  .data-table td textarea { min-height: 50px; }
+  .data-table tr:nth-child(even) td { background: var(--gray1); }
+  .data-table td.label-cell {
+    padding: 8px 10px;
+    font-weight: 500;
+    color: var(--gray7);
+    background: var(--gray1) !important;
+    font-size: 12px;
+  }
+  .data-table tr.total-row td {
+    background: var(--lblue) !important;
+    font-weight: 600;
+    color: var(--navy);
+    padding: 7px 10px;
+  }
+
+  /* ── Checklist ── */
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--gray2);
+    border-radius: 6px;
+    background: var(--gray1);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .check-item:hover { border-color: var(--blue); background: var(--lblue); }
+  .check-item.checked { border-color: var(--green); background: var(--lgreen); }
+  .check-box {
+    width: 18px; height: 18px;
+    border: 2px solid var(--gray3);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+    transition: all .12s;
+  }
+  .check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+  .check-box-tick { color: #fff; font-size: 11px; display: none; }
+  .check-item.checked .check-box-tick { display: block; }
+  .check-label { font-size: 13px; font-weight: 500; color: var(--gray9); }
+  .check-guide { font-size: 11px; color: var(--gray5); margin-top: 2px; }
+
+  /* ── Section divider / subsection ── */
+  .subsection {
+    border: 1px solid var(--gray2);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .subsection-header {
+    background: var(--gray1);
+    border-bottom: 1px solid var(--gray2);
+    padding: 9px 14px;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--navy);
+    letter-spacing: .03em;
+  }
+  .subsection-body { padding: 14px; }
+
+  /* ── Status pills ── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .03em;
+  }
+  .pill-draft  { background: var(--lamber); color: var(--amber); }
+  .pill-saved  { background: var(--lgreen); color: var(--green); }
+  .pill-locked { background: var(--lred);   color: var(--red);   }
+
+  /* ── Progress bar ── */
+  .progress-wrap { margin-bottom: 20px; }
+  .progress-label { font-size: 11px; color: var(--gray5); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 4px; background: var(--gray2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width .3s; }
+
+  /* ── Save bar ── */
+  .save-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--gray2);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 50;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+  }
+  .save-bar-status { font-size: 12px; color: var(--gray5); flex: 1; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all .15s;
+  }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: var(--dblue); }
+  .btn-secondary { background: var(--gray1); color: var(--gray7); border: 1px solid var(--gray3); }
+  .btn-secondary:hover { background: var(--gray2); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { background: #166534; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Reports list (admin view) ── */
+  .reports-list { display: flex; flex-direction: column; gap: 10px; }
+  .report-row {
+    background: var(--white);
+    border: 1px solid var(--gray2);
+    border-radius: 8px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+  }
+  .report-row-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .report-row-icon.monthly  { background: #eff6ff; }
+  .report-row-icon.biannual { background: #fef9c3; }
+  .report-row-icon.annual   { background: #f0fdf4; }
+  .report-row-info { flex: 1; }
+  .report-row-title { font-weight: 600; font-size: 13px; color: var(--navy); }
+  .report-row-meta  { font-size: 11px; color: var(--gray5); margin-top: 2px; }
+  .report-row-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Welcome / type picker screen ── */
+  #screen-select { padding: 0; }
+  .welcome-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #2d4a6e 100%);
+    color: #fff;
+    padding: 32px;
+    border-radius: 10px 10px 0 0;
+    margin-bottom: 24px;
+  }
+  .welcome-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .welcome-header p  { font-size: 13px; color: rgba(255,255,255,.65); }
+
+  /* ── Scrollable main with bottom padding for save bar ── */
+  .main { padding-bottom: 80px; }
+
+  /* ── Print / PDF styles ── */
+  @media print {
+    .topbar, .sidebar, .save-bar, .type-selector, .nav-item,
+    .btn, .tip, #screen-select, .no-print { display: none !important; }
+    body { background: white; font-size: 11pt; }
+    .main { padding: 0; max-width: 100%; }
+    .section-card { display: block !important; break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+    .section-header { background: #1a2e4a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .data-table th { background: #1a2e4a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    textarea { border: 1px solid #ccc; min-height: auto; }
+    .layout { display: block; }
+  }
+
+  /* ── Responsive utilities ── */
+  .hide-mobile { display: inline; }
+  .show-mobile { display: none; }
+  @media (max-width: 768px) {
+
+    /* ── Utilities ── */
+    .hide-mobile { display: none !important; }
+    .show-mobile { display: inline !important; }
+
+    /* ── Topbar ── */
+    .topbar {
+      padding: 0 10px;
+      gap: 6px;
+      height: 48px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+    .topbar-sub  { display: none; }
+    .topbar-logo { width: 26px; height: 26px; font-size: 10px; flex-shrink: 0; }
+    .topbar-title { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+    .topbar-btn  { padding: 4px 8px; font-size: 11px; flex-shrink: 0; }
+
+    /* ── Layout: no sidebar, full width ── */
+    .layout      { flex-direction: column; }
+    .sidebar     { display: none !important; }
+    .main        { width: 100%; max-width: 100%; padding: 12px 10px 90px; }
+    #admin-panel { padding: 0 10px 90px; }
+
+    /* ── Type selector ── */
+    .type-selector { flex-direction: column; gap: 8px; }
+    .type-card {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      padding: 12px 14px;
+    }
+    .type-card-icon { font-size: 22px; margin-bottom: 0; flex-shrink: 0; }
+
+    /* ── Welcome banner ── */
+    .welcome-header { padding: 18px 14px; border-radius: 8px 8px 0 0; }
+    .welcome-header h1 { font-size: 16px; }
+    .welcome-header p  { font-size: 12px; }
+
+    /* ── Section cards ── */
+    .section-card  { margin-bottom: 14px; }
+    .section-header{ padding: 10px 12px; }
+    .section-title { font-size: 13px; }
+    .section-body  { padding: 12px 10px; }
+
+    /* ── Forms — prevent iOS auto-zoom (needs font-size >= 16px on inputs) ── */
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+    label { font-size: 11px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.span2 { grid-column: span 1; }
+
+    /* ── Basic info table: stack label above value ── */
+    .info-table, .info-table tbody, .info-table tr { display: block; width: 100%; }
+    .info-table tr { border-bottom: 1px solid var(--gray2); }
+    .info-table td {
+      display: block;
+      width: 100% !important;
+      border: none;
+      padding: 5px 10px;
+    }
+    .info-table td:first-child {
+      padding-top: 8px;
+      padding-bottom: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray5);
+      background: var(--gray1);
+    }
+    .info-table td:last-child { padding-bottom: 8px; }
+    .info-table input, .info-table select { width: 100%; }
+
+    /* ── Data tables: horizontal scroll ── */
+    .section-body  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .subsection-body { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 10px; }
+    .data-table    { min-width: 500px; }
+
+    /* ── Progress bar ── */
+    .progress-wrap { margin-bottom: 12px; }
+    .progress-label { font-size: 11px; }
+
+    /* ── Tips ── */
+    .tip { font-size: 11px; padding: 7px 10px; }
+
+    /* ── Subsection ── */
+    .subsection-header { font-size: 11px; padding: 7px 10px; }
+
+    /* ── Report rows (admin & drafts) ── */
+    .report-row        { flex-wrap: wrap; padding: 10px 12px; gap: 8px; }
+    .report-row-icon   { width: 30px; height: 30px; font-size: 14px; }
+    .report-row-title  { font-size: 12px; }
+    .report-row-meta   { font-size: 10px; line-height: 1.6; }
+    .report-row-actions{ width: 100%; justify-content: flex-end; margin-top: 2px; }
+
+    /* ── Admin header ── */
+    .admin-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
+    .admin-filters { flex-wrap: wrap; gap: 8px; width: 100%; }
+    .admin-filters select { flex: 1; min-width: 130px; }
+
+    /* ── Save bar ── */
+    .save-bar { padding: 8px 10px; gap: 6px; }
+    .save-bar-status { font-size: 11px; min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .save-bar .btn { padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
+
+    /* ── Checklist ── */
+    .check-item  { padding: 8px 10px; }
+    .check-label { font-size: 12px; }
+    .check-guide { font-size: 10px; }
+
+    /* ── Buttons ── */
+    .btn { font-size: 12px; padding: 7px 12px; }
+  }
+
+  /* ── Extra small (iPhone SE 375px) ── */
+  @media (max-width: 390px) {
+    .topbar-title { max-width: 80px; }
+    .topbar-btn   { font-size: 10px; padding: 4px 6px; }
+    .save-bar .btn{ font-size: 11px; padding: 7px 10px; }
+    .section-title{ font-size: 12px; }
+  }
+
+  /* ── Admin reports panel ── */
+  #admin-panel {
+    padding: 0 32px 80px;
+    flex: 1;
+    display: none;
+  }
+  #admin-panel.visible { display: block; }
+
+  .admin-header {
+    background: var(--white);
+    border: 1px solid var(--gray2);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .admin-filters { display: flex; gap: 10px; align-items: center; }
+  .admin-filters select, .admin-filters input {
+    width: auto;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray5);
+  }
+  .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 15px; font-weight: 600; color: var(--gray7); margin-bottom: 4px; }
+  .empty-state p { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ─────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <!-- Back button -->
+  <button class="topbar-btn" onclick="window.close()" title="Return to PDP Dashboard" style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+    ← <span class="hide-mobile">Dashboard</span>
+  </button>
+
+  <!-- Logo + title -->
+  <div class="topbar-logo" style="flex-shrink:0;">PDP</div>
+  <div style="min-width:0;overflow:hidden;">
+    <div class="topbar-title">DCR</div>
+    <div class="topbar-sub">Diocesan Consolidated Report · v3.1.0</div>
+  </div>
+
+  <div class="topbar-gap"></div>
+
+  <!-- Role switcher: only shown to admin/manager -->
+  <div id="role-switcher" style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+    <button class="topbar-btn" id="btn-mode-staff" onclick="setMode('staff')">
+      👤 <span class="hide-mobile">Staff View</span>
+    </button>
+    <button class="topbar-btn primary" id="btn-mode-admin" onclick="setMode('admin')">
+      🔑 <span class="hide-mobile">Admin View</span>
+    </button>
+  </div>
+  <!-- Staff: just show name badge -->
+  <div id="user-badge" style="display:none;align-items:center;gap:6px;flex-shrink:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 10px;">
+    <span style="font-size:12px;" id="topbar-user-name"></span>
+    <span style="font-size:10px;color:rgba(255,255,255,.5);" id="topbar-user-role"></span>
+  </div>
+  <button class="topbar-btn" id="btn-new-report" onclick="showNewReport()" style="display:none;flex-shrink:0;">
+    + <span class="hide-mobile">New Report</span>
+  </button>
+</div>
+
+<!-- ── Layout ──────────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-label">Report Type</div>
+    <div class="nav-item active" id="nav-select" onclick="showScreen('select')">
+      <span class="nav-num">◈</span> Select Type
+    </div>
+
+    <div class="sidebar-label" id="nav-section-label" style="display:none;">Sections</div>
+    <div id="nav-sections"></div>
+  </nav>
+
+  <!-- Staff: form area -->
+  <div class="main" id="main-form">
+
+    <!-- ── Screen: Type selector ── -->
+    <div id="screen-select">
+      <div class="welcome-header">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.08em;opacity:.6;margin-bottom:8px;">DIOCESAN CONSOLIDATED REPORT</div>
+        <h1>Select Report Type</h1>
+        <p>Choose the reporting period you are completing. All sections are guided with instructions from the official template.</p>
+      </div>
+
+      <div class="type-selector">
+        <div class="type-card" onclick="startReport('monthly')">
+          <div class="type-card-icon">📅</div>
+          <div class="type-card-label">Monthly</div>
+          <div class="type-card-sub">Single month period</div>
+        </div>
+        <div class="type-card" onclick="startReport('biannual')">
+          <div class="type-card-icon">📊</div>
+          <div class="type-card-label">Bi-Annual</div>
+          <div class="type-card-sub">Half 1 or Half 2</div>
+        </div>
+        <div class="type-card" onclick="startReport('annual')">
+          <div class="type-card-icon">📋</div>
+          <div class="type-card-label">Annual</div>
+          <div class="type-card-sub">Full year report</div>
+        </div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--gray2);border-radius:8px;padding:16px 20px;">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px;">📅 Quarterly & CW Reference Calendar</div>
+        <table class="data-table">
+          <thead><tr><th>Quarter</th><th>Months</th><th>CW Range</th><th>Report Types Due</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="padding:7px 10px;font-weight:600;">Q1</td>
+              <td style="padding:7px 10px;">January – March</td>
+              <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;">CW 01 – CW 13</td>
+              <td style="padding:7px 10px;font-size:11px;">Weekly (each CW) · Monthly (end of month) · Bi-Annual (end of June) · Annual (end of Dec)</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px;font-weight:600;">Q2</td>
+              <td style="padding:7px 10px;">April – June</td>
+              <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;">CW 14 – CW 26</td>
+              <td style="padding:7px 10px;font-size:11px;">Weekly (each CW) · Monthly (end of month) · Bi-Annual (end of June)</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px;font-weight:600;">Q3</td>
+              <td style="padding:7px 10px;">July – September</td>
+              <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;">CW 27 – CW 39</td>
+              <td style="padding:7px 10px;font-size:11px;">Weekly (each CW) · Monthly (end of month)</td>
+            </tr>
+            <tr>
+              <td style="padding:7px 10px;font-weight:600;">Q4</td>
+              <td style="padding:7px 10px;">October – December</td>
+              <td style="padding:7px 10px;font-family:'IBM Plex Mono',monospace;">CW 40 – CW 52/53</td>
+              <td style="padding:7px 10px;font-size:11px;">Weekly (each CW) · Monthly (end of month) · Bi-Annual (end of Dec) · Annual (end of Dec)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Saved drafts -->
+      <div style="margin-top:20px;">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px;">📂 Your Saved Drafts</div>
+        <div id="drafts-list"></div>
+      </div>
+    </div>
+
+    <!-- ── Form sections (shown when report started) ── -->
+    <div id="form-area" style="display:none;">
+
+      <!-- Progress -->
+      <div class="progress-wrap no-print">
+        <div class="progress-label">
+          <span id="progress-label-text">Section 1 of 9</span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Report header (print) -->
+      <div id="report-print-header" style="display:none;margin-bottom:20px;">
+        <div style="text-align:center;margin-bottom:8px;">
+          <div style="font-size:18px;font-weight:700;color:var(--navy);" id="print-title">DIOCESAN CONSOLIDATED REPORT</div>
+          <div style="font-size:12px;color:var(--gray5);" id="print-subtitle"></div>
+        </div>
+      </div>
+
+      <!-- S1: Basic Information -->
+      <div class="section-card visible" id="sec-1">
+        <div class="section-header">
+          <div class="section-num">1</div>
+          <div class="section-title">Basic Information</div>
+        </div>
+        <div class="section-body">
+          <table class="info-table" id="basic-info-table">
+            <!-- Populated by JS based on report type -->
+          </table>
+        </div>
+      </div>
+
+      <!-- S2: Executive Summary -->
+      <div class="section-card" id="sec-2">
+        <div class="section-header">
+          <div class="section-num">2</div>
+          <div class="section-title">Executive Summary <span style="font-weight:300;font-size:12px;opacity:.7;">(1 Page Maximum)</span></div>
+        </div>
+        <div class="section-body">
+          <div class="tip">
+            <b>✏ Writing Tip:</b> Be precise with dates. For weekly reports always cite the CW number (e.g. CW 14). Write 4 paragraphs — one per point below. Be analytical: focus on impact and causes, not just listing events. Avoid backfilling.
+          </div>
+          <div class="form-grid full">
+            <div class="form-group">
+              <label>Scope of Activities</label>
+              <textarea id="exec-scope" rows="3" placeholder="Scope of activities across the reporting period..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Total Beneficiaries <span style="font-weight:400;">(female / male breakdown)</span></label>
+              <textarea id="exec-beneficiaries" rows="2" placeholder="Total Beneficiaries: female / male..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>One Major Achievement</label>
+              <textarea id="exec-achievement" rows="3" placeholder="One flagship achievement for the reporting period..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>One Major Challenge</label>
+              <textarea id="exec-challenge" rows="3" placeholder="One key challenge for the reporting period..."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S3: Progress by Objectives -->
+      <div class="section-card" id="sec-3">
+        <div class="section-header">
+          <div class="section-num">3</div>
+          <div class="section-title">Progress by Objectives</div>
+        </div>
+        <div class="section-body">
+          <div class="tip"><b>Note:</b> Repeat subsections 3.1–3.5 for each approved programme objective. This form covers Objective 1. Use the "+ Add Objective" button to add more.</div>
+          <div id="objectives-container">
+            <!-- Populated by JS -->
+          </div>
+          <button class="btn btn-secondary no-print" onclick="addObjective()" style="margin-top:8px;">+ Add Objective</button>
+        </div>
+      </div>
+
+      <!-- S4: Cross-Cutting Issues -->
+      <div class="section-card" id="sec-4">
+        <div class="section-header">
+          <div class="section-num">4</div>
+          <div class="section-title">Cross-Cutting Issues</div>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-header">4.1 Gender Participation</div>
+            <div class="subsection-body">
+              <div class="tip"><b>Guidance:</b> Report female/male participation rates (% or numbers). Note any gap and its cause. Avoid vague statements like 'women participated'.</div>
+              <table class="data-table" style="margin-bottom:10px;">
+                <thead><tr><th>Activity / Group</th><th style="width:12%">Total</th><th style="width:14%">Female (%)</th><th style="width:14%">Male (%)</th><th>Notes</th></tr></thead>
+                <tbody id="gender-table-body">
+                  <tr><td><input type="text" placeholder="Activity or group name..."></td><td><input type="number" placeholder="0"></td><td><input type="text" placeholder="e.g. 60%"></td><td><input type="text" placeholder="e.g. 40%"></td><td><input type="text" placeholder="Notes..."></td></tr>
+                  <tr><td><input type="text"></td><td><input type="number"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                  <tr><td><input type="text"></td><td><input type="number"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                </tbody>
+              </table>
+              <button class="btn btn-secondary no-print" onclick="addTableRow('gender-table-body',5)" style="font-size:11px;padding:5px 10px;">+ Row</button>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-header">4.2 Vulnerable Groups</div>
+            <div class="subsection-body">
+              <div class="tip"><b>Guidance:</b> Report with numbers (if possible): IDPs, ethnic minorities, persons with disabilities. If none applicable, state clearly.</div>
+              <table class="data-table">
+                <tbody>
+                  <tr><td class="label-cell" style="width:40%">IDPs / displaced persons:</td><td><input type="text" id="vg-idps" placeholder="Number and notes..."></td></tr>
+                  <tr><td class="label-cell">Ethnic minorities:</td><td><input type="text" id="vg-ethnic" placeholder="Number and notes..."></td></tr>
+                  <tr><td class="label-cell">Persons with disabilities:</td><td><input type="text" id="vg-disability" placeholder="Number and notes..."></td></tr>
+                  <tr><td class="label-cell">Other vulnerable groups:</td><td><input type="text" id="vg-other" placeholder="Number and notes..."></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-header">4.3 Community Contribution</div>
+            <div class="subsection-body">
+              <div class="tip"><b>Guidance:</b> State community contributions precisely. Avoid vague phrases like 'the community cooperated well'.</div>
+              <table class="data-table">
+                <thead><tr><th>Contribution Type</th><th>Description / Amount</th></tr></thead>
+                <tbody>
+                  <tr><td class="label-cell" style="width:40%">Financial (MMK or in-kind value):</td><td><input type="text" placeholder="Amount and description..."></td></tr>
+                  <tr><td class="label-cell">Volunteer labour (person-days):</td><td><input type="text" placeholder="Number of person-days..."></td></tr>
+                  <tr><td class="label-cell">Infrastructure / premises:</td><td><input type="text" placeholder="Description..."></td></tr>
+                  <tr><td class="label-cell">Food / supplies:</td><td><input type="text" placeholder="Description..."></td></tr>
+                  <tr><td class="label-cell">Other:</td><td><input type="text" placeholder="Other contributions..."></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- S5: Challenges & Adaptive Actions -->
+      <div class="section-card" id="sec-5">
+        <div class="section-header">
+          <div class="section-num">5</div>
+          <div class="section-title">Challenges & Adaptive Actions</div>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection">
+            <div class="subsection-header">5.1 Challenges</div>
+            <div class="subsection-body">
+              <div class="tip"><b>Guidance:</b> Structure each challenge: (a) What happened? (b) Where? (c) How did it affect implementation?<br>
+              <b>Category:</b> Security | Access | Financial | Staff / Capacity | Natural | Other &nbsp;·&nbsp; <b>Severity:</b> Low | Medium | High</div>
+              <table class="data-table" style="margin-bottom:10px;">
+                <thead><tr><th style="width:5%">#</th><th>Challenge (What / Where)</th><th>Effect on Implementation</th><th style="width:18%">Category</th><th style="width:12%">Severity</th></tr></thead>
+                <tbody id="challenges-body">
+                  <tr>
+                    <td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">1</td>
+                    <td><textarea style="min-height:54px;" placeholder="What happened and where?"></textarea></td>
+                    <td><textarea style="min-height:54px;" placeholder="How did this affect implementation?"></textarea></td>
+                    <td><select><option value="">Select…</option><option>Security</option><option>Access</option><option>Financial</option><option>Staff / Capacity</option><option>Natural</option><option>Other</option></select></td>
+                    <td><select><option value="">Select…</option><option>Low</option><option>Medium</option><option>High</option></select></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">2</td>
+                    <td><textarea style="min-height:54px;"></textarea></td>
+                    <td><textarea style="min-height:54px;"></textarea></td>
+                    <td><select><option value="">Select…</option><option>Security</option><option>Access</option><option>Financial</option><option>Staff / Capacity</option><option>Natural</option><option>Other</option></select></td>
+                    <td><select><option value="">Select…</option><option>Low</option><option>Medium</option><option>High</option></select></td>
+                  </tr>
+                  <tr>
+                    <td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">3</td>
+                    <td><textarea style="min-height:54px;"></textarea></td>
+                    <td><textarea style="min-height:54px;"></textarea></td>
+                    <td><select><option value="">Select…</option><option>Security</option><option>Access</option><option>Financial</option><option>Staff / Capacity</option><option>Natural</option><option>Other</option></select></td>
+                    <td><select><option value="">Select…</option><option>Low</option><option>Medium</option><option>High</option></select></td>
+                  </tr>
+                </tbody>
+              </table>
+              <button class="btn btn-secondary no-print" onclick="addChallengeRow()" style="font-size:11px;padding:5px 10px;">+ Row</button>
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-header">5.2 Adaptive Actions Taken</div>
+            <div class="subsection-body">
+              <div class="tip"><b>Guidance:</b> For each challenge above, describe what adjustment was made. This demonstrates leadership and problem-solving capacity.</div>
+              <textarea id="adaptive-actions" class="large" placeholder="For each challenge listed above, describe the adaptive action taken..."></textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- S6: Financial Summary -->
+      <div class="section-card" id="sec-6">
+        <div class="section-header">
+          <div class="section-num">6</div>
+          <div class="section-title">Financial Summary</div>
+        </div>
+        <div class="section-body">
+          <div class="tip" id="finance-tip"><b>Guidance:</b> Summarise expenditure vs. budget. Explain all variances. Do not paste raw Excel data.</div>
+          <table class="data-table" style="margin-bottom:14px;">
+            <thead><tr><th>Budget Line</th><th style="width:16%">Budget (MMK)</th><th style="width:16%">Spent (MMK)</th><th style="width:16%">Variance</th><th>Explanation</th></tr></thead>
+            <tbody id="finance-body">
+              <tr><td><input type="text" placeholder="Budget line description..."></td><td><input type="number" placeholder="0" oninput="updateFinanceTotal()"></td><td><input type="number" placeholder="0" oninput="updateFinanceTotal()"></td><td><input type="text" placeholder="Auto or manual"></td><td><input type="text" placeholder="Explanation..."></td></tr>
+              <tr><td><input type="text"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="text"></td><td><input type="text"></td></tr>
+              <tr><td><input type="text"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="text"></td><td><input type="text"></td></tr>
+              <tr><td><input type="text"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="text"></td><td><input type="text"></td></tr>
+              <tr class="total-row" id="finance-total-row">
+                <td>TOTAL</td><td id="ft-budget">—</td><td id="ft-spent">—</td><td id="ft-variance">—</td><td>—</td>
+              </tr>
+            </tbody>
+          </table>
+          <button class="btn btn-secondary no-print" onclick="addFinanceRow()" style="font-size:11px;padding:5px 10px;margin-bottom:14px;">+ Row</button>
+
+          <div class="subsection">
+            <div class="subsection-header">Explanation of Major Variances</div>
+            <div class="subsection-body">
+              <textarea id="finance-variances" class="large" placeholder="Explain all variances (under- or over-spending) in detail. Do not leave variances unexplained."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S7: Monitoring & Data Quality -->
+      <div class="section-card" id="sec-7">
+        <div class="section-header">
+          <div class="section-num">7</div>
+          <div class="section-title">Monitoring & Data Quality</div>
+        </div>
+        <div class="section-body">
+          <div class="tip"><b>Guidance:</b> Briefly reflect on the following questions. Honest reporting of data gaps or delays increases the credibility of this report.</div>
+          <table class="data-table">
+            <thead><tr><th>Monitoring Question</th><th style="width:14%">Yes / No</th><th>Notes / Details</th></tr></thead>
+            <tbody>
+              <tr>
+                <td style="padding:8px 10px;">Were all community reports received on time?</td>
+                <td><select><option value="">—</option><option>Yes</option><option>No</option><option>Partial</option></select></td>
+                <td><input type="text" placeholder="Details..."></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;">Were there any data inconsistencies or discrepancies?</td>
+                <td><select><option value="">—</option><option>Yes</option><option>No</option></select></td>
+                <td><input type="text" placeholder="Details..."></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;">Were there any late or missing reports?</td>
+                <td><select><option value="">—</option><option>Yes</option><option>No</option></select></td>
+                <td><input type="text" placeholder="Details..."></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;">Were field verification visits conducted?</td>
+                <td><select><option value="">—</option><option>Yes</option><option>No</option></select></td>
+                <td><input type="text" placeholder="Details..."></td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;">Was data cross-checked with M&E records?</td>
+                <td><select><option value="">—</option><option>Yes</option><option>No</option></select></td>
+                <td><input type="text" placeholder="Details..."></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- S8: Lessons Learned -->
+      <div class="section-card" id="sec-8">
+        <div class="section-header">
+          <div class="section-num">8</div>
+          <div class="section-title">Lessons Learned & Recommendations</div>
+        </div>
+        <div class="section-body">
+          <div class="tip"><b>Guidance:</b> Write 3–5 lessons. Each lesson must include: (a) the problem identified, (b) what action will improve it. Avoid vague statements.</div>
+          <table class="data-table" style="margin-bottom:10px;">
+            <thead><tr><th style="width:5%">#</th><th>Lesson / Finding (What happened?)</th><th>Recommendation (What will be done?)</th></tr></thead>
+            <tbody id="lessons-body">
+              <tr><td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">1</td><td><textarea style="min-height:54px;" placeholder="Problem identified..."></textarea></td><td><textarea style="min-height:54px;" placeholder="Action that will improve it..."></textarea></td></tr>
+              <tr><td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">2</td><td><textarea style="min-height:54px;"></textarea></td><td><textarea style="min-height:54px;"></textarea></td></tr>
+              <tr><td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">3</td><td><textarea style="min-height:54px;"></textarea></td><td><textarea style="min-height:54px;"></textarea></td></tr>
+              <tr><td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">4</td><td><textarea style="min-height:54px;"></textarea></td><td><textarea style="min-height:54px;"></textarea></td></tr>
+              <tr><td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">5</td><td><textarea style="min-height:54px;"></textarea></td><td><textarea style="min-height:54px;"></textarea></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- S9: Annexes & Checklist -->
+      <div class="section-card" id="sec-9">
+        <div class="section-header">
+          <div class="section-num">9</div>
+          <div class="section-title">Annexes & Pre-Submission Checklist</div>
+        </div>
+        <div class="section-body">
+
+          <div class="subsection" style="margin-bottom:16px;">
+            <div class="subsection-header">Annexes to Attach</div>
+            <div class="subsection-body" id="annexes-list" style="font-size:13px;color:var(--gray7);line-height:2;">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <div class="subsection">
+            <div class="subsection-header">✅ Pre-Submission Checklist</div>
+            <div class="subsection-body">
+              <div class="tip"><b>Note:</b> Before submitting, tick all items below. A complete checklist = a credible report.</div>
+              <div class="checklist" id="checklist-items">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit for review -->
+          <div style="margin-top:20px;padding:16px;background:var(--lgreen);border:1px solid #bbf7d0;border-radius:8px;" id="submit-section">
+            <div style="font-weight:600;font-size:13px;color:var(--green);margin-bottom:4px;">Ready to Submit?</div>
+            <div style="font-size:12px;color:var(--gray7);margin-bottom:10px;">Once you submit, your report will be locked and forwarded to your admin/manager for review and PDF download.</div>
+            <button class="btn btn-success" onclick="submitReport()">Submit Report →</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /form-area -->
+  </div><!-- /main-form -->
+
+  <!-- Admin panel -->
+  <div id="admin-panel">
+    <div style="padding-top:28px;">
+      <div class="admin-header">
+        <div style="flex:1;">
+          <div style="font-size:16px;font-weight:600;color:var(--navy);">Submitted Reports</div>
+          <div style="font-size:12px;color:var(--gray5);margin-top:2px;">Download any submitted report as PDF</div>
+        </div>
+        <div class="admin-filters">
+          <select id="filter-type" onchange="renderAdminList()">
+            <option value="">All Types</option>
+            <option value="monthly">Monthly</option>
+            <option value="biannual">Bi-Annual</option>
+            <option value="annual">Annual</option>
+          </select>
+          <select id="filter-status" onchange="renderAdminList()">
+            <option value="">All Status</option>
+            <option value="submitted">Submitted</option>
+            <option value="draft">Draft</option>
+          </select>
+        </div>
+      </div>
+      <div id="admin-reports-list"></div>
+    </div>
+  </div>
+
+</div><!-- /layout -->
+
+<!-- Save bar -->
+<div class="save-bar" id="save-bar" style="display:none;">
+  <div class="save-bar-status" id="save-status">Draft — not saved</div>
+  <button class="btn btn-secondary" onclick="saveDraft()">💾 Save Draft</button>
+  <button class="btn btn-primary" onclick="exportPDF()">⬇ Download PDF</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+
+// ── Worker URL — set this to your Cloudflare Worker URL ──────────────────
+const WORKER_URL = 'https://pdp-dashboard.gamalieltun282.workers.dev/';
+
+// ── Worker call helper ────────────────────────────────────────────────────
+async function workerCall(action, extra = {}) {
+  const username = PDP_USER?.username || '';
+  const password = sessionStorage.getItem('pdp_pw') || '';
+  const res = await fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, username, password, ...extra }),
+  });
+  return res.json();
+}
+
+// Read logged-in user from PDP dashboard sessionStorage
+const PDP_USER = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
+const PDP_ROLE = PDP_USER?.role || 'staff';   // 'admin' | 'manager' | 'staff'
+const PDP_NAME = PDP_USER?.name || '';
+
+let MODE         = (PDP_ROLE === 'admin' || PDP_ROLE === 'manager') ? 'admin' : 'staff';
+let REPORT_TYPE  = null;
+let CURRENT_SCREEN = 'select';
+let REPORT_ID    = null;
+let objectiveCount = 1;
+let challengeRowCount = 3;
+
+const SECTIONS = [
+  { id: 1, label: 'Basic Information' },
+  { id: 2, label: 'Executive Summary' },
+  { id: 3, label: 'Progress by Objectives' },
+  { id: 4, label: 'Cross-Cutting Issues' },
+  { id: 5, label: 'Challenges & Actions' },
+  { id: 6, label: 'Financial Summary' },
+  { id: 7, label: 'Monitoring & Data Quality' },
+  { id: 8, label: 'Lessons Learned' },
+  { id: 9, label: 'Annexes & Checklist' },
+];
+
+// ── Type config ────────────────────────────────────────
+const TYPE_CONFIG = {
+  monthly: {
+    label: 'Monthly Reporting Form',
+    fullLabel: 'DIOCESAN CONSOLIDATED REPORT — MONTHLY',
+    basicFields: [
+      { key: 'diocese',        label: 'Diocese:',              type: 'text' },
+      { key: 'month',          label: 'Reporting Month:',      type: 'text', placeholder: 'e.g. March 2026' },
+      { key: 'quarter',        label: 'Quarter:',              type: 'select', options: ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Q4 (Oct–Dec)'] },
+      { key: 'period',         label: 'Reporting Period:',     type: 'text', placeholder: '1st ___ to last day of ___' },
+      { key: 'focalPerson',    label: 'Focal Person:',         type: 'text' },
+      { key: 'dateSubmitted',  label: 'Date Submitted:',       type: 'date' },
+      { key: 'communities',    label: 'Number of Communities:', type: 'number' },
+    ],
+    financeTip: 'Summarise this month\'s expenditure vs. monthly budget allocation. Note any variance ≥ 10%.',
+    annexes: ['A. Consolidated M&E table', 'B. Attendance summary', 'C. Financial records if required'],
+    pageLimit: '8 pages',
+  },
+  biannual: {
+    label: 'Bi-Annual Reporting Form',
+    fullLabel: 'DIOCESAN CONSOLIDATED REPORT — BI-ANNUAL',
+    basicFields: [
+      { key: 'diocese',        label: 'Diocese:',              type: 'text' },
+      { key: 'halfYear',       label: 'Reporting Period:',     type: 'select', options: ['Half 1: Jan–Jun', 'Half 2: Jul–Dec'] },
+      { key: 'dates',          label: 'Dates:',                type: 'text', placeholder: 'From: ___ To: ___' },
+      { key: 'quarters',       label: 'Quarters Covered:',     type: 'select', options: ['Q1 + Q2', 'Q3 + Q4'] },
+      { key: 'focalPerson',    label: 'Focal Person:',         type: 'text' },
+      { key: 'dateSubmitted',  label: 'Date Submitted:',       type: 'date' },
+      { key: 'communities',    label: 'Number of Communities:', type: 'number' },
+    ],
+    financeTip: 'Summarise half-year expenditure. Compare to half-year budget allocation. Note variances and reasons.',
+    annexes: ['A. Consolidated M&E table', 'B. Attendance summary', 'C. Financial Excel (if required)', 'D. 1–2 photos', 'E. Case story'],
+    pageLimit: '12 pages',
+  },
+  annual: {
+    label: 'Annual Reporting Form',
+    fullLabel: 'DIOCESAN CONSOLIDATED REPORT — ANNUAL',
+    basicFields: [
+      { key: 'diocese',        label: 'Diocese:',              type: 'text' },
+      { key: 'year',           label: 'Reporting Year:',       type: 'text', placeholder: 'January 1 to December 31, 20___' },
+      { key: 'quarters',       label: 'Quarters Covered:',     type: 'text', value: 'Q1 + Q2 + Q3 + Q4', readonly: true },
+      { key: 'focalPerson',    label: 'Focal Person:',         type: 'text' },
+      { key: 'dateSubmitted',  label: 'Date Submitted:',       type: 'date' },
+      { key: 'communities',    label: 'Number of Communities:', type: 'number' },
+    ],
+    financeTip: 'Summarise full-year expenditure across all budget lines. Compare to approved annual budget. Explain all variances.',
+    annexes: ['A. Consolidated M&E table', 'B. Attendance summaries (all quarters)', 'C. Financial Excel', 'D. Case story', 'E. 1–2 photos'],
+    pageLimit: '12 pages',
+  }
+};
+
+const CHECKLIST_ITEMS = [
+  { key: 'objectives',  label: 'Objectives',         guide: 'All programme objectives are covered in Section 3.' },
+  { key: 'figures',     label: 'Figures',             guide: 'Numbers match M&E records and attendance sheets.' },
+  { key: 'gender',      label: 'Gender',              guide: 'Female/male participation rates are accurately stated.' },
+  { key: 'finance',     label: 'Finance',             guide: 'All variances are explained.' },
+  { key: 'challenges',  label: 'Challenges',          guide: 'Specific, factual — not emotional or blame-based.' },
+  { key: 'alignment',   label: 'Quarterly Alignment', guide: 'Quarter(s) covered are clearly identified.' },
+  { key: 'pageLimit',   label: 'Page Limit',          guide: '' }, // filled per type
+  { key: 'noCopyPaste', label: 'No Copy-Paste',       guide: 'No data copied verbatim from other reports without adjustment.' },
+  { key: 'tone',        label: 'Tone',                guide: 'Report tone is: Responsible | Competent | Transparent.' },
+];
+
+// ══════════════════════════════════════════════════════
+//  MODE
+// ══════════════════════════════════════════════════════
+function setMode(m) {
+  // Staff can only ever be in staff mode — enforce role restriction
+  if (PDP_ROLE === 'staff' && m === 'admin') m = 'staff';
+  MODE = m;
+  document.getElementById('btn-mode-staff').className = m === 'staff' ? 'topbar-btn primary' : 'topbar-btn';
+  document.getElementById('btn-mode-admin').className = m === 'admin' ? 'topbar-btn primary' : 'topbar-btn';
+
+  const mainForm  = document.getElementById('main-form');
+  const adminPanel = document.getElementById('admin-panel');
+  const sidebar   = document.getElementById('sidebar');
+  const newBtn    = document.getElementById('btn-new-report');
+  const saveBar   = document.getElementById('save-bar');
+
+  if (m === 'admin') {
+    mainForm.style.display   = 'none';
+    adminPanel.classList.add('visible');
+    sidebar.style.display    = 'none';
+    newBtn.style.display     = 'inline-flex';
+    saveBar.style.display    = 'none';
+    renderAdminList();
+  } else {
+    mainForm.style.display   = 'block';
+    adminPanel.classList.remove('visible');
+    sidebar.style.display    = 'block';
+    newBtn.style.display     = 'none';
+    if (REPORT_TYPE) saveBar.style.display = 'flex';
+  }
+}
+
+function showNewReport() {
+  setMode('staff');
+  showScreen('select');
+}
+
+// ══════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════
+function showScreen(screen) {
+  CURRENT_SCREEN = screen;
+  document.getElementById('screen-select').style.display = screen === 'select' ? 'block' : 'none';
+  document.getElementById('form-area').style.display     = screen === 'form'   ? 'block' : 'none';
+  document.getElementById('save-bar').style.display      = screen === 'form'   ? 'flex'  : 'none';
+  document.getElementById('nav-select').classList.toggle('active', screen === 'select');
+  document.getElementById('nav-section-label').style.display = screen === 'form' ? 'block' : 'none';
+  if (screen === 'select') renderDrafts();
+}
+
+function buildSidebarSections() {
+  const container = document.getElementById('nav-sections');
+  container.innerHTML = SECTIONS.map(s => `
+    <div class="nav-item" id="nav-s${s.id}" onclick="scrollToSection(${s.id})">
+      <span class="nav-num" id="nav-num-${s.id}">${s.id}</span>
+      ${s.label}
+    </div>`).join('');
+}
+
+function scrollToSection(id) {
+  const el = document.getElementById(`sec-${id}`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const ni = document.getElementById(`nav-s${id}`);
+  if (ni) ni.classList.add('active');
+  updateProgress(id);
+}
+
+function updateProgress(sectionId) {
+  const pct = Math.round(((sectionId - 1) / 9) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-label-text').textContent = `Section ${sectionId} of 9`;
+}
+
+// ══════════════════════════════════════════════════════
+//  START REPORT
+// ══════════════════════════════════════════════════════
+function startReport(type) {
+  REPORT_TYPE = type;
+  REPORT_ID   = type + '_' + Date.now();
+  objectiveCount = 1;
+
+  const cfg = TYPE_CONFIG[type];
+  buildBasicInfoTable(cfg);
+  buildObjectives();
+  buildAnnexes(cfg);
+  buildChecklist(cfg);
+  document.getElementById('finance-tip').textContent = cfg.financeTip;
+
+  // Auto-fill Focal Person from logged-in user
+  if (PDP_NAME) {
+    setTimeout(() => {
+      const fp = document.getElementById('bi-focalPerson');
+      if (fp && !fp.value) fp.value = PDP_NAME;
+    }, 50);
+  }
+
+  buildSidebarSections();
+  showScreen('form');
+  updateProgress(1);
+  document.getElementById('save-status').textContent = `${cfg.label} — Draft`;
+}
+
+// ── Basic info table ──
+function buildBasicInfoTable(cfg) {
+  const tbody = document.getElementById('basic-info-table');
+  tbody.innerHTML = cfg.basicFields.map(f => {
+    let input = '';
+    // Focal Person: read-only for staff (pre-filled from login)
+    const isLockedFocalPerson = f.key === 'focalPerson' && PDP_ROLE === 'staff' && PDP_NAME;
+    if (isLockedFocalPerson) {
+      input = `<input type="text" id="bi-${f.key}" value="${PDP_NAME}" readonly style="color:var(--gray7);font-weight:500;background:var(--lgreen);">
+               <span style="font-size:10px;color:var(--green);margin-left:2px;">🔒 locked to your account</span>`;
+    } else if (f.type === 'select') {
+      input = `<select id="bi-${f.key}">${f.options.map(o => `<option>${o}</option>`).join('')}</select>`;
+    } else if (f.readonly) {
+      input = `<input type="text" id="bi-${f.key}" value="${f.value}" readonly style="color:var(--gray5)">`;
+    } else {
+      input = `<input type="${f.type}" id="bi-${f.key}" placeholder="${f.placeholder || ''}">`;
+    }
+    return `<tr><td><b>${f.label}</b></td><td>${input}</td></tr>`;
+  }).join('');
+}
+
+// ── Objectives ──
+function buildObjectives() {
+  document.getElementById('objectives-container').innerHTML = '';
+  addObjective();
+}
+
+function addObjective() {
+  const n = objectiveCount++;
+  const div = document.createElement('div');
+  div.className = 'subsection';
+  div.id = `obj-${n}`;
+  div.innerHTML = `
+    <div class="subsection-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>Objective ${n}</span>
+      ${n > 1 ? `<button class="btn btn-secondary no-print" onclick="removeObjective(${n})" style="font-size:11px;padding:3px 8px;color:var(--red);border-color:var(--red);">Remove</button>` : ''}
+    </div>
+    <div class="subsection-body">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>Objective Title / Name</label>
+        <input type="text" id="obj-${n}-title" placeholder="Name of programme objective...">
+      </div>
+
+      <div style="border:1px solid var(--gray2);border-radius:5px;overflow:hidden;margin-bottom:12px;">
+        <div style="padding:7px 12px;background:var(--gray1);font-size:11px;font-weight:600;color:var(--gray5);border-bottom:1px solid var(--gray2);">3.1 PLANNED ACTIVITIES</div>
+        <div style="padding:10px 12px;">
+          <div class="tip" style="font-size:11px;">Summarise what was planned. Include: location(s), number of sessions/days, expected participants. Keep to 3–4 sentences.</div>
+          <textarea id="obj-${n}-planned" rows="3" placeholder="Planned activities summary..."></textarea>
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--gray2);border-radius:5px;overflow:hidden;margin-bottom:12px;">
+        <div style="padding:7px 12px;background:var(--gray1);font-size:11px;font-weight:600;color:var(--gray5);border-bottom:1px solid var(--gray2);">3.2 ACTIVITIES IMPLEMENTED</div>
+        <div style="padding:10px 12px;">
+          <div class="tip" style="font-size:11px;">Summarise what actually happened. Answer: Where? How many sessions/days? How many participants?</div>
+          <textarea id="obj-${n}-implemented" rows="3" placeholder="Activities implemented..."></textarea>
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--gray2);border-radius:5px;overflow:hidden;margin-bottom:12px;">
+        <div style="padding:7px 12px;background:var(--gray1);font-size:11px;font-weight:600;color:var(--gray5);border-bottom:1px solid var(--gray2);">3.3 CONSOLIDATED DATA SUMMARY</div>
+        <div style="padding:10px 12px;">
+          <div class="tip" style="font-size:11px;">Complete the indicator table below. Then explain: (a) Was the target met? (b) If not, why not?</div>
+          <table class="data-table" style="margin-bottom:8px;">
+            <thead><tr><th>Indicator</th><th style="width:14%">Target</th><th style="width:14%">Achieved</th><th style="width:14%">Variance</th><th>Comment</th></tr></thead>
+            <tbody id="obj-${n}-indicators">
+              <tr><td><input type="text" placeholder="Indicator name..."></td><td><input type="number"></td><td><input type="number"></td><td><input type="text"></td><td><input type="text"></td></tr>
+              <tr><td><input type="text"></td><td><input type="number"></td><td><input type="number"></td><td><input type="text"></td><td><input type="text"></td></tr>
+              <tr><td><input type="text"></td><td><input type="number"></td><td><input type="number"></td><td><input type="text"></td><td><input type="text"></td></tr>
+            </tbody>
+          </table>
+          <button class="btn btn-secondary no-print" onclick="addTableRow('obj-${n}-indicators',5)" style="font-size:11px;padding:4px 8px;">+ Row</button>
+          <textarea id="obj-${n}-data-explanation" rows="2" style="margin-top:8px;" placeholder="Was the target met? If not, why not?"></textarea>
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--gray2);border-radius:5px;overflow:hidden;margin-bottom:12px;">
+        <div style="padding:7px 12px;background:var(--gray1);font-size:11px;font-weight:600;color:var(--gray5);border-bottom:1px solid var(--gray2);">3.4 RESULTS & CHANGES OBSERVED</div>
+        <div style="padding:10px 12px;">
+          <div class="tip" style="font-size:11px;">Shift from "what was done" to "what changed". Include: attendance trends, learning/skill improvements, behavioural changes.</div>
+          <textarea id="obj-${n}-results" rows="4" placeholder="Results and changes observed..."></textarea>
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--gray2);border-radius:5px;overflow:hidden;">
+        <div style="padding:7px 12px;background:var(--gray1);font-size:11px;font-weight:600;color:var(--gray5);border-bottom:1px solid var(--gray2);">3.5 EVIDENCE</div>
+        <div style="padding:10px 12px;">
+          <div class="tip" style="font-size:11px;">Include: (1) One short case example (5–8 sentences). (2) One significant pattern observed.</div>
+          <textarea id="obj-${n}-evidence" rows="5" placeholder="Case example and significant pattern observed..."></textarea>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('objectives-container').appendChild(div);
+}
+
+function removeObjective(n) {
+  const el = document.getElementById(`obj-${n}`);
+  if (el) el.remove();
+}
+
+// ── Annexes ──
+function buildAnnexes(cfg) {
+  document.getElementById('annexes-list').innerHTML =
+    cfg.annexes.map(a => `<div style="padding:3px 0;">📎 ${a}</div>`).join('');
+}
+
+// ── Checklist ──
+function buildChecklist(cfg) {
+  const items = CHECKLIST_ITEMS.map(item => {
+    const guide = item.key === 'pageLimit'
+      ? `Report does not exceed ${cfg.pageLimit}.`
+      : item.guide;
+    return { ...item, guide };
+  });
+  document.getElementById('checklist-items').innerHTML = items.map(item => `
+    <div class="check-item" id="ci-${item.key}" onclick="toggleCheck('${item.key}')">
+      <div class="check-box"><span class="check-box-tick">✓</span></div>
+      <div>
+        <div class="check-label">${item.label}</div>
+        <div class="check-guide">${item.guide}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleCheck(key) {
+  const el = document.getElementById(`ci-${key}`);
+  el.classList.toggle('checked');
+}
+
+// ── Finance total ──
+function updateFinanceTotal() {
+  const rows = document.querySelectorAll('#finance-body tr:not(.total-row)');
+  let totalBudget = 0, totalSpent = 0;
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input[type="number"]');
+    if (inputs.length >= 2) {
+      totalBudget += parseFloat(inputs[0].value) || 0;
+      totalSpent  += parseFloat(inputs[1].value) || 0;
+    }
+  });
+  const variance = totalBudget - totalSpent;
+  document.getElementById('ft-budget').textContent   = totalBudget.toLocaleString();
+  document.getElementById('ft-spent').textContent    = totalSpent.toLocaleString();
+  document.getElementById('ft-variance').textContent = variance !== 0 ? variance.toLocaleString() : '—';
+}
+
+// ── Add rows ──
+function addTableRow(tbodyId, cols) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  for (let i = 0; i < cols; i++) {
+    const td = document.createElement('td');
+    td.innerHTML = `<input type="text">`;
+    tr.appendChild(td);
+  }
+  tbody.appendChild(tr);
+}
+
+function addChallengeRow() {
+  const tbody = document.getElementById('challenges-body');
+  challengeRowCount++;
+  const n = challengeRowCount;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="padding:7px 10px;text-align:center;font-weight:600;color:var(--gray5);">${n}</td>
+    <td><textarea style="min-height:54px;"></textarea></td>
+    <td><textarea style="min-height:54px;"></textarea></td>
+    <td><select><option value="">Select…</option><option>Security</option><option>Access</option><option>Financial</option><option>Staff / Capacity</option><option>Natural</option><option>Other</option></select></td>
+    <td><select><option value="">Select…</option><option>Low</option><option>Medium</option><option>High</option></select></td>`;
+  tbody.appendChild(tr);
+}
+
+function addFinanceRow() {
+  const tbody = document.getElementById('finance-body');
+  const totalRow = document.getElementById('finance-total-row');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="number" oninput="updateFinanceTotal()"></td><td><input type="text"></td><td><input type="text"></td>`;
+  tbody.insertBefore(tr, totalRow);
+}
+
+// ══════════════════════════════════════════════════════
+//  SAVE / LOAD
+// ══════════════════════════════════════════════════════
+function collectFormData() {
+  const data = { type: REPORT_TYPE, id: REPORT_ID, savedAt: new Date().toISOString(), status: 'draft' };
+
+  // Basic info
+  const cfg = TYPE_CONFIG[REPORT_TYPE];
+  data.basicInfo = {};
+  cfg.basicFields.forEach(f => {
+    const el = document.getElementById(`bi-${f.key}`);
+    if (el) data.basicInfo[f.key] = el.value;
+  });
+
+  // Executive summary
+  data.exec = {
+    scope: document.getElementById('exec-scope')?.value,
+    beneficiaries: document.getElementById('exec-beneficiaries')?.value,
+    achievement: document.getElementById('exec-achievement')?.value,
+    challenge: document.getElementById('exec-challenge')?.value,
+  };
+
+  // Store status, title
+  data.diocese     = data.basicInfo.diocese    || '';
+  data.period      = data.basicInfo.month || data.basicInfo.halfYear || data.basicInfo.year || '';
+  data.submittedBy = data.basicInfo.focalPerson || PDP_NAME || '';
+  data.pdpUsername = PDP_USER?.username || '';
+
+  return data;
+}
+
+async function saveDraft() {
+  const data = collectFormData();
+  const btn  = document.querySelector('.save-bar .btn-secondary');
+  if (btn) { btn.disabled = true; btn.textContent = '💾 Saving…'; }
+  document.getElementById('save-status').textContent = 'Saving…';
+  try {
+    const res = await workerCall('save_dcr', { report: data, submit: false });
+    if (res.ok) {
+      REPORT_ID = data.id; // keep same ID for updates
+      document.getElementById('save-status').textContent = `Saved at ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+      toast('Draft saved ✓', 'green');
+    } else {
+      toast('Save failed: ' + (res.error || 'Unknown error'), 'red');
+      document.getElementById('save-status').textContent = 'Save failed';
+    }
+  } catch (e) {
+    toast('Network error — check connection', 'red');
+    document.getElementById('save-status').textContent = 'Save failed';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save Draft'; }
+  }
+}
+
+async function renderDrafts() {
+  const list = document.getElementById('drafts-list');
+  list.innerHTML = '<div style="color:var(--gray5);font-size:13px;padding:12px 0;">Loading reports…</div>';
+  try {
+    const res = await workerCall('get_dcr');
+    if (!res.ok) {
+      list.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px 0;">Failed to load reports: ${res.error || 'Unknown error'}</div>`;
+      return;
+    }
+    const reports = res.reports || [];
+    if (reports.length === 0) {
+      list.innerHTML = '<div style="color:var(--gray5);font-size:13px;padding:12px 0;">No saved reports yet.</div>';
+      return;
+    }
+    const typeMap = { monthly: '📅', biannual: '📊', annual: '📋' };
+    list.innerHTML = reports
+      .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt))
+      .map(d => {
+        const isSubmitted = d.status === 'submitted';
+        const statusPill = isSubmitted
+          ? '<span class="pill pill-saved">Submitted</span>'
+          : '<span class="pill pill-draft">Draft</span>';
+        const canDelete = PDP_ROLE === 'admin';
+        const btnLabel = isSubmitted ? '✏ Edit & Resubmit' : '✏ Continue';
+        return `
+          <div class="report-row">
+            <div class="report-row-icon ${d.type}">${typeMap[d.type] || '📄'}</div>
+            <div class="report-row-info">
+              <div class="report-row-title">${TYPE_CONFIG[d.type]?.label || d.type} — ${d.diocese || 'Untitled'}</div>
+              <div class="report-row-meta">${d.period || '—'} · ${d.submittedBy ? '<b>' + d.submittedBy + '</b> · ' : ''}Saved ${new Date(d.savedAt).toLocaleDateString()}${isSubmitted ? ' · <span style="color:var(--green);">✅ Submitted</span>' : ''}</div>
+            </div>
+            ${statusPill}
+            <div class="report-row-actions">
+              <button class="btn btn-secondary" onclick='loadDriveReport(${JSON.stringify(d)})' style="font-size:11px;padding:5px 10px;">${btnLabel}</button>
+              ${canDelete ? `<button class="btn" onclick="deleteDriveReport('${d._fileId}')" style="font-size:11px;padding:5px 10px;color:var(--red);">Delete</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+  } catch (e) {
+    list.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px 0;">Network error loading reports.</div>`;
+  }
+}
+
+// Track submitted state of currently loaded report
+let LOADED_REPORT_SUBMITTED = false;
+let LOADED_REPORT_SUBMITTED_AT = null;
+
+function applySubmitSection() {
+  if (!LOADED_REPORT_SUBMITTED) return;
+  const submitSection = document.getElementById('submit-section');
+  if (!submitSection) return;
+  submitSection.style.background = 'var(--lblue)';
+  submitSection.style.borderColor = '#bfdbfe';
+  submitSection.innerHTML =
+    '<div style="color:var(--blue);font-weight:600;font-size:13px;margin-bottom:8px;">✅ Previously submitted — ' + new Date(LOADED_REPORT_SUBMITTED_AT).toLocaleString() + '</div>' +
+    '<div style="font-size:12px;color:var(--gray7);margin-bottom:10px;">You can edit this report and resubmit. Your admin will see the updated version.</div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+    '<button class="btn btn-success" onclick="submitReport()">↩ Resubmit Report →</button>' +
+    '<button class="btn btn-secondary" onclick="saveDraft()">💾 Save as Draft</button>' +
+    '</div>';
+}
+
+function loadDriveReport(data) {
+  if (!data) return;
+
+  // Track submitted state BEFORE startReport resets anything
+  LOADED_REPORT_SUBMITTED = data.status === 'submitted';
+  LOADED_REPORT_SUBMITTED_AT = data.submittedAt || data.savedAt;
+
+  startReport(data.type);
+  REPORT_ID = data.id;
+
+  // Restore basic info
+  if (data.basicInfo) {
+    Object.entries(data.basicInfo).forEach(([k, v]) => {
+      const el = document.getElementById('bi-' + k);
+      if (el) el.value = v;
+    });
+  }
+  // Restore exec summary
+  if (data.exec) {
+    ['scope','beneficiaries','achievement','challenge'].forEach(k => {
+      const el = document.getElementById('exec-' + k);
+      if (el && data.exec[k]) el.value = data.exec[k];
+    });
+  }
+
+  // Apply resubmit UI — 300ms to let DOM fully settle after startReport
+  if (LOADED_REPORT_SUBMITTED) {
+    setTimeout(applySubmitSection, 300);
+  }
+
+  toast('Report loaded', 'green');
+  showScreen('form');
+}
+
+async function deleteDriveReport(fileId) {
+  if (!fileId) return;
+  if (!confirm('Delete this report? It will be moved to Drive trash.')) return;
+  try {
+    const res = await workerCall('delete_dcr', { fileId });
+    if (res.ok) {
+      toast('Report deleted', 'green');
+      renderDrafts();
+    } else {
+      toast('Delete failed: ' + (res.error || 'Unknown'), 'red');
+    }
+  } catch (e) {
+    toast('Network error', 'red');
+  }
+}
+
+// Build a clean HTML snapshot of the current report for Google Drive
+function buildReportHTML(data) {
+  const typeLabel = { monthly: 'Monthly', biannual: 'Biannual', annual: 'Annual' }[data.type] || data.type;
+  const bi = data.basicInfo || {};
+  const ex = data.exec || {};
+
+  // Build sections HTML
+  const sectionRows = (data.sections || []).map(s => {
+    const rows = (s.activities || []).map(a =>
+      `<tr>
+        <td style="padding:6px 8px;border:1px solid #ccc;">${a.activity || ''}</td>
+        <td style="padding:6px 8px;border:1px solid #ccc;text-align:center;">${a.target || ''}</td>
+        <td style="padding:6px 8px;border:1px solid #ccc;text-align:center;">${a.achieved || ''}</td>
+        <td style="padding:6px 8px;border:1px solid #ccc;">${a.remarks || ''}</td>
+      </tr>`
+    ).join('');
+    return `
+      <h3 style="color:#2c5282;margin:18px 0 6px;">${s.sectionTitle || s.id || ''}</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="background:#ebf4ff;">
+          <th style="padding:6px 8px;border:1px solid #ccc;text-align:left;">Activity</th>
+          <th style="padding:6px 8px;border:1px solid #ccc;width:80px;">Target</th>
+          <th style="padding:6px 8px;border:1px solid #ccc;width:80px;">Achieved</th>
+          <th style="padding:6px 8px;border:1px solid #ccc;">Remarks</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 14px; color: #1a1a1a; max-width: 900px; margin: 0 auto; padding: 24px; }
+  h1 { color: #1a365d; border-bottom: 2px solid #2c5282; padding-bottom: 8px; }
+  h2 { color: #2c5282; margin-top: 24px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+  th, td { padding: 7px 10px; border: 1px solid #ccc; }
+  th { background: #ebf4ff; text-align: left; }
+  .meta { color: #555; font-size: 12px; margin-bottom: 20px; }
+  .field-label { font-weight: bold; width: 180px; }
+</style>
+</head>
+<body>
+  <h1>PDP Digital Development — ${typeLabel} DCR</h1>
+  <div class="meta">Submitted by <b>${data.submittedBy || bi.focalPerson || '—'}</b> · ${data.submittedAt ? new Date(data.submittedAt).toLocaleString() : ''}</div>
+
+  <h2>Basic Information</h2>
+  <table>
+    <tr><td class="field-label">Diocese / Province</td><td>${bi.diocese || '—'}</td></tr>
+    <tr><td class="field-label">Focal Person</td><td>${bi.focalPerson || '—'}</td></tr>
+    <tr><td class="field-label">Period</td><td>${data.period || bi.period || '—'}</td></tr>
+    <tr><td class="field-label">Report Type</td><td>${typeLabel}</td></tr>
+  </table>
+
+  <h2>Executive Summary</h2>
+  <table>
+    <tr><td class="field-label">Scope</td><td>${ex.scope || '—'}</td></tr>
+    <tr><td class="field-label">Beneficiaries</td><td>${ex.beneficiaries || '—'}</td></tr>
+    <tr><td class="field-label">Key Achievement</td><td>${ex.achievement || '—'}</td></tr>
+    <tr><td class="field-label">Key Challenge</td><td>${ex.challenge || '—'}</td></tr>
+  </table>
+
+  <h2>Programme Activities</h2>
+  ${sectionRows || '<p>No activities recorded.</p>'}
+</body>
+</html>`;
+}
+
+async function submitReport() {
+  const data = collectFormData();
+  const btn = document.querySelector('#submit-section .btn-success');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  LOADED_REPORT_SUBMITTED = false; // pause resubmit re-apply while submitting
+  try {
+    const htmlContent = buildReportHTML(data);
+    const res = await workerCall('save_dcr', { report: data, submit: true, htmlContent });
+    if (res.ok) {
+      const gdocNote = res.gdocId ? ' A Google Doc copy has been saved to Drive.' : '';
+      document.getElementById('submit-section').innerHTML =
+        `<div style="color:var(--green);font-weight:600;font-size:13px;">✅ Report submitted — ${new Date().toLocaleString()}</div>
+         <div style="font-size:12px;color:var(--gray5);margin-top:4px;">Your admin/manager can now view this report in Google Drive.${gdocNote}</div>`;
+      document.getElementById('save-status').textContent = 'Submitted ✓';
+      toast('Report submitted ✓', 'green');
+    } else {
+      toast('Submit failed: ' + (res.error || 'Unknown'), 'red');
+      LOADED_REPORT_SUBMITTED = true; // restore resubmit UI on failure
+      setTimeout(applySubmitSection, 50);
+    }
+  } catch (e) {
+    toast('Network error — report not submitted', 'red');
+    LOADED_REPORT_SUBMITTED = true; // restore resubmit UI on failure
+    setTimeout(applySubmitSection, 50);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  ADMIN VIEW
+// ══════════════════════════════════════════════════════
+async function renderAdminList() {
+  const list = document.getElementById('admin-reports-list');
+  list.innerHTML = '<div style="padding:20px;color:var(--gray5);font-size:13px;">Loading reports…</div>';
+
+  try {
+    const res = await workerCall('get_dcr');
+    if (!res.ok) {
+      list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Failed to load</h3><p>${res.error || 'Unknown error'}</p></div>`;
+      return;
+    }
+
+    const filterType   = document.getElementById('filter-type')?.value;
+    const filterStatus = document.getElementById('filter-status')?.value;
+
+    const reports = (res.reports || [])
+      .filter(d => !filterType   || d.type   === filterType)
+      .filter(d => !filterStatus || d.status === filterStatus)
+      .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+    if (reports.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <h3>No reports found</h3>
+          <p>Staff reports will appear here once submitted.</p>
+        </div>`;
+      return;
+    }
+
+    const typeMap   = { monthly: '📅', biannual: '📊', annual: '📋' };
+    const typeLabel = { monthly: 'Monthly', biannual: 'Bi-Annual', annual: 'Annual' };
+    const isAdmin   = PDP_ROLE === 'admin';
+
+    list.innerHTML = '<div class="reports-list">' + reports.map(d => `
+      <div class="report-row">
+        <div class="report-row-icon ${d.type}">${typeMap[d.type] || '📄'}</div>
+        <div class="report-row-info">
+          <div class="report-row-title">${typeLabel[d.type] || d.type} Report — ${d.diocese || 'Untitled Diocese'} ${d.submittedBy ? '<span style="font-size:11px;font-weight:400;color:var(--gray5);">by ' + d.submittedBy + '</span>' : ''}</div>
+          <div class="report-row-meta">
+            ${d.submittedBy ? '<span style="font-weight:600;color:var(--gray9);">👤 ' + d.submittedBy + '</span> · ' : ''}
+            ${d.period || '—'} ·
+            ${d.status === 'submitted' ? '✅ Submitted' : '⏳ Draft'} ·
+            ${new Date(d.savedAt).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})}
+            ${d.submittedAt ? ' · <span style="color:var(--green);">Submitted ' + new Date(d.submittedAt).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) + '</span>' : ''}
+          </div>
+        </div>
+        <div class="report-row-actions">
+          <span class="pill ${d.status === 'submitted' ? 'pill-saved' : 'pill-draft'}">${d.status === 'submitted' ? 'Submitted' : 'Draft'}</span>
+          <button class="btn btn-secondary" onclick='loadDriveReport(${JSON.stringify(d)})' style="font-size:11px;padding:5px 10px;">👁 Preview</button>
+          <button class="btn btn-primary" onclick='downloadDriveReportPDF(${JSON.stringify(d)})' style="font-size:11px;padding:5px 10px;">⬇ PDF</button>
+          ${isAdmin ? `<button class="btn" onclick="deleteDriveReport('${d._fileId}')" style="font-size:11px;padding:5px 10px;color:var(--red);">🗑</button>` : ''}
+        </div>
+      </div>`).join('') + '</div>';
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Network error</h3><p>Could not connect to Worker.</p></div>`;
+  }
+}
+
+function downloadDriveReportPDF(data) {
+  loadDriveReport(data);
+  setMode('staff');
+  setTimeout(() => exportPDF(), 600);
+}
+
+function exportPDF() {
+  // Show print header, show all sections, then print
+  document.getElementById('report-print-header').style.display = 'block';
+  const cfg = TYPE_CONFIG[REPORT_TYPE];
+  document.getElementById('print-title').textContent   = cfg?.fullLabel || 'DIOCESAN CONSOLIDATED REPORT';
+  const submittedByName = document.getElementById('bi-focalPerson')?.value || '';
+  const byStr = submittedByName ? ` · ${submittedByName}` : '';
+  document.getElementById('print-subtitle').textContent = `${cfg?.label || ''}${byStr} · Generated ${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})}`;
+
+  // Show all sections for printing
+  document.querySelectorAll('.section-card').forEach(el => el.style.display = 'block');
+
+  window.print();
+
+  // Restore
+  setTimeout(() => {
+    document.getElementById('report-print-header').style.display = 'none';
+    document.querySelectorAll('.section-card').forEach((el, i) => {
+      el.style.display = i === 0 ? 'block' : 'none';
+    });
+    // Restore visible ones
+    document.querySelectorAll('.section-card').forEach(el => {
+      el.classList.contains('visible') ? el.style.display = 'block' : el.style.display = 'none';
+    });
+  }, 1000);
+}
+
+// Show all section cards when in form view
+function showAllSections() {
+  document.querySelectorAll('.section-card').forEach(el => el.style.display = 'block');
+}
+
+// ══════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => { t.className = 'toast'; }, 2500);
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  ROLE RESTRICTIONS
+// ══════════════════════════════════════════════════════
+function applyRoleRestrictions() {
+  const roleSwitcher = document.getElementById('role-switcher');
+  const userBadge    = document.getElementById('user-badge');
+  const nameEl       = document.getElementById('topbar-user-name');
+  const roleEl       = document.getElementById('topbar-user-role');
+  const roleLabels   = { admin: 'Admin', manager: 'Manager', staff: 'Staff' };
+
+  if (PDP_ROLE === 'staff') {
+    // Staff: hide role switcher, show name badge, lock to staff mode
+    if (roleSwitcher) roleSwitcher.style.display = 'none';
+    if (userBadge)    userBadge.style.display    = 'flex';
+    if (nameEl)       nameEl.textContent = PDP_NAME || 'Staff';
+    if (roleEl)       roleEl.textContent = 'Staff';
+    MODE = 'staff';
+  } else {
+    // Admin / Manager: show role switcher, hide name badge
+    if (roleSwitcher) roleSwitcher.style.display = 'flex';
+    if (userBadge)    userBadge.style.display    = 'none';
+    if (nameEl)       nameEl.textContent = PDP_NAME;
+    if (roleEl)       roleEl.textContent = roleLabels[PDP_ROLE] || PDP_ROLE;
+    MODE = 'admin'; // default to admin view for admin/manager
+  }
+
+  // If no PDP session at all — show a warning but allow read-only demo
+  if (!PDP_USER) {
+    console.warn('DCR: No PDP session found. Running in demo mode.');
+    if (roleSwitcher) roleSwitcher.style.display = 'flex';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Apply role from PDP dashboard session
+  applyRoleRestrictions();
+  setMode(MODE);
+  showScreen('select');
+  renderDrafts(); // load reports from Drive on page open
+
+  // Show all section cards when scrolled into view (make them all visible once form is started)
+  // Intersection observer to activate nav items
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id?.replace('sec-', '');
+        if (id) {
+          document.querySelectorAll('#nav-sections .nav-item').forEach(n => n.classList.remove('active'));
+          const ni = document.getElementById(`nav-s${id}`);
+          if (ni) ni.classList.add('active');
+          updateProgress(parseInt(id));
+        }
+      }
+    });
+  }, { threshold: 0.3 });
+
+  // We'll attach observer after form is started — override showScreen
+  const origShowScreen = showScreen;
+});
+
+// Make all section cards visible when form is active (to allow scroll-all)
+document.addEventListener('click', () => {
+  if (CURRENT_SCREEN === 'form') {
+    document.querySelectorAll('.section-card').forEach(el => el.style.display = 'block');
+    // Re-apply resubmit UI if a submitted report is loaded
+    if (LOADED_REPORT_SUBMITTED) {
+      setTimeout(applySubmitSection, 50);
+    }
+  }
+});
+</script>
+
+</body>
+</html>
