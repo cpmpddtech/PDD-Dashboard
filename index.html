@@ -1007,6 +1007,7 @@
     <button class="tab" id="tab-btn-setup" onclick="switchTab('setup',this)">⚙ Setup</button>
     <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report">📄 DCR Reports</button>
     <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department">💰 Finance</button>
+    <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff">📢 Announcements</button>
   </div>
 
   <div class="main">
@@ -1758,7 +1759,7 @@
 // ═══════════════════════════════════════════════════
 //  ⚙ CONFIGURATION — only set your Worker URL here
 // ═══════════════════════════════════════════════════
-const WORKER_URL = 'https://pdd-dashboard.cpmpdd-tech.workers.dev/';
+const WORKER_URL = 'https://pdp-dashboard.gamalieltun282.workers.dev/';
 // ↑ Replace with your Cloudflare Worker URL after deploying
 
 const TOTAL_CW   = 52;
@@ -1990,6 +1991,9 @@ function applyRBAC() {
   setTabVisible('setup',    isAdmin());
   const isFinance = () => ['finance','finance_staff','finance_manager'].includes(CURRENT_USER?.role);
   setTabVisible('finance',  isAdmin() || isManager() || isFinance());             // external: NO
+  // Announcements: admin always; other roles based on ANNOUNCEMENT_PERMS checked on the page itself
+  // Show the tab for admin + manager + finance_manager by default; page handles finer permission check
+  setTabVisible('announcements', isAdmin() || isManager() || isFinance());
 
   // Update header badge
   const nameBadge = document.getElementById('user-name-badge');
@@ -4752,6 +4756,10 @@ function openDCR() {
 
 function openFinance() {
   window.location.href = 'finance.html';
+}
+
+function openAnnouncements() {
+  window.location.href = 'announcements.html';
 }
 
 function renderRoleManagement() {

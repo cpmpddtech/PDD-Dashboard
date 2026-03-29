@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDP — Announcements</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0f1e38; --navy2:#1a2e52; --blue:#2563eb; --blue-lt:#eff6ff; --blue-bd:#bfdbfe;
+  --teal:#0f766e; --green:#15803d; --green-lt:#f0fdf4;
+  --amber:#b45309; --amber-lt:#fffbeb;
+  --red:#dc2626; --red-lt:#fef2f2;
+  --purple:#7c3aed; --purple-lt:#f5f3ff;
+  --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+  --gray-300:#d1d5db; --gray-400:#9ca3af; --gray-500:#6b7280;
+  --gray-600:#4b5563; --gray-700:#374151; --gray-800:#1f2937; --gray-900:#111827;
+  --font:'IBM Plex Sans',sans-serif; --radius:8px; --shadow:0 1px 3px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);font-size:14px;background:#f1f4f9;color:var(--gray-800);min-height:100vh}
+
+.header{background:var(--navy);color:#fff;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.08)}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-back{background:rgba(255,255,255,.08);border:none;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--font);transition:background .15s}
+.header-back:hover{background:rgba(255,255,255,.16)}
+.header-title{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.header-sub{font-size:11px;opacity:.5;margin-top:1px}
+.user-chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.role-dot{width:6px;height:6px;border-radius:50%;background:#4ade80}
+
+.layout{display:flex;min-height:calc(100vh - 54px)}
+.sidebar{width:220px;flex-shrink:0;background:#fff;border-right:1px solid var(--gray-200);padding:16px 0;position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto}
+.sidebar-section{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-400);padding:12px 16px 6px;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;font-weight:500;color:var(--gray-600);cursor:pointer;border-left:2px solid transparent;transition:all .12s}
+.nav-item:hover{background:var(--gray-50);color:var(--gray-900)}
+.nav-item.active{background:var(--blue-lt);color:var(--blue);border-left-color:var(--blue)}
+.nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+.main{flex:1;padding:24px;max-width:900px;padding-bottom:80px}
+.pane{display:none}.pane.active{display:block;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.pane-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.pane-title{font-size:18px;font-weight:600;color:var(--gray-900);letter-spacing:-.01em}
+.pane-sub{font-size:13px;color:var(--gray-400);margin-top:2px}
+
+.card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600;color:var(--gray-800);flex-wrap:wrap;gap:8px}
+.card-body{padding:18px}
+
+.form-group{margin-bottom:14px}
+.form-row{display:grid;gap:12px}.form-row.cols2{grid-template-columns:1fr 1fr}
+label{font-size:12px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px}
+input,select,textarea{border:1px solid var(--gray-200);border-radius:var(--radius);padding:8px 10px;font-size:13px;color:var(--gray-800);background:#fff;width:100%;outline:none;transition:border-color .13s;font-family:var(--font)}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+textarea{resize:vertical;min-height:140px}
+.field-hint{font-size:11px;color:var(--gray-400);margin-top:3px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .13s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover:not(:disabled){background:#1d4ed8}
+.btn-secondary{background:#fff;color:var(--gray-700);border:1px solid var(--gray-200)}.btn-secondary:hover:not(:disabled){background:var(--gray-50)}
+.btn-danger{background:var(--red-lt);color:var(--red);border:1px solid #fecaca}.btn-danger:hover:not(:disabled){background:#fecaca}
+
+.recipient-section{margin-bottom:14px}
+.recipient-groups{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.group-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1.5px solid var(--gray-200);background:#fff;cursor:pointer;transition:all .13s;user-select:none}
+.group-chip:hover{border-color:var(--blue);color:var(--blue)}
+.group-chip.selected{background:var(--blue-lt);border-color:var(--blue-bd);color:var(--blue)}
+.group-chip .chip-count{font-size:10px;font-weight:600;background:currentColor;color:#fff;border-radius:8px;padding:1px 5px;opacity:.85}
+
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:8px}
+.staff-chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);border:1px solid var(--gray-200);background:#fff;cursor:pointer;transition:all .13s;font-size:13px}
+.staff-chip:hover{border-color:var(--blue);background:var(--blue-lt)}
+.staff-chip.selected{border-color:var(--blue);background:var(--blue-lt);color:var(--blue)}
+.staff-chip.no-email{opacity:.45;cursor:not-allowed}
+.staff-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;color:#fff}
+.staff-info{min-width:0}
+.staff-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staff-role{font-size:10px;color:var(--gray-400)}
+
+.recipient-summary{font-size:12px;color:var(--gray-500);padding:8px 12px;background:var(--gray-50);border-radius:var(--radius);border:1px solid var(--gray-200);margin-top:8px}
+.recipient-summary span{color:var(--blue);font-weight:600}
+
+.select-actions{display:flex;gap:8px;margin-bottom:8px}
+.select-actions button{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--gray-200);background:none;cursor:pointer;color:var(--gray-500);font-family:var(--font)}
+.select-actions button:hover{background:var(--gray-100)}
+
+.preview-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius);padding:16px;font-size:13px;color:var(--gray-700);white-space:pre-wrap;line-height:1.7;display:none;margin-top:8px}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill-sent{background:var(--green-lt);color:var(--green);border:1px solid #bbf7d0}
+.pill-failed{background:var(--red-lt);color:var(--red);border:1px solid #fecaca}
+.pill-role{background:var(--purple-lt);color:var(--purple)}
+
+.history-item{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--gray-100)}
+.history-item:last-child{border-bottom:none}
+.history-avatar{width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.history-meta{font-size:12px;color:var(--gray-400);margin-top:2px}
+.history-subject{font-size:13px;font-weight:600;color:var(--gray-900);margin-bottom:2px}
+
+.perm-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100)}
+.perm-row:last-child{border-bottom:none}
+.perm-info{font-size:13px;font-weight:500}
+.perm-sub{font-size:11px;color:var(--gray-400);margin-top:1px}
+.toggle-wrap{display:flex;align-items:center;gap:8px}
+.toggle-track{width:36px;height:20px;border-radius:10px;background:var(--gray-300);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-track.on{background:var(--blue)}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;pointer-events:none}
+.toggle-track.on .toggle-thumb{transform:translateX(16px)}
+.toggle-label{font-size:12px;color:var(--gray-400);min-width:32px}
+
+.access-denied{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:12px;text-align:center;color:var(--gray-400)}
+
+#toast{position:fixed;bottom:24px;right:24px;padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;color:#fff;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;z-index:999;pointer-events:none}
+#toast.show{opacity:1;transform:none}
+#toast.green{background:var(--green)}#toast.red{background:var(--red)}#toast.blue{background:var(--blue)}
+
+.empty{padding:40px 24px;text-align:center;color:var(--gray-400);font-size:13px}
+.loading{padding:32px;text-align:center;color:var(--gray-400);font-size:13px}
+.spinner{width:22px;height:22px;border:2px solid var(--gray-200);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.msg-box{font-size:13px;padding:9px 13px;border-radius:var(--radius);margin-top:10px;display:none}
+.msg-box.ok{background:var(--green-lt);color:var(--green)}
+.msg-box.err{background:var(--red-lt);color:var(--red)}
+
+.char-count{font-size:11px;color:var(--gray-400);text-align:right;margin-top:2px}
+
+@media(max-width:768px){.sidebar{display:none}.main{padding:14px}.form-row.cols2{grid-template-columns:1fr}.staff-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <button class="header-back" onclick="window.location.href='index.html'">← Dashboard</button>
+    <div>
+      <div class="header-title">Announcements</div>
+      <div class="header-sub">PDP — Staff communications</div>
+    </div>
+  </div>
+  <div class="user-chip">
+    <div class="role-dot"></div>
+    <span id="hdr-name">—</span>
+    <span style="opacity:.5;font-size:11px;" id="hdr-role">—</span>
+  </div>
+</header>
+
+<div id="access-denied" class="access-denied">
+  <div style="font-size:36px;margin-bottom:8px;">🔒</div>
+  <h2 style="font-size:16px;color:var(--gray-700);margin-bottom:6px;">Access denied</h2>
+  <p style="font-size:13px;">You don't have permission to send announcements.<br>Contact your Director to request access.</p>
+  <button class="btn btn-secondary" style="margin-top:14px;" onclick="window.location.href='index.html'">← Back to dashboard</button>
+</div>
+
+<div class="layout" id="main-layout" style="display:none;">
+  <nav class="sidebar">
+    <div class="sidebar-section">Send</div>
+    <div class="nav-item active" id="nav-compose" onclick="switchPane('compose')">
+      <div class="nav-dot" style="background:var(--blue)"></div> New Announcement
+    </div>
+    <div class="sidebar-section">History</div>
+    <div class="nav-item" id="nav-history" onclick="switchPane('history');loadHistory()">
+      <div class="nav-dot" style="background:var(--teal)"></div> Sent History
+    </div>
+    <div class="sidebar-section" id="admin-section" style="display:none;">Admin</div>
+    <div class="nav-item" id="nav-permissions" onclick="switchPane('permissions')" style="display:none;">
+      <div class="nav-dot" style="background:var(--purple)"></div> Send Permissions
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- ═══ COMPOSE ═══ -->
+    <div class="pane active" id="pane-compose">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">New Announcement</div>
+          <div class="pane-sub">Send an email to selected staff members</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Compose</div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Subject</label>
+            <input type="text" id="ann-subject" placeholder="e.g. Q1 Budget Review — Action Required" maxlength="200">
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea id="ann-body" placeholder="Type your announcement here…" oninput="updateCharCount()" maxlength="5000"></textarea>
+            <div class="char-count"><span id="char-count">0</span> / 5000</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Recipients</div>
+        <div class="card-body">
+          <!-- Quick group chips -->
+          <div class="form-group">
+            <label>Quick select by group</label>
+            <div class="recipient-groups" id="group-chips">
+              <div class="group-chip" data-group="all" onclick="selectGroup('all',this)">All staff</div>
+              <div class="group-chip" data-group="admin" onclick="selectGroup('admin',this)">Admin / Director</div>
+              <div class="group-chip" data-group="manager" onclick="selectGroup('manager',this)">Managers</div>
+              <div class="group-chip" data-group="finance_manager" onclick="selectGroup('finance_manager',this)">Finance Managers</div>
+              <div class="group-chip" data-group="finance_staff" onclick="selectGroup('finance_staff',this)">Finance Staff</div>
+              <div class="group-chip" data-group="staff" onclick="selectGroup('staff',this)">Programme Staff</div>
+            </div>
+          </div>
+
+          <!-- Diocese chips -->
+          <div class="form-group">
+            <label>Filter by diocese</label>
+            <div class="recipient-groups" id="diocese-chips">
+              <div class="group-chip" data-diocese="Myitkyina" onclick="selectDiocese('Myitkyina',this)">Myitkyina</div>
+              <div class="group-chip" data-diocese="Mandalay" onclick="selectDiocese('Mandalay',this)">Mandalay</div>
+              <div class="group-chip" data-diocese="Sittwe" onclick="selectDiocese('Sittwe',this)">Sittwe</div>
+              <div class="group-chip" data-diocese="Taungoo" onclick="selectDiocese('Taungoo',this)">Taungoo</div>
+              <div class="group-chip" data-diocese="Pathein" onclick="selectDiocese('Pathein',this)">Pathein</div>
+              <div class="group-chip" data-diocese="Homalin" onclick="selectDiocese('Homalin',this)">Homalin</div>
+              <div class="group-chip" data-diocese="Yangon" onclick="selectDiocese('Yangon',this)">Yangon</div>
+              <div class="group-chip" data-diocese="Pyay" onclick="selectDiocese('Pyay',this)">Pyay</div>
+              <div class="group-chip" data-diocese="Hpa-an" onclick="selectDiocese('Hpa-an',this)">Hpa-an</div>
+            </div>
+          </div>
+
+          <!-- Individual staff -->
+          <div class="form-group">
+            <label>Individual staff <span style="font-weight:400;color:var(--gray-400)">(grayed out = no email set)</span></label>
+            <div class="select-actions">
+              <button onclick="selectAllStaff()">Select all</button>
+              <button onclick="clearAllStaff()">Clear all</button>
+            </div>
+            <div class="staff-grid" id="staff-grid">
+              <div class="loading"><div class="spinner"></div>Loading staff…</div>
+            </div>
+          </div>
+
+          <div class="recipient-summary" id="recipient-summary">
+            No recipients selected yet.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Preview &amp; Send</div>
+        <div class="card-body">
+          <button class="btn btn-secondary" onclick="togglePreview()" id="preview-btn">Preview email</button>
+          <div class="preview-box" id="preview-box"></div>
+          <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+            <button class="btn btn-primary" id="send-btn" onclick="sendAnnouncement()">Send announcement →</button>
+          </div>
+          <div class="msg-box" id="send-msg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ HISTORY ═══ -->
+    <div class="pane" id="pane-history">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Sent History</div>
+          <div class="pane-sub">All announcements saved to Google Drive</div>
+        </div>
+        <button class="btn btn-secondary" onclick="loadHistory()">↻ Refresh</button>
+      </div>
+      <div class="card">
+        <div id="history-list"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ═══ PERMISSIONS ═══ -->
+    <div class="pane" id="pane-permissions">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Send Permissions</div>
+          <div class="pane-sub">Control which roles can send announcements — Admin always has access</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">Role permissions</div>
+        <div class="card-body" style="padding:8px 18px;">
+          <div class="perm-row">
+            <div>
+              <div class="perm-info">Admin / Director</div>
+              <div class="perm-sub">Always enabled — cannot be removed</div>
+            </div>
+            <div class="toggle-wrap">
+              <span class="toggle-label" style="color:var(--green);font-weight:500;">Always on</span>
+            </div>
+          </div>
+          <div class="perm-row" id="perm-finance_manager">
+            <div>
+              <div class="perm-info">Finance Manager</div>
+              <div class="perm-sub">Can send to all finance staff and managers</div>
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-track" id="toggle-finance_manager" onclick="togglePerm('finance_manager')">
+                <div class="toggle-thumb"></div>
+              </div>
+              <span class="toggle-label" id="toggle-label-finance_manager">Off</span>
+            </div>
+          </div>
+          <div class="perm-row" id="perm-manager">
+            <div>
+              <div class="perm-info">Manager</div>
+              <div class="perm-sub">Programme Managers, HR, M&amp;E</div>
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-track" id="toggle-manager" onclick="togglePerm('manager')">
+                <div class="toggle-thumb"></div>
+              </div>
+              <span class="toggle-label" id="toggle-label-manager">Off</span>
+            </div>
+          </div>
+          <div class="perm-row" id="perm-finance_staff">
+            <div>
+              <div class="perm-info">Finance Staff</div>
+              <div class="perm-sub">Finance Officers</div>
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-track" id="toggle-finance_staff" onclick="togglePerm('finance_staff')">
+                <div class="toggle-thumb"></div>
+              </div>
+              <span class="toggle-label" id="toggle-label-finance_staff">Off</span>
+            </div>
+          </div>
+          <div class="perm-row" id="perm-staff">
+            <div>
+              <div class="perm-info">Staff</div>
+              <div class="perm-sub">Programme Officers and DDOs</div>
+            </div>
+            <div class="toggle-wrap">
+              <div class="toggle-track" id="toggle-staff" onclick="togglePerm('staff')">
+                <div class="toggle-thumb"></div>
+              </div>
+              <span class="toggle-label" id="toggle-label-staff">Off</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:4px;">
+        <button class="btn btn-primary" id="save-perms-btn" onclick="savePermissions()">Save permissions →</button>
+      </div>
+      <div class="msg-box" id="perms-msg"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const WORKER_URL  = 'https://pdp-dashboard.gamalieltun282.workers.dev/';
+const PDP_USER    = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
+const PDP_PW      = sessionStorage.getItem('pdp_pw') || '';
+const PDP_ROLE    = PDP_USER?.role || '';
+const PDP_NAME    = PDP_USER?.name || '';
+const IS_ADMIN    = PDP_ROLE === 'admin';
+
+const ROLE_COLORS = {admin:'#0f1e38',manager:'#0f766e',finance_manager:'#7c3aed',finance_staff:'#b45309',staff:'#2563eb',finance:'#b45309'};
+function roleColor(r){return ROLE_COLORS[r]||'#6b7280'}
+function initials(name){return (name||'?').split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?'}
+
+let STAFF_LIST = [];       // [{username, name, role, diocese, email, hasEmail}]
+let SELECTED   = new Set();// selected usernames
+let ANN_PERMS  = {};       // {finance_manager:bool, manager:bool, ...}
+let ACTIVE_GROUPS = new Set();
+let ACTIVE_DIOCESES = new Set();
+
+async function workerCall(action, extra={}) {
+  const res = await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action, username:PDP_USER?.username||'', password:PDP_PW, ...extra}),
+  });
+  return res.json();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('hdr-name').textContent = PDP_NAME || PDP_USER?.username || 'User';
+  document.getElementById('hdr-role').textContent = PDP_ROLE || '—';
+
+  // Load permissions first to check access
+  await loadPermissions();
+
+  const canSend = IS_ADMIN || ANN_PERMS[PDP_ROLE] === true;
+  if (!canSend) {
+    document.getElementById('access-denied').style.display = 'flex';
+    return;
+  }
+
+  document.getElementById('main-layout').style.display = 'flex';
+
+  // Show admin-only sections
+  if (IS_ADMIN) {
+    document.getElementById('admin-section').style.display = '';
+    document.getElementById('nav-permissions').style.display = '';
+  }
+
+  await loadStaff();
+});
+
+// ── NAVIGATION ────────────────────────────────────────────────────────
+function switchPane(name) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('pane-' + name)?.classList.add('active');
+  document.getElementById('nav-' + name)?.classList.add('active');
+}
+
+// ── LOAD STAFF ────────────────────────────────────────────────────────
+async function loadStaff() {
+  try {
+    const res = await workerCall('get_staff_list');
+    if (!res.ok) { document.getElementById('staff-grid').innerHTML = '<div class="empty">Could not load staff list.</div>'; return; }
+    STAFF_LIST = res.staff || [];
+    renderStaffGrid();
+  } catch(e) {
+    document.getElementById('staff-grid').innerHTML = '<div class="empty">Network error loading staff.</div>';
+  }
+}
+
+function renderStaffGrid() {
+  const grid = document.getElementById('staff-grid');
+  if (!STAFF_LIST.length) { grid.innerHTML = '<div class="empty">No staff found.</div>'; return; }
+
+  grid.innerHTML = STAFF_LIST.map(s => {
+    const sel = SELECTED.has(s.username);
+    const noEmail = !s.hasEmail;
+    return `<div class="staff-chip ${sel?'selected':''} ${noEmail?'no-email':''}"
+      data-username="${s.username}"
+      onclick="${noEmail ? '' : `toggleStaff('${s.username}')`}"
+      title="${noEmail ? 'No email set — cannot receive emails' : s.email||''}">
+      <div class="staff-avatar" style="background:${roleColor(s.role)}">${initials(s.name)}</div>
+      <div class="staff-info">
+        <div class="staff-name">${s.name||s.username}</div>
+        <div class="staff-role">${s.role}${s.diocese?' · '+s.diocese:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateRecipientSummary();
+}
+
+function toggleStaff(username) {
+  if (SELECTED.has(username)) SELECTED.delete(username);
+  else SELECTED.add(username);
+  // Clear group/diocese active chips since we've gone individual
+  renderStaffGrid();
+}
+
+function selectAllStaff() {
+  STAFF_LIST.filter(s => s.hasEmail).forEach(s => SELECTED.add(s.username));
+  ACTIVE_GROUPS.clear(); ACTIVE_DIOCESES.clear();
+  document.querySelectorAll('.group-chip, #diocese-chips .group-chip').forEach(c => c.classList.remove('selected'));
+  renderStaffGrid();
+}
+
+function clearAllStaff() {
+  SELECTED.clear(); ACTIVE_GROUPS.clear(); ACTIVE_DIOCESES.clear();
+  document.querySelectorAll('.group-chip').forEach(c => c.classList.remove('selected'));
+  renderStaffGrid();
+}
+
+// ── GROUP SELECTION ───────────────────────────────────────────────────
+function selectGroup(group, el) {
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) ACTIVE_GROUPS.add(group);
+  else ACTIVE_GROUPS.delete(group);
+  applyGroupFilters();
+}
+
+function selectDiocese(diocese, el) {
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) ACTIVE_DIOCESES.add(diocese);
+  else ACTIVE_DIOCESES.delete(diocese);
+  applyGroupFilters();
+}
+
+function applyGroupFilters() {
+  SELECTED.clear();
+  STAFF_LIST.filter(s => s.hasEmail).forEach(s => {
+    let include = false;
+    if (ACTIVE_GROUPS.has('all')) include = true;
+    if (ACTIVE_GROUPS.has(s.role)) include = true;
+    if (ACTIVE_DIOCESES.size > 0 && ACTIVE_DIOCESES.has(s.diocese)) include = true;
+    // If both groups and dioceses active — intersection
+    if (ACTIVE_GROUPS.size > 0 && !ACTIVE_GROUPS.has('all') && ACTIVE_DIOCESES.size > 0) {
+      include = ACTIVE_GROUPS.has(s.role) && ACTIVE_DIOCESES.has(s.diocese);
+    }
+    if (include) SELECTED.add(s.username);
+  });
+  renderStaffGrid();
+}
+
+// ── RECIPIENT SUMMARY ─────────────────────────────────────────────────
+function updateRecipientSummary() {
+  const el = document.getElementById('recipient-summary');
+  const count = SELECTED.size;
+  if (!count) { el.innerHTML = 'No recipients selected yet.'; return; }
+  const names = STAFF_LIST.filter(s => SELECTED.has(s.username)).map(s => s.name||s.username).slice(0,5);
+  const extra = count > 5 ? ` and <span>${count-5} more</span>` : '';
+  el.innerHTML = `<span>${count}</span> recipient${count!==1?'s':''} selected: ${names.join(', ')}${extra}`;
+}
+
+// ── CHAR COUNT ────────────────────────────────────────────────────────
+function updateCharCount() {
+  const len = document.getElementById('ann-body').value.length;
+  document.getElementById('char-count').textContent = len;
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────────
+function togglePreview() {
+  const box = document.getElementById('preview-box');
+  const btn = document.getElementById('preview-btn');
+  if (box.style.display === 'block') {
+    box.style.display = 'none'; btn.textContent = 'Preview email'; return;
+  }
+  const subject = document.getElementById('ann-subject').value.trim();
+  const body    = document.getElementById('ann-body').value.trim();
+  if (!subject && !body) { toast('Fill in subject and message first.', 'red'); return; }
+  box.style.display = 'block';
+  btn.textContent = 'Hide preview';
+  box.textContent = `Subject: ${subject||'(no subject)'}\nFrom: PDD Dashboard <cpmpdd.tech@gmail.com>\nTo: ${SELECTED.size} recipient(s)\n\n${body||'(no message)'}`;
+}
+
+// ── SEND ──────────────────────────────────────────────────────────────
+async function sendAnnouncement() {
+  const subject  = document.getElementById('ann-subject').value.trim();
+  const body     = document.getElementById('ann-body').value.trim();
+  const btn      = document.getElementById('send-btn');
+  const msgEl    = document.getElementById('send-msg');
+
+  if (!subject) { showMsg('send-msg', 'Subject is required.', false); return; }
+  if (!body)    { showMsg('send-msg', 'Message body is required.', false); return; }
+  if (!SELECTED.size) { showMsg('send-msg', 'Please select at least one recipient.', false); return; }
+
+  if (!confirm(`Send this announcement to ${SELECTED.size} recipient${SELECTED.size!==1?'s':''}?`)) return;
+
+  btn.disabled = true; btn.textContent = 'Sending…';
+  msgEl.style.display = 'none';
+
+  try {
+    const res = await workerCall('send_announcement', {
+      subject,
+      body,
+      recipients: [...SELECTED],
+      senderName: PDP_NAME,
+    });
+
+    if (res.ok) {
+      showMsg('send-msg', `✓ Sent to ${res.sent} recipient${res.sent!==1?'s':''}${res.failed>0?' ('+res.failed+' failed — no email set)':''}. Saved to Drive.`, true);
+      toast('Announcement sent ✓', 'green');
+      clearForm();
+    } else {
+      showMsg('send-msg', res.error || 'Send failed.', false);
+    }
+  } catch(e) {
+    showMsg('send-msg', 'Network error: ' + e.message, false);
+  }
+  btn.disabled = false; btn.textContent = 'Send announcement →';
+}
+
+function clearForm() {
+  document.getElementById('ann-subject').value = '';
+  document.getElementById('ann-body').value    = '';
+  document.getElementById('char-count').textContent = '0';
+  document.getElementById('preview-box').style.display = 'none';
+  document.getElementById('preview-btn').textContent = 'Preview email';
+  SELECTED.clear(); ACTIVE_GROUPS.clear(); ACTIVE_DIOCESES.clear();
+  document.querySelectorAll('.group-chip').forEach(c => c.classList.remove('selected'));
+  renderStaffGrid();
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────
+async function loadHistory() {
+  const el = document.getElementById('history-list');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+  try {
+    const res = await workerCall('get_announcements');
+    if (!res.ok || !res.announcements?.length) {
+      el.innerHTML = '<div class="empty">No announcements sent yet.</div>'; return;
+    }
+    el.innerHTML = '<div style="padding:8px 18px;">' +
+      res.announcements.map(a => `
+        <div class="history-item">
+          <div class="history-avatar">${initials(a.sentBy)}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="history-subject">${a.subject}</div>
+            <div class="history-meta">Sent by ${a.sentBy} · ${new Date(a.sentAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})} · ${a.recipientCount} recipient${a.recipientCount!==1?'s':''}</div>
+            ${a.recipients ? `<div style="font-size:11px;color:var(--gray-400);margin-top:2px;">${a.recipients.slice(0,5).join(', ')}${a.recipients.length>5?' +' +(a.recipients.length-5)+' more':''}</div>` : ''}
+          </div>
+          <span class="pill pill-sent">Sent</span>
+        </div>`).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="empty">Failed to load history.</div>';
+  }
+}
+
+// ── PERMISSIONS ───────────────────────────────────────────────────────
+async function loadPermissions() {
+  try {
+    const res = await workerCall('get_announcement_perms');
+    if (res.ok) {
+      ANN_PERMS = res.permissions || {};
+      renderPermToggles();
+    }
+  } catch(_) {}
+}
+
+function renderPermToggles() {
+  ['finance_manager','manager','finance_staff','staff'].forEach(role => {
+    const track = document.getElementById('toggle-' + role);
+    const label = document.getElementById('toggle-label-' + role);
+    if (!track || !label) return;
+    const on = ANN_PERMS[role] === true;
+    track.classList.toggle('on', on);
+    label.textContent = on ? 'On' : 'Off';
+    label.style.color = on ? 'var(--green)' : 'var(--gray-400)';
+  });
+}
+
+function togglePerm(role) {
+  ANN_PERMS[role] = !ANN_PERMS[role];
+  renderPermToggles();
+}
+
+async function savePermissions() {
+  const btn = document.getElementById('save-perms-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await workerCall('save_announcement_perms', { permissions: ANN_PERMS });
+    if (res.ok) { toast('Permissions saved ✓', 'green'); showMsg('perms-msg', '✓ Permissions updated.', true); }
+    else showMsg('perms-msg', res.error || 'Failed to save.', false);
+  } catch(e) { showMsg('perms-msg', 'Network error: ' + e.message, false); }
+  btn.disabled = false; btn.textContent = 'Save permissions →';
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────
+function showMsg(elId, text, ok) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.display = 'block';
+  el.className = 'msg-box ' + (ok ? 'ok' : 'err');
+  el.textContent = text;
+  if (ok) setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+let _toastTimer;
+function toast(msg, type='blue') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+</script>
+</body>
+</html>
