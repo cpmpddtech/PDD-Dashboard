@@ -3896,8 +3896,9 @@ export default {
       const u = validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
-      const annPerms = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
-      const canSend  = u.role === 'admin' || annPerms[u.role] === true;
+      const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
+      const userPerms = annPerms.users || {};
+      const canSend   = u.role === 'admin' || userPerms[body.username] === true;
       if (!canSend)
         return new Response(JSON.stringify({ error: 'No announcement permission' }), { status: 403, headers });
 

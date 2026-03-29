@@ -314,6 +314,9 @@ const PDP_PW      = sessionStorage.getItem('pdp_pw') || '';
 const PDP_ROLE    = PDP_USER?.role || '';
 const PDP_NAME    = PDP_USER?.name || '';
 const IS_ADMIN    = PDP_ROLE === 'admin';
+// Live role — updated from worker on load to catch role changes since last login
+let LIVE_ROLE = PDP_ROLE;
+let LIVE_NAME = PDP_NAME;
 
 const ROLE_COLORS = {admin:'#0f1e38',manager:'#0f766e',finance_manager:'#7c3aed',finance_staff:'#b45309',staff:'#2563eb',finance:'#b45309'};
 function roleColor(r){return ROLE_COLORS[r]||'#6b7280'}
@@ -338,10 +341,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('hdr-name').textContent = PDP_NAME || PDP_USER?.username || 'User';
   document.getElementById('hdr-role').textContent = PDP_ROLE || '—';
 
-  // Load permissions first to check access
+  // Re-validate role live from worker — sessionStorage may be stale after role changes
+  try {
+    const authRes = await workerCall('auth');
+    if (authRes?.role) {
+      // Update session with fresh role
+      const freshUser = { ...PDP_USER, role: authRes.role, name: authRes.name || PDP_NAME };
+      sessionStorage.setItem('pdp_user', JSON.stringify(freshUser));
+      LIVE_ROLE = authRes.role;
+      LIVE_NAME = authRes.name || PDP_NAME;
+      document.getElementById('hdr-role').textContent = LIVE_ROLE;
+      document.getElementById('hdr-name').textContent = LIVE_NAME;
+    }
+  } catch(_) {}
+
+  // Load permissions
   await loadPermissions();
 
-  const canSend = IS_ADMIN || ANN_PERMS[PDP_ROLE] === true;
+  const isLiveAdmin = LIVE_ROLE === 'admin';
+  const userPerms   = ANN_PERMS.users || {};
+  const canSend     = isLiveAdmin || userPerms[PDP_USER?.username] === true;
+
   if (!canSend) {
     document.getElementById('access-denied').style.display = 'flex';
     return;
@@ -349,13 +369,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('main-layout').style.display = 'flex';
 
-  // Show admin-only sections
-  if (IS_ADMIN) {
+  if (isLiveAdmin) {
     document.getElementById('admin-section').style.display = '';
     document.getElementById('nav-permissions').style.display = '';
   }
 
-  // Load staff — always, for all permitted roles
   await loadStaff();
   renderPermToggles();
 });
