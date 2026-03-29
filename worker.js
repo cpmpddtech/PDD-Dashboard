@@ -20,6 +20,7 @@
  *    ALERT_THRESHOLD       → number e.g. 0.70 for 70% threshold
  *    DRIVE_REFRESH_TOKEN   → OAuth2 refresh token with drive.file + spreadsheets + gmail.send scopes
  *    DRIVE_FOLDER_ID       → Google Drive folder ID for PDP_DCR_Reports
+ *    ANNOUNCEMENTS_FOLDER_ID → Google Drive folder ID for Announcement logs
  *
  *  ── INITIAL USERS_CONFIG SETUP ──────────────────────────────
  *  Add this minimal JSON as a Secret in Cloudflare:
@@ -3723,12 +3724,8 @@ export default {
       const u = validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
-      // Check send permission
-      const annPerms = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
-      const canSend  = u.role === 'admin' || annPerms[u.role] === true;
-      if (!canSend)
-        return new Response(JSON.stringify({ error: 'No announcement permission' }), { status: 403, headers });
-
+      // Any authenticated user can fetch the staff list for recipient selection
+      // Sending permission is checked separately in send_announcement
       const users = getUsers();
       const staff = Object.entries(users).map(([username, usr]) => ({
         username,
@@ -3761,10 +3758,15 @@ export default {
       if (!permissions)
         return new Response(JSON.stringify({ error: 'Missing permissions object' }), { status: 400, headers });
 
-      // Validate — only known roles allowed
-      const ALLOWED_ROLES = ['finance_manager', 'manager', 'finance_staff', 'staff'];
-      const clean = {};
-      ALLOWED_ROLES.forEach(r => { if (typeof permissions[r] === 'boolean') clean[r] = permissions[r]; });
+      // Accept per-user structure: { users: { username: bool } }
+      // Validate: only known usernames allowed
+      const users = getUsers();
+      const clean = { users: {} };
+      if (permissions.users && typeof permissions.users === 'object') {
+        Object.entries(permissions.users).forEach(([username, val]) => {
+          if (users[username] && typeof val === 'boolean') clean.users[username] = val;
+        });
+      }
 
       // Save to Cloudflare secret via API
       const cfToken = env.CF_API_TOKEN;
@@ -3801,8 +3803,9 @@ export default {
       const u = validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
-      const annPerms = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
-      const canSend  = u.role === 'admin' || annPerms[u.role] === true;
+      const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
+      const userPerms = annPerms.users || {};
+      const canSend   = u.role === 'admin' || userPerms[body.username] === true;
       if (!canSend)
         return new Response(JSON.stringify({ error: 'No announcement permission' }), { status: 403, headers });
 
@@ -3861,7 +3864,7 @@ export default {
       // Log to Google Drive
       try {
         const driveToken = await getDriveToken(env);
-        const logFolderId = env.DRIVE_FOLDER_ID;
+        const logFolderId = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_FOLDER_ID;
         if (logFolderId) {
           const logData = {
             subject,
@@ -3900,7 +3903,7 @@ export default {
 
       try {
         const driveToken = await getDriveToken(env);
-        const folderId   = env.DRIVE_FOLDER_ID;
+        const folderId   = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_FOLDER_ID;
         if (!folderId) return new Response(JSON.stringify({ ok: true, announcements: [] }), { status: 200, headers });
 
         // List JSON files in Drive folder that match announcement naming

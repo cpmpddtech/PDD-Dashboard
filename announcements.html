@@ -280,69 +280,20 @@ textarea{resize:vertical;min-height:140px}
       <div class="pane-header">
         <div>
           <div class="pane-title">Send Permissions</div>
-          <div class="pane-sub">Control which roles can send announcements — Admin always has access</div>
+          <div class="pane-sub">Choose which staff members can send announcements — Admin always has access</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" style="font-size:12px;" onclick="permSelectAll()">Enable all</button>
+          <button class="btn btn-secondary" style="font-size:12px;" onclick="permClearAll()">Disable all</button>
         </div>
       </div>
       <div class="card">
-        <div class="card-header">Role permissions</div>
-        <div class="card-body" style="padding:8px 18px;">
-          <div class="perm-row">
-            <div>
-              <div class="perm-info">Admin / Director</div>
-              <div class="perm-sub">Always enabled — cannot be removed</div>
-            </div>
-            <div class="toggle-wrap">
-              <span class="toggle-label" style="color:var(--green);font-weight:500;">Always on</span>
-            </div>
-          </div>
-          <div class="perm-row" id="perm-finance_manager">
-            <div>
-              <div class="perm-info">Finance Manager</div>
-              <div class="perm-sub">Can send to all finance staff and managers</div>
-            </div>
-            <div class="toggle-wrap">
-              <div class="toggle-track" id="toggle-finance_manager" onclick="togglePerm('finance_manager')">
-                <div class="toggle-thumb"></div>
-              </div>
-              <span class="toggle-label" id="toggle-label-finance_manager">Off</span>
-            </div>
-          </div>
-          <div class="perm-row" id="perm-manager">
-            <div>
-              <div class="perm-info">Manager</div>
-              <div class="perm-sub">Programme Managers, HR, M&amp;E</div>
-            </div>
-            <div class="toggle-wrap">
-              <div class="toggle-track" id="toggle-manager" onclick="togglePerm('manager')">
-                <div class="toggle-thumb"></div>
-              </div>
-              <span class="toggle-label" id="toggle-label-manager">Off</span>
-            </div>
-          </div>
-          <div class="perm-row" id="perm-finance_staff">
-            <div>
-              <div class="perm-info">Finance Staff</div>
-              <div class="perm-sub">Finance Officers</div>
-            </div>
-            <div class="toggle-wrap">
-              <div class="toggle-track" id="toggle-finance_staff" onclick="togglePerm('finance_staff')">
-                <div class="toggle-thumb"></div>
-              </div>
-              <span class="toggle-label" id="toggle-label-finance_staff">Off</span>
-            </div>
-          </div>
-          <div class="perm-row" id="perm-staff">
-            <div>
-              <div class="perm-info">Staff</div>
-              <div class="perm-sub">Programme Officers and DDOs</div>
-            </div>
-            <div class="toggle-wrap">
-              <div class="toggle-track" id="toggle-staff" onclick="togglePerm('staff')">
-                <div class="toggle-thumb"></div>
-              </div>
-              <span class="toggle-label" id="toggle-label-staff">Off</span>
-            </div>
-          </div>
+        <div class="card-header">
+          Staff permissions
+          <span style="font-size:12px;font-weight:400;color:var(--gray-400);" id="perm-count-label"></span>
+        </div>
+        <div id="perm-staff-list" style="padding:4px 18px 8px;">
+          <div class="loading"><div class="spinner"></div>Loading staff…</div>
         </div>
       </div>
       <div style="display:flex;justify-content:flex-end;margin-top:4px;">
@@ -404,7 +355,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('nav-permissions').style.display = '';
   }
 
+  // Load staff — always, for all permitted roles
   await loadStaff();
+  renderPermToggles();
 });
 
 // ── NAVIGATION ────────────────────────────────────────────────────────
@@ -413,6 +366,7 @@ function switchPane(name) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('pane-' + name)?.classList.add('active');
   document.getElementById('nav-' + name)?.classList.add('active');
+  if (name === 'permissions' && STAFF_LIST.length) renderPermStaff();
 }
 
 // ── LOAD STAFF ────────────────────────────────────────────────────────
@@ -421,12 +375,9 @@ async function loadStaff() {
     const res = await workerCall('get_staff_list');
     if (!res.ok) {
       const msg = res.error || 'Could not load staff list.';
-      // Unknown action = old worker still deployed
       const hint = msg.includes('Unknown action')
         ? '<br><span style="font-size:11px;color:var(--amber);">Deploy pdp-worker-v3.3.0 to Cloudflare first.</span>'
-        : msg.includes('permission')
-          ? '<br><span style="font-size:11px;">Ask your Director to grant announcement access.</span>'
-          : '';
+        : '';
       document.getElementById('staff-grid').innerHTML = `<div class="empty">${msg}${hint}</div>`;
       return;
     }
@@ -619,31 +570,108 @@ async function loadHistory() {
 }
 
 // ── PERMISSIONS ───────────────────────────────────────────────────────
+// ANN_PERMS structure for per-user: { users: { "username": true/false, ... } }
 async function loadPermissions() {
   try {
     const res = await workerCall('get_announcement_perms');
     if (res.ok) {
       ANN_PERMS = res.permissions || {};
-      renderPermToggles();
+      // Render staff perms only after staff list is loaded
+      if (STAFF_LIST.length) renderPermStaff();
     }
   } catch(_) {}
 }
 
-function renderPermToggles() {
-  ['finance_manager','manager','finance_staff','staff'].forEach(role => {
-    const track = document.getElementById('toggle-' + role);
-    const label = document.getElementById('toggle-label-' + role);
-    if (!track || !label) return;
-    const on = ANN_PERMS[role] === true;
-    track.classList.toggle('on', on);
-    label.textContent = on ? 'On' : 'Off';
-    label.style.color = on ? 'var(--green)' : 'var(--gray-400)';
+function renderPermStaff() {
+  const el = document.getElementById('perm-staff-list');
+  if (!el) return;
+  const userPerms = ANN_PERMS.users || {};
+  const nonAdmin  = STAFF_LIST.filter(s => s.role !== 'admin');
+
+  if (!nonAdmin.length) {
+    el.innerHTML = '<div class="empty">No staff found.</div>'; return;
+  }
+
+  // Group by role for visual clarity
+  const roleOrder = ['manager','finance_manager','finance_staff','staff','finance'];
+  const roleLabel = {
+    manager:'Manager', finance_manager:'Finance Manager',
+    finance_staff:'Finance Staff', staff:'Programme Staff', finance:'Finance'
+  };
+  const grouped = {};
+  nonAdmin.forEach(s => {
+    const r = s.role || 'staff';
+    if (!grouped[r]) grouped[r] = [];
+    grouped[r].push(s);
   });
+
+  let html = '';
+  roleOrder.forEach(role => {
+    if (!grouped[role]?.length) return;
+    html += `<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-400);padding:12px 0 6px;">${roleLabel[role]||role}</div>`;
+    grouped[role].forEach(s => {
+      const on = userPerms[s.username] === true || s.role === 'admin';
+      const isAdmin = s.role === 'admin';
+      html += `<div class="perm-row" id="perm-user-${s.username}">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="staff-avatar" style="background:${roleColor(s.role)};width:32px;height:32px;font-size:11px;flex-shrink:0;">${initials(s.name)}</div>
+          <div>
+            <div class="perm-info">${s.name||s.username}</div>
+            <div class="perm-sub">${s.role}${s.diocese?' · '+s.diocese:''}${!s.hasEmail?' · <span style="color:var(--amber)">no email set</span>':''}</div>
+          </div>
+        </div>
+        <div class="toggle-wrap">
+          ${isAdmin
+            ? '<span class="toggle-label" style="color:var(--green);font-weight:500;">Always on</span>'
+            : `<div class="toggle-track${on?' on':''}" id="toggle-user-${s.username}" onclick="toggleUserPerm('${s.username}')">
+                <div class="toggle-thumb"></div>
+               </div>
+               <span class="toggle-label" id="toggle-user-label-${s.username}" style="color:${on?'var(--green)':'var(--gray-400)'};">${on?'On':'Off'}</span>`
+          }
+        </div>
+      </div>`;
+    });
+  });
+
+  el.innerHTML = html;
+  updatePermCount();
 }
 
-function togglePerm(role) {
-  ANN_PERMS[role] = !ANN_PERMS[role];
-  renderPermToggles();
+function toggleUserPerm(username) {
+  if (!ANN_PERMS.users) ANN_PERMS.users = {};
+  ANN_PERMS.users[username] = !ANN_PERMS.users[username];
+  const on    = ANN_PERMS.users[username];
+  const track = document.getElementById('toggle-user-' + username);
+  const label = document.getElementById('toggle-user-label-' + username);
+  if (track) track.classList.toggle('on', on);
+  if (label) { label.textContent = on ? 'On' : 'Off'; label.style.color = on ? 'var(--green)' : 'var(--gray-400)'; }
+  updatePermCount();
+}
+
+function permSelectAll() {
+  if (!ANN_PERMS.users) ANN_PERMS.users = {};
+  STAFF_LIST.filter(s => s.role !== 'admin').forEach(s => { ANN_PERMS.users[s.username] = true; });
+  renderPermStaff();
+}
+
+function permClearAll() {
+  if (!ANN_PERMS.users) ANN_PERMS.users = {};
+  STAFF_LIST.filter(s => s.role !== 'admin').forEach(s => { ANN_PERMS.users[s.username] = false; });
+  renderPermStaff();
+}
+
+function updatePermCount() {
+  const el = document.getElementById('perm-count-label');
+  if (!el) return;
+  const count = Object.values(ANN_PERMS.users || {}).filter(Boolean).length;
+  el.textContent = count + ' staff enabled';
+}
+
+function renderPermToggles() {
+  // Called after staff loads — now renders per-user perm list
+  if (document.getElementById('pane-permissions')?.classList.contains('active')) {
+    renderPermStaff();
+  }
 }
 
 async function savePermissions() {
@@ -651,8 +679,13 @@ async function savePermissions() {
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
     const res = await workerCall('save_announcement_perms', { permissions: ANN_PERMS });
-    if (res.ok) { toast('Permissions saved ✓', 'green'); showMsg('perms-msg', '✓ Permissions updated.', true); }
-    else showMsg('perms-msg', res.error || 'Failed to save.', false);
+    if (res.ok) {
+      toast('Permissions saved ✓', 'green');
+      showMsg('perms-msg', '✓ Permissions updated.', true);
+      await loadStaff();
+    } else {
+      showMsg('perms-msg', res.error || 'Failed to save.', false);
+    }
   } catch(e) { showMsg('perms-msg', 'Network error: ' + e.message, false); }
   btn.disabled = false; btn.textContent = 'Save permissions →';
 }
