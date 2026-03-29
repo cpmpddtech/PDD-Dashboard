@@ -419,11 +419,25 @@ function switchPane(name) {
 async function loadStaff() {
   try {
     const res = await workerCall('get_staff_list');
-    if (!res.ok) { document.getElementById('staff-grid').innerHTML = '<div class="empty">Could not load staff list.</div>'; return; }
+    if (!res.ok) {
+      const msg = res.error || 'Could not load staff list.';
+      // Unknown action = old worker still deployed
+      const hint = msg.includes('Unknown action')
+        ? '<br><span style="font-size:11px;color:var(--amber);">Deploy pdp-worker-v3.3.0 to Cloudflare first.</span>'
+        : msg.includes('permission')
+          ? '<br><span style="font-size:11px;">Ask your Director to grant announcement access.</span>'
+          : '';
+      document.getElementById('staff-grid').innerHTML = `<div class="empty">${msg}${hint}</div>`;
+      return;
+    }
+    if (!res.staff || res.staff.length === 0) {
+      document.getElementById('staff-grid').innerHTML = '<div class="empty">No staff found — ensure users are configured in USERS_CONFIG.</div>';
+      return;
+    }
     STAFF_LIST = res.staff || [];
     renderStaffGrid();
   } catch(e) {
-    document.getElementById('staff-grid').innerHTML = '<div class="empty">Network error loading staff.</div>';
+    document.getElementById('staff-grid').innerHTML = `<div class="empty">Network error: ${e.message}</div>`;
   }
 }
 
