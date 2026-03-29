@@ -3,710 +3,1066 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDP Finance</title>
+<title>PDP Finance — v2</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  /* ── Base ── */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:    #0f1e38;
+  --navy2:   #1a2e52;
+  --blue:    #2563eb;
+  --blue-lt: #eff6ff;
+  --blue-bd: #bfdbfe;
+  --teal:    #0f766e;
+  --teal-lt: #f0fdfa;
+  --green:   #15803d;
+  --green-lt:#f0fdf4;
+  --amber:   #b45309;
+  --amber-lt:#fffbeb;
+  --red:     #dc2626;
+  --red-lt:  #fef2f2;
+  --purple:  #7c3aed;
+  --purple-lt:#f5f3ff;
+  --gray-50: #f9fafb;
+  --gray-100:#f3f4f6;
+  --gray-200:#e5e7eb;
+  --gray-300:#d1d5db;
+  --gray-400:#9ca3af;
+  --gray-500:#6b7280;
+  --gray-600:#4b5563;
+  --gray-700:#374151;
+  --gray-800:#1f2937;
+  --gray-900:#111827;
+  --font: 'IBM Plex Sans', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.1);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--font); font-size:14px; background:#f1f4f9; color:var(--gray-800); min-height:100vh; }
 
-  :root {
-    --navy:    #0f1f3d;
-    --navy2:   #1a2e52;
-    --blue:    #2563eb;
-    --blue-lt: #eff6ff;
-    --green:   #15803d;
-    --green-lt:#f0fdf4;
-    --amber:   #b45309;
-    --amber-lt:#fffbeb;
-    --red:     #dc2626;
-    --red-lt:  #fef2f2;
-    --purple:  #7c3aed;
-    --purple-lt:#f5f3ff;
-    --gray-50: #f9fafb;
-    --gray-100:#f3f4f6;
-    --gray-200:#e5e7eb;
-    --gray-300:#d1d5db;
-    --gray-400:#9ca3af;
-    --gray-500:#6b7280;
-    --gray-600:#4b5563;
-    --gray-700:#374151;
-    --gray-800:#1f2937;
-    --gray-900:#111827;
-    --radius:  8px;
-    --shadow:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-    --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
-  }
+/* ── Header ── */
+.header {
+  background:var(--navy);
+  color:#fff;
+  padding:0 24px;
+  height:54px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  position:sticky; top:0; z-index:100;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.header-left { display:flex; align-items:center; gap:12px; }
+.header-back {
+  background:rgba(255,255,255,.08); border:none; color:#fff;
+  padding:6px 12px; border-radius:6px; font-size:13px; cursor:pointer;
+  font-family:var(--font); display:flex; align-items:center; gap:6px;
+  transition:background .15s;
+}
+.header-back:hover { background:rgba(255,255,255,.16); }
+.header-title { font-size:15px; font-weight:600; letter-spacing:-.01em; }
+.header-sub   { font-size:11px; opacity:.5; margin-top:1px; }
+.user-chip {
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+  padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500;
+  display:flex; align-items:center; gap:6px;
+}
+.role-dot { width:6px; height:6px; border-radius:50%; background:#4ade80; }
 
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-size: 14px;
-    background: var(--gray-50);
-    color: var(--gray-800);
-    min-height: 100vh;
-  }
+/* ── Layout ── */
+.layout { display:flex; min-height:calc(100vh - 54px); }
 
-  /* ── Header ── */
-  .header {
-    background: var(--navy);
-    color: #fff;
-    padding: 0 24px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-left { display: flex; align-items: center; gap: 12px; }
-  .header-back {
-    background: rgba(255,255,255,.1);
-    border: none;
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .header-back:hover { background: rgba(255,255,255,.18); }
-  .header-title { font-size: 16px; font-weight: 600; }
-  .header-subtitle { font-size: 12px; opacity: .6; }
-  .user-badge {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,.1);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-  }
-  .user-badge .role {
-    background: rgba(255,255,255,.15);
-    padding: 1px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
+/* ── Sidebar ── */
+.sidebar {
+  width:220px; flex-shrink:0;
+  background:#fff; border-right:1px solid var(--gray-200);
+  padding:16px 0;
+  position:sticky; top:54px; height:calc(100vh - 54px); overflow-y:auto;
+}
+.sidebar-section {
+  font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--gray-400); padding:12px 16px 6px; margin-top:6px;
+}
+.sidebar-section:first-child { margin-top:0; }
+.nav-item {
+  display:flex; align-items:center; gap:9px;
+  padding:8px 16px; font-size:13px; font-weight:500;
+  color:var(--gray-600); cursor:pointer;
+  border-left:2px solid transparent; transition:all .12s;
+}
+.nav-item:hover { background:var(--gray-50); color:var(--gray-900); }
+.nav-item.active { background:var(--blue-lt); color:var(--blue); border-left-color:var(--blue); }
+.nav-item .badge {
+  margin-left:auto; background:var(--red); color:#fff;
+  border-radius:10px; padding:1px 6px; font-size:10px; font-weight:600;
+  min-width:18px; text-align:center;
+}
+.nav-dot {
+  width:7px; height:7px; border-radius:50%; flex-shrink:0;
+}
 
-  /* ── Layout ── */
-  .main { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+/* ── Main ── */
+.main { flex:1; padding:24px; max-width:1080px; padding-bottom:80px; }
 
-  /* ── Access denied ── */
-  #access-denied {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    text-align: center;
-    gap: 12px;
-    color: var(--gray-500);
-  }
-  #access-denied .icon { font-size: 48px; }
-  #access-denied h2 { font-size: 18px; color: var(--gray-700); }
+/* ── Access denied ── */
+#access-denied {
+  display:none; flex-direction:column; align-items:center;
+  justify-content:center; min-height:60vh; gap:12px;
+  text-align:center; color:var(--gray-400);
+}
 
-  /* ── Stat cards ── */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: #fff;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    box-shadow: var(--shadow);
-  }
-  .stat-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    color: var(--gray-500);
-    margin-bottom: 6px;
-  }
-  .stat-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--gray-900);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .stat-sub { font-size: 11px; color: var(--gray-400); }
+/* ── Panes ── */
+.pane { display:none; }
+.pane.active { display:block; animation:fadeIn .15s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
 
-  /* ── Sub-tabs ── */
-  .subtab-bar {
-    display: flex;
-    gap: 2px;
-    border-bottom: 1px solid var(--gray-200);
-    margin-bottom: 20px;
-  }
-  .subtab {
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--gray-500);
-    cursor: pointer;
-    margin-bottom: -1px;
-    transition: color .15s, border-color .15s;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .subtab:hover { color: var(--gray-800); }
-  .subtab.active { color: var(--blue); border-bottom-color: var(--blue); }
-  .subtab-pane { display: none; }
-  .subtab-pane.active { display: block; animation: fadeIn .15s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+/* ── Cards ── */
+.card {
+  background:#fff; border:1px solid var(--gray-200);
+  border-radius:var(--radius); box-shadow:var(--shadow);
+  margin-bottom:16px; overflow:hidden;
+}
+.card-header {
+  padding:14px 18px; border-bottom:1px solid var(--gray-100);
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:14px; font-weight:600; color:var(--gray-800);
+  flex-wrap:wrap; gap:8px;
+}
+.card-body { padding:18px; }
 
-  .badge {
-    background: var(--red);
-    color: #fff;
-    border-radius: 10px;
-    padding: 1px 6px;
-    font-size: 11px;
-    font-weight: 700;
-    min-width: 18px;
-    text-align: center;
-  }
+/* ── Stat grid ── */
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:20px; }
+.stat-card {
+  background:#fff; border:1px solid var(--gray-200);
+  border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow);
+}
+.stat-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--gray-400); margin-bottom:6px; }
+.stat-value { font-size:22px; font-weight:600; color:var(--gray-900); line-height:1.1; margin-bottom:4px; font-family:var(--mono); }
+.stat-sub   { font-size:11px; color:var(--gray-400); }
 
-  /* ── Toolbar ── */
-  .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-  .toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .toolbar-right { display: flex; align-items: center; gap: 8px; }
+/* ── Progress bar ── */
+.prog-wrap { margin-top:8px; }
+.prog-bar  { height:5px; background:var(--gray-100); border-radius:3px; overflow:hidden; }
+.prog-fill { height:100%; border-radius:3px; transition:width .4s; }
 
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px;
-    border-radius: var(--radius);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: background .15s, opacity .15s;
-  }
-  .btn:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-primary { background: var(--blue); color: #fff; }
-  .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
-  .btn-secondary { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-200); }
-  .btn-secondary:hover:not(:disabled) { background: var(--gray-50); }
-  .btn-danger { background: var(--red-lt); color: var(--red); border: 1px solid #fecaca; }
-  .btn-danger:hover:not(:disabled) { background: #fecaca; }
-  .btn-success { background: var(--green-lt); color: var(--green); border: 1px solid #bbf7d0; }
-  .btn-success:hover:not(:disabled) { background: #bbf7d0; }
-  .btn-sm { padding: 4px 10px; font-size: 12px; }
+/* ── Tables ── */
+.tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.tbl th {
+  padding:8px 14px; text-align:left; font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.05em; color:var(--gray-400);
+  background:var(--gray-50); border-bottom:1px solid var(--gray-200);
+}
+.tbl td { padding:11px 14px; border-bottom:1px solid var(--gray-100); vertical-align:middle; color:var(--gray-700); }
+.tbl tr:last-child td { border-bottom:none; }
+.tbl tr:hover td { background:var(--gray-50); }
+.tbl .actions { display:flex; gap:6px; }
 
-  /* ── Select / Input ── */
-  select, input, textarea {
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    padding: 7px 10px;
-    font-size: 13px;
-    color: var(--gray-800);
-    background: #fff;
-    width: 100%;
-    outline: none;
-    transition: border-color .15s;
-    font-family: inherit;
-  }
-  select:focus, input:focus, textarea:focus { border-color: var(--blue); }
-  label { font-size: 12px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 4px; }
+/* ── Badges / Pills ── */
+.pill {
+  display:inline-block; padding:2px 9px; border-radius:10px;
+  font-size:11px; font-weight:600; white-space:nowrap;
+}
+.pill-pending   { background:var(--amber-lt); color:var(--amber); border:1px solid #fde68a; }
+.pill-approved  { background:var(--green-lt); color:var(--green); border:1px solid #bbf7d0; }
+.pill-rejected  { background:var(--red-lt);   color:var(--red);   border:1px solid #fecaca; }
+.pill-draft     { background:var(--gray-100); color:var(--gray-500); border:1px solid var(--gray-300); }
+.pill-active    { background:var(--blue-lt);  color:var(--blue);  border:1px solid var(--blue-bd); }
 
-  /* ── Card ── */
-  .card {
-    background: #fff;
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
-  .card-header {
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--gray-100);
-    display: flex; align-items: center; justify-content: space-between;
-    font-weight: 600; font-size: 14px; color: var(--gray-800);
-  }
+.pill-q { background:#fef3c7; color:#92400e; font-family:var(--mono); }
 
-  /* ── Table ── */
-  .fin-table { width: 100%; border-collapse: collapse; }
-  .fin-table th {
-    padding: 9px 14px;
-    text-align: left;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    color: var(--gray-500);
-    background: var(--gray-50);
-    border-bottom: 1px solid var(--gray-200);
-  }
-  .fin-table td {
-    padding: 11px 14px;
-    border-bottom: 1px solid var(--gray-100);
-    color: var(--gray-700);
-    vertical-align: middle;
-  }
-  .fin-table tr:last-child td { border-bottom: none; }
-  .fin-table tr:hover td { background: var(--gray-50); }
-  .fin-table .actions { display: flex; gap: 6px; }
+/* ── Buttons ── */
+.btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; border-radius:var(--radius);
+  font-size:13px; font-weight:500; cursor:pointer; border:none;
+  font-family:var(--font); transition:all .13s;
+}
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn-primary  { background:var(--blue); color:#fff; }
+.btn-primary:hover:not(:disabled) { background:#1d4ed8; }
+.btn-secondary { background:#fff; color:var(--gray-700); border:1px solid var(--gray-200); }
+.btn-secondary:hover:not(:disabled) { background:var(--gray-50); }
+.btn-success  { background:var(--green-lt); color:var(--green); border:1px solid #bbf7d0; }
+.btn-success:hover:not(:disabled) { background:#bbf7d0; }
+.btn-danger   { background:var(--red-lt); color:var(--red); border:1px solid #fecaca; }
+.btn-danger:hover:not(:disabled)  { background:#fecaca; }
+.btn-teal     { background:var(--teal); color:#fff; }
+.btn-teal:hover:not(:disabled) { background:#0d6460; }
+.btn-sm { padding:4px 10px; font-size:12px; }
 
-  /* ── Status pills ── */
-  .pill {
-    display: inline-block;
-    padding: 2px 9px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .pill-pending  { background: var(--amber-lt); color: var(--amber); border: 1px solid #fde68a; }
-  .pill-draft    { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
-  .pill-submitted{ background: var(--amber-lt); color: var(--amber); border: 1px solid #fde68a; }
-  .pill-approved { background: var(--green-lt); color: var(--green); border: 1px solid #bbf7d0; }
-  .pill-rejected { background: var(--red-lt);   color: var(--red);   border: 1px solid #fecaca; }
+/* ── Form elements ── */
+label { font-size:12px; font-weight:600; color:var(--gray-600); display:block; margin-bottom:4px; }
+input, select, textarea {
+  border:1px solid var(--gray-200); border-radius:var(--radius);
+  padding:8px 10px; font-size:13px; color:var(--gray-800);
+  background:#fff; width:100%; outline:none;
+  transition:border-color .13s; font-family:var(--font);
+}
+input:focus, select:focus, textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,.08); }
+textarea { resize:vertical; min-height:80px; }
+.form-group { margin-bottom:14px; }
+.form-row { display:grid; gap:12px; }
+.form-row.cols2 { grid-template-columns:1fr 1fr; }
+.form-row.cols3 { grid-template-columns:1fr 1fr 1fr; }
+.field-hint { font-size:11px; color:var(--gray-400); margin-top:3px; }
 
-  /* ── Program summary cards ── */
-  .proj-summary-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-bottom:16px; }
-  .proj-summary-card { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius); padding:12px 14px; }
-  .proj-summary-name { font-size:12px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px; }
+/* ── Section header inside pane ── */
+.pane-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px; flex-wrap:wrap; gap:10px;
+}
+.pane-title { font-size:18px; font-weight:600; color:var(--gray-900); letter-spacing:-.01em; }
+.pane-sub   { font-size:13px; color:var(--gray-400); margin-top:2px; }
 
-  /* ── Progress bar ── */
-  .progress-wrap { min-width: 100px; }
-  .progress-label { font-size: 11px; color: var(--gray-500); margin-bottom: 3px; }
-  .progress-bar { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 3px; transition: width .4s; background: var(--blue); }
-  .progress-fill.warn { background: var(--amber); }
-  .progress-fill.over { background: var(--red); }
+/* ── Section grouping label ── */
+.section-label {
+  font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--gray-400); margin:20px 0 8px; display:flex; align-items:center; gap:8px;
+}
+.section-label::after { content:''; flex:1; height:1px; background:var(--gray-100); }
 
-  /* ── Modal ── */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.45);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 200;
-    opacity: 0; pointer-events: none;
-    transition: opacity .2s;
-  }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal {
-    background: #fff;
-    border-radius: 12px;
-    padding: 24px;
-    width: 440px;
-    max-width: 95vw;
-    box-shadow: 0 20px 60px rgba(0,0,0,.25);
-    transform: translateY(8px);
-    transition: transform .2s;
-  }
-  .modal-overlay.open .modal { transform: none; }
-  .modal-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 18px;
-  }
-  .modal-title { font-size: 16px; font-weight: 600; color: var(--gray-900); }
-  .modal-close {
-    background: none; border: none; font-size: 22px;
-    color: var(--gray-400); cursor: pointer; line-height: 1;
-    padding: 2px 6px; border-radius: 4px;
-  }
-  .modal-close:hover { background: var(--gray-100); color: var(--gray-600); }
-  .form-group { margin-bottom: 14px; }
-  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+/* ── Donor split rows ── */
+.split-row {
+  display:grid; grid-template-columns:1fr 140px 130px 110px 36px;
+  gap:10px; align-items:start; padding:10px 14px;
+  border:1px solid var(--gray-200); border-radius:var(--radius);
+  margin-bottom:8px; background:#fff;
+}
+.split-col-hdr {
+  display:grid; grid-template-columns:1fr 140px 130px 110px 36px;
+  gap:10px; padding:0 14px 4px; font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.05em; color:var(--gray-400);
+}
+.split-donor-name { font-size:13px; font-weight:500; }
+.split-donor-sub  { font-size:11px; color:var(--gray-400); }
 
-  /* ── Toast ── */
-  #toast {
-    position: fixed; bottom: 24px; right: 24px;
-    padding: 10px 18px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #fff;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity .25s, transform .25s;
-    z-index: 300;
-    pointer-events: none;
-  }
-  #toast.show { opacity: 1; transform: none; }
-  #toast.green { background: #15803d; }
-  #toast.red   { background: #dc2626; }
-  #toast.blue  { background: var(--blue); }
+/* ── Line item section grouping ── */
+.li-section-header {
+  background:var(--navy); color:#fff;
+  padding:8px 14px; font-size:12px; font-weight:600;
+  border-radius:var(--radius) var(--radius) 0 0;
+  letter-spacing:.02em;
+}
 
-  /* ── Empty state ── */
-  .empty {
-    padding: 48px 24px;
-    text-align: center;
-    color: var(--gray-400);
-  }
-  .empty-icon { font-size: 32px; margin-bottom: 8px; }
-  .empty-text { font-size: 13px; }
+/* ── Empty state ── */
+.empty { padding:48px 24px; text-align:center; color:var(--gray-400); }
+.empty-icon { font-size:28px; margin-bottom:10px; opacity:.6; }
+.empty-text { font-size:13px; }
 
-  /* ── Loading ── */
-  .loading { padding: 32px; text-align: center; color: var(--gray-400); font-size: 13px; }
+/* ── Loading ── */
+.loading { padding:32px; text-align:center; color:var(--gray-400); font-size:13px; }
+.spinner {
+  width:24px; height:24px; border:2px solid var(--gray-200);
+  border-top-color:var(--blue); border-radius:50%;
+  animation:spin .7s linear infinite; margin:0 auto 10px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
 
-  /* ── Budget category label ── */
-  .cat-pill {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 500;
-    background: var(--blue-lt);
-    color: var(--blue);
-  }
+/* ── Report result ── */
+.rpt-result {
+  margin-top:10px; font-size:12px; display:none;
+  padding:8px 12px; border-radius:var(--radius);
+}
+.rpt-result.ok   { background:var(--green-lt); color:var(--green); }
+.rpt-result.err  { background:var(--red-lt);   color:var(--red);   }
+.rpt-result a    { color:inherit; font-weight:600; text-decoration:underline; }
 
-  /* ── Program summary cards ── */
-  .proj-summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-bottom:20px; }
-  .proj-summary-card { background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); }
-  .proj-summary-name { font-size:13px; font-weight:600; color:var(--gray-800); margin-bottom:2px; }
-  .proj-summary-id   { font-size:11px; color:var(--gray-400); margin-bottom:10px; }
-  .proj-summary-bar  { height:6px; background:var(--gray-100); border-radius:3px; margin:6px 0 4px; overflow:hidden; }
-  .proj-summary-fill { height:100%; border-radius:3px; transition:width .4s; }
-  .proj-summary-row  { display:flex; justify-content:space-between; font-size:11px; color:var(--gray-500); }
-  .proj-summary-pct  { font-size:12px; font-weight:700; }
+/* ── Toast ── */
+#toast {
+  position:fixed; bottom:24px; right:24px;
+  padding:10px 18px; border-radius:var(--radius);
+  font-size:13px; font-weight:500; color:#fff;
+  opacity:0; transform:translateY(6px);
+  transition:opacity .2s,transform .2s; z-index:999; pointer-events:none;
+}
+#toast.show { opacity:1; transform:none; }
+#toast.green { background:var(--green); }
+#toast.red   { background:var(--red); }
+#toast.blue  { background:var(--blue); }
 
-  /* ── Section labels ── */
-  .section-heading {
-    font-size:11px; font-weight:700; text-transform:uppercase;
-    letter-spacing:.06em; color:var(--gray-400);
-    padding:0 0 8px; margin-bottom:12px;
-    border-bottom:1px solid var(--gray-100);
-    display:flex; align-items:center; gap:8px;
-  }
-  .section-heading::before { content:''; display:inline-block; width:3px; height:14px; border-radius:2px; background:var(--blue); }
+/* ── Modal ── */
+.modal-bg {
+  position:fixed; inset:0; background:rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center;
+  z-index:200; padding:20px;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.modal-bg.open { opacity:1; pointer-events:all; }
+.modal {
+  background:#fff; border-radius:12px; padding:24px;
+  width:100%; max-width:520px; max-height:90vh; overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);
+  transform:translateY(8px); transition:transform .2s;
+}
+.modal-bg.open .modal { transform:none; }
+.modal-title { font-size:16px; font-weight:600; color:var(--gray-900); margin-bottom:4px; }
+.modal-sub   { font-size:13px; color:var(--gray-400); margin-bottom:20px; }
+.modal-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
 
-  /* ── Color-coded status ── */
-  .stat-value-red   { color:var(--red) !important; }
-  .stat-value-amber { color:var(--amber) !important; }
-  .stat-value-green { color:var(--green) !important; }
+/* ── Pending badge in header ── */
+.pending-count {
+  background:var(--red); color:#fff; border-radius:10px;
+  padding:1px 7px; font-size:11px; font-weight:700; margin-left:6px;
+}
 
-  /* ── Responsive ── */
-  @media (max-width: 640px) {
-    .main { padding: 16px 12px; }
-    .stat-grid { grid-template-columns: repeat(2, 1fr); }
-    .proj-summary-grid { grid-template-columns: repeat(2, 1fr); }
-    .fin-table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .toolbar { flex-direction: column; align-items: stretch; }
-    .toolbar-right { width: 100%; }
-    .toolbar-right .btn { width: 100%; justify-content: center; }
-    #add-budget-grid { grid-template-columns: 1fr !important; }
-    .modal { width: 95vw !important; padding: 16px; }
-    .subtab { padding: 8px 10px; font-size: 12px; }
-  }
+/* ── Diocese pill ── */
+.diocese-pill {
+  font-size:11px; font-weight:600; padding:3px 9px; border-radius:10px;
+  background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;
+}
+
+/* ── Setup banner ── */
+.setup-banner {
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);
+  color:#fff; border-radius:var(--radius); padding:20px 24px;
+  margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;
+  gap:16px; flex-wrap:wrap;
+}
+.setup-banner h3 { font-size:15px; font-weight:600; margin-bottom:4px; }
+.setup-banner p  { font-size:13px; opacity:.7; }
+
+/* ── Donor color dots ── */
+.donor-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; display:inline-block; }
+
+/* ── Budget card ── */
+.budget-card {
+  background:#fff; border:1px solid var(--gray-200); border-radius:var(--radius);
+  padding:0; overflow:hidden; box-shadow:var(--shadow); margin-bottom:12px;
+  cursor:pointer; transition:box-shadow .15s;
+}
+.budget-card:hover { box-shadow:var(--shadow-md); }
+.budget-card-top { padding:14px 18px; display:flex; align-items:center; gap:12px; }
+.budget-card-prog { font-size:11px; font-weight:600; color:var(--blue); background:var(--blue-lt); padding:2px 8px; border-radius:10px; }
+.budget-card-name { font-size:14px; font-weight:600; color:var(--gray-900); flex:1; }
+.budget-card-meta { font-size:11px; color:var(--gray-400); margin-top:2px; }
+.budget-card-bar  { height:3px; background:var(--gray-100); }
+.budget-card-fill { height:100%; background:var(--blue); transition:width .4s; }
+
+/* ── Currency chips ── */
+.currency-chip {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:8px 4px; border:1.5px solid var(--gray-200); border-radius:8px;
+  cursor:pointer; transition:all .13s; background:#fff; gap:2px;
+}
+.currency-chip:hover { border-color:var(--blue); background:var(--blue-lt); }
+.currency-chip.active { border-color:var(--blue); background:var(--blue-lt); }
+.currency-chip .chip-code { font-size:12px; font-weight:700; font-family:var(--mono); color:var(--gray-700); }
+.currency-chip.active .chip-code { color:var(--blue); }
+.currency-chip .chip-name { font-size:9px; color:var(--gray-400); text-transform:uppercase; letter-spacing:.04em; }
+.currency-chip.active .chip-name { color:var(--blue); }
+
+/* ── Format chips ── */
+.format-chip {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 12px; border:1.5px solid var(--gray-200); border-radius:8px;
+  cursor:pointer; transition:all .13s; background:#fff;
+}
+.format-chip:hover { border-color:var(--teal); background:var(--teal-lt); }
+.format-chip.active { border-color:var(--teal); background:var(--teal-lt); }
+.format-dot {
+  width:10px; height:10px; border-radius:50%;
+  border:2px solid var(--gray-300); flex-shrink:0; transition:all .13s;
+}
+.format-chip.active .format-dot { border-color:var(--teal); background:var(--teal); }
+.format-name { font-size:13px; font-weight:500; color:var(--gray-800); }
+.format-chip.active .format-name { color:var(--teal); }
+.format-sub  { font-size:11px; color:var(--gray-400); margin-top:1px; }
+
+/* ── Donor card in list ── */
+.donor-card {
+  display:flex; align-items:center; gap:14px;
+  padding:14px 18px; border-bottom:1px solid var(--gray-100);
+  transition:background .12s;
+}
+.donor-card:last-child { border-bottom:none; }
+.donor-card:hover { background:var(--gray-50); }
+.donor-avatar {
+  width:40px; height:40px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; letter-spacing:-.02em; color:#fff;
+}
+.donor-info { flex:1; min-width:0; }
+.donor-card-name { font-size:14px; font-weight:600; color:var(--gray-900); }
+.donor-card-meta { font-size:12px; color:var(--gray-400); margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; }
+.donor-tag {
+  font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px;
+  font-family:var(--mono);
+}
+.tag-mmk    { background:#f1f5f9; color:#475569; }
+.tag-aud    { background:#eff6ff; color:#1d4ed8; }
+.tag-gbp    { background:#faf5ff; color:#7c3aed; }
+.tag-usd    { background:#f0fdf4; color:#15803d; }
+.tag-sgd    { background:#fff7ed; color:#c2410c; }
+.tag-eur    { background:#fef2f2; color:#dc2626; }
+.tag-other  { background:#f8fafc; color:#64748b; }
+.tag-format { background:var(--teal-lt); color:var(--teal); border:none; font-family:var(--font); font-weight:500; }
+
+/* ── Responsive ── */
+@media(max-width:768px) {
+  .sidebar { display:none; }
+  .main { padding:14px; }
+  .stat-grid { grid-template-columns:1fr 1fr; }
+  .form-row.cols2, .form-row.cols3 { grid-template-columns:1fr; }
+  .split-row { grid-template-columns:1fr; }
+  .tbl { display:block; overflow-x:auto; }
+}
 </style>
 </head>
 <body>
 
-<!-- ── HEADER ── -->
+<!-- Header -->
 <header class="header">
   <div class="header-left">
-    <button class="header-back" onclick="window.location.href='index.html'">
-      ← Dashboard
-    </button>
+    <button class="header-back" onclick="window.location.href='index.html'">← Dashboard</button>
     <div>
       <div class="header-title">Finance</div>
-      <div class="header-subtitle">PDP Digital Development</div>
+      <div class="header-sub">PDP — MMK budget system v2</div>
     </div>
   </div>
-  <div class="user-badge">
-    <span id="hdr-name">—</span>
-    <span class="role" id="hdr-role">—</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="user-chip">
+      <div class="role-dot"></div>
+      <span id="hdr-name">—</span>
+      <span style="opacity:.5;font-size:11px;" id="hdr-role">—</span>
+    </div>
+    <span id="hdr-diocese" class="diocese-pill" style="display:none;"></span>
   </div>
 </header>
 
-<!-- ── MAIN ── -->
-<main class="main">
+<!-- Access denied -->
+<div id="access-denied">
+  <div style="font-size:36px;margin-bottom:8px;">🔒</div>
+  <h2 style="font-size:16px;color:var(--gray-700);margin-bottom:6px;">Access denied</h2>
+  <p style="font-size:13px;">Finance module is for Finance, Manager and Admin roles only.</p>
+  <button class="btn btn-secondary" style="margin-top:14px;" onclick="window.location.href='index.html'">← Back to dashboard</button>
+</div>
 
-  <!-- Access denied -->
-  <div id="access-denied">
-    <div class="icon">🔒</div>
-    <h2>Access Denied</h2>
-    <p>This module is only accessible to Finance, Manager, and Admin users.</p>
-    <button class="btn btn-secondary" style="margin-top:12px;" onclick="window.location.href='index.html'">← Back to Dashboard</button>
-  </div>
+<!-- Main layout -->
+<div class="layout" id="main-layout" style="display:none;">
 
-  <!-- Finance content -->
-  <div id="finance-content">
-
-    <!-- Overview summary -->
-    <div style="margin-bottom:6px;">
-      <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-400);">Overview</span>
-    </div>
-    <div class="stat-grid" id="stat-grid">
-      <div class="stat-card"><div class="stat-label">Total Budget</div><div class="stat-value" id="st-total">—</div><div class="stat-sub">MMK allocated</div></div>
-      <div class="stat-card"><div class="stat-label">Total Spent</div><div class="stat-value" id="st-spent" >—</div><div class="stat-sub" id="st-pct">—</div></div>
-      <div class="stat-card"><div class="stat-label">Remaining</div><div class="stat-value" id="st-rem"  >—</div><div class="stat-sub">MMK available</div></div>
-      <div class="stat-card"><div class="stat-label">Pending Approvals</div><div class="stat-value" id="st-pending" style="color:var(--amber)">—</div><div class="stat-sub">awaiting review</div></div>
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-section">Overview</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="switchPane('dashboard')">
+      <div class="nav-dot" style="background:var(--blue);"></div> Dashboard
     </div>
 
-    <!-- Sub-tab bar -->
-    <div class="subtab-bar">
-      <button class="subtab active" id="st-budget"       onclick="switchTab('budget')">Budget Overview</button>
-      <button class="subtab"        id="st-transactions" onclick="switchTab('transactions')">Transactions</button>
-      <button class="subtab"        id="st-queue"        onclick="switchTab('queue')">
-        Approval Queue
-        <span class="badge" id="queue-badge" style="display:none">0</span>
-      </button>
-      <button class="subtab" id="st-manage" onclick="switchTab('manage')" style="display:none">
-        Manage Budgets
-      </button>
-
-      <button class="subtab" id="st-proposals" onclick="switchTab('proposals')">
-        Budget Proposals
-        <span class="badge" id="proposals-badge" style="display:none">0</span>
-      </button>
+    <div class="sidebar-section">Budgets</div>
+    <div class="nav-item" id="nav-budgets" onclick="switchPane('budgets')">
+      <div class="nav-dot" style="background:var(--teal);"></div> All Budgets
+    </div>
+    <div class="nav-item" id="nav-budget-new" onclick="openBudgetModal(null)">
+      <div class="nav-dot" style="background:var(--gray-300);"></div> New Budget
     </div>
 
-    <!-- ══ BUDGET TAB ══ -->
-    <div class="subtab-pane active" id="pane-budget">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <div class="sidebar-section">Expenditures</div>
+    <div class="nav-item" id="nav-expenditures" onclick="switchPane('expenditures')">
+      <div class="nav-dot" style="background:var(--amber);"></div> Log Expense
+    </div>
+    <div class="nav-item" id="nav-approvals" onclick="switchPane('approvals')">
+      <div class="nav-dot" style="background:var(--red);"></div> Approvals
+      <span class="badge" id="approvals-badge" style="display:none;">0</span>
+    </div>
+    <div class="nav-item" id="nav-reports" onclick="switchPane('reports')">
+      <div class="nav-dot" style="background:var(--teal);"></div> Reports
+    </div>
+
+    <div class="sidebar-section" id="nav-admin-section">Config</div>
+    <div class="nav-item" id="nav-donors" onclick="switchPane('donors')">
+      <div class="nav-dot" style="background:var(--purple);"></div> Donors
+    </div>
+    <div class="nav-item" id="nav-setup" onclick="switchPane('setup')">
+      <div class="nav-dot" style="background:var(--gray-400);"></div> Setup
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div class="main">
+
+    <!-- ═══ PANE: DASHBOARD ═══ -->
+    <div class="pane active" id="pane-dashboard">
+      <div class="pane-header">
         <div>
-          <div style="font-size:15px;font-weight:600;color:var(--gray-800);">Budget Overview</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-top:2px;">Allocated vs spent by program, project and category</div>
+          <div class="pane-title">Finance Overview</div>
+          <div class="pane-sub" id="dash-scope">Province-wide · all programmes</div>
         </div>
         <button class="btn btn-secondary" onclick="loadAll()">↻ Refresh</button>
       </div>
-      <!-- Per-program summary cards -->
-      <div class="section-heading">By Program</div>
-      <div class="proj-summary-grid" id="proj-summary-cards"></div>
-      <!-- Full budget lines table -->
-      <div class="section-heading" style="margin-top:8px;">Budget Lines</div>
-      <div class="card">
-        <div id="budget-body"><div class="loading">Loading budget data…</div></div>
+
+      <div id="dash-loading" class="loading"><div class="spinner"></div>Loading…</div>
+
+      <div id="dash-content" style="display:none;">
+        <div class="stat-grid" id="dash-stats"></div>
+
+        <div class="section-label">By programme</div>
+        <div class="card">
+          <div id="dash-by-programme"></div>
+        </div>
+
+        <div class="section-label">By diocese</div>
+        <div class="card">
+          <div id="dash-by-diocese"></div>
+        </div>
       </div>
     </div>
 
-    <!-- ══ TRANSACTIONS TAB ══ -->
-    <div class="subtab-pane" id="pane-transactions">
-      <div class="section-heading">Expense Transactions</div>
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <select id="filter-program" onchange="renderTransactions()" style="width:160px;">
-            <option value="">All Programs</option>
-          </select>
-          <select id="filter-category" onchange="renderTransactions()" style="width:140px;">
-            <option value="">All Categories</option>
-          </select>
-          <select id="filter-status" onchange="renderTransactions()" style="width:130px;">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
+    <!-- ═══ PANE: BUDGETS ═══ -->
+    <div class="pane" id="pane-budgets">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Budgets</div>
+          <div class="pane-sub">All donor-funded programme budgets</div>
         </div>
-        <div class="toolbar-right">
-          <button class="btn btn-primary" id="btn-log-expense" onclick="openExpenseModal()">+ Log Expense</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select id="filter-prog" onchange="renderBudgets()" style="width:auto;font-size:13px;padding:6px 10px;">
+            <option value="">All programmes</option>
+          </select>
+          <select id="filter-diocese" onchange="renderBudgets()" style="width:auto;font-size:13px;padding:6px 10px;">
+            <option value="">All dioceses</option>
+          </select>
+          <button class="btn btn-primary" onclick="openBudgetModal(null)">+ New Budget</button>
         </div>
       </div>
+      <div id="budgets-list"></div>
+    </div>
+
+    <!-- ═══ PANE: BUDGET DETAIL ═══ -->
+    <div class="pane" id="pane-budget-detail">
+      <div class="pane-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn btn-secondary btn-sm" onclick="switchPane('budgets')">← Budgets</button>
+          <div>
+            <div class="pane-title" id="detail-title">Budget Detail</div>
+            <div class="pane-sub" id="detail-sub"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;" id="detail-actions"></div>
+      </div>
+
+      <!-- Donor summary cards -->
+      <div class="stat-grid" id="detail-donor-summary"></div>
+
+      <!-- Quarter breakdown -->
+      <div class="section-label">Quarterly expenditure</div>
       <div class="card">
-        <div id="tx-body"><div class="loading">Loading transactions…</div></div>
+        <div id="detail-quarters"></div>
+      </div>
+
+      <!-- Line items -->
+      <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;">
+        <span>Budget line items</span>
+        <button class="btn btn-teal btn-sm" id="btn-add-li" onclick="openLineItemModal(null)">+ Add line item</button>
+      </div>
+      <div id="detail-line-items"></div>
+
+      <!-- Expenditures for this budget -->
+      <div class="section-label" style="margin-top:20px;">Expenditure records</div>
+      <div class="card">
+        <div id="detail-expenditures"></div>
       </div>
     </div>
 
-    <!-- ══ APPROVAL QUEUE TAB ══ -->
-    <div class="subtab-pane" id="pane-queue">
-      <div class="section-heading">Pending Approvals</div>
-      <div class="toolbar">
-        <span style="font-size:13px;font-weight:500;color:var(--gray-600)" id="queue-label">Pending expense requests</span>
+    <!-- ═══ PANE: EXPENDITURES ═══ -->
+    <div class="pane" id="pane-expenditures">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Log Expenditure</div>
+          <div class="pane-sub">Record actual quarterly spending against a budget</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">New expenditure entry</div>
+        <div class="card-body">
+          <div class="form-row cols2">
+            <div class="form-group">
+              <label>Budget</label>
+              <select id="exp-budget" onchange="onExpBudgetChange()">
+                <option value="">— Select budget —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quarter</label>
+              <select id="exp-quarter">
+                <option value="Q1">Q1 (Jul–Sep)</option>
+                <option value="Q2">Q2 (Oct–Dec)</option>
+                <option value="Q3">Q3 (Jan–Mar)</option>
+                <option value="Q4">Q4 (Apr–Jun)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row cols2">
+            <div class="form-group">
+              <label>Line item</label>
+              <select id="exp-line-item" onchange="onExpLineItemChange()">
+                <option value="">— Select budget first —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Donor / partner</label>
+              <select id="exp-bd">
+                <option value="">— Select line item first —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row cols2">
+            <div class="form-group">
+              <label>Amount (MMK)</label>
+              <input type="number" id="exp-amount" placeholder="e.g. 1000000" min="0" style="font-family:var(--mono);">
+              <div class="field-hint" id="exp-budget-hint"></div>
+            </div>
+            <div class="form-group">
+              <label>Description / note</label>
+              <input type="text" id="exp-desc" placeholder="Brief description…">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn btn-primary" id="exp-submit-btn" onclick="submitExpenditure()">Submit for approval</button>
+          </div>
+          <div id="exp-msg" style="font-size:13px;margin-top:10px;display:none;padding:8px 12px;border-radius:6px;"></div>
+        </div>
+      </div>
+
+      <!-- Recent expenditures -->
+      <div class="section-label">My recent submissions</div>
+      <div class="card">
+        <div id="my-expenditures"></div>
+      </div>
+    </div>
+
+    <!-- ═══ PANE: APPROVALS ═══ -->
+    <div class="pane" id="pane-approvals">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Expenditure Approvals</div>
+          <div class="pane-sub">Review and approve pending expenditure submissions</div>
+        </div>
         <button class="btn btn-secondary" onclick="loadAll()">↻ Refresh</button>
       </div>
       <div class="card">
-        <div id="queue-body"><div class="loading">Loading queue…</div></div>
+        <div id="approvals-list"></div>
       </div>
     </div>
 
-    <!-- ══ MANAGE BUDGETS PANE ══ -->
-    <div class="subtab-pane" id="pane-manage">
-
-      <div class="section-heading">Manage Budget Lines</div>
-      <!-- Add Budget Line form -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-header">Add Budget Line</div>
-        <div style="padding:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;" id="add-budget-grid">
-          <div>
-            <label>Program</label>
-            <select id="nb-program" onchange="loadBudgetProjects()"></select>
-          </div>
-          <div>
-            <label>Category</label>
-            <select id="nb-category">
-              <option value="Travel">Travel</option>
-              <option value="Training">Training</option>
-              <option value="Equipment">Equipment</option>
-              <option value="Supplies">Supplies</option>
-              <option value="Services">Services</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label>Project <span style="font-weight:400;font-size:11px;color:var(--gray-400)">(optional)</span></label>
-            <select id="nb-project-id">
-              <option value="">— Entire program —</option>
-            </select>
-          </div>
-          <div>
-            <label>Allocated Amount (MMK)</label>
-            <input type="number" id="nb-allocated" placeholder="e.g. 500000" min="0">
-          </div>
-          <div>
-            <label>Period</label>
-            <select id="nb-period">
-              <option value="Q1 2026">Q1 2026</option>
-              <option value="Q2 2026">Q2 2026</option>
-              <option value="Q3 2026">Q3 2026</option>
-              <option value="Q4 2026">Q4 2026</option>
-              <option value="Annual 2026">Annual 2026</option>
-              <option value="Q1 2027">Q1 2027</option>
-              <option value="Q2 2027">Q2 2027</option>
-              <option value="Q3 2027">Q3 2027</option>
-              <option value="Q4 2027">Q4 2027</option>
-              <option value="Annual 2027">Annual 2027</option>
-            </select>
-          </div>
-          <div>
-            <label>Notes (optional)</label>
-            <input type="text" id="nb-notes" placeholder="e.g. Approved by Director">
-          </div>
-          <div style="display:flex;align-items:flex-end;">
-            <button class="btn btn-primary" id="nb-submit-btn" onclick="submitAddBudget()" style="width:100%;">+ Add Budget Line</button>
-          </div>
+    <!-- ═══ PANE: DONORS ═══ -->
+    <div class="pane" id="pane-donors">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Donors</div>
+          <div class="pane-sub">Configure donors/partners — reused across all budgets</div>
         </div>
-        <div id="nb-msg" style="display:none;padding:0 18px 14px;font-size:13px;"></div>
-      </div>
-
-      <!-- Existing budget lines table -->
-      <div class="card">
-        <div class="card-header">
-          <span>Existing Budget Lines</span>
-          <button class="btn btn-secondary" style="font-size:12px;padding:4px 10px;" onclick="loadAll()">↻ Refresh</button>
-        </div>
-        <div id="manage-budget-body"><div class="loading">Loading…</div></div>
-      </div>
-    </div>
-
-
-
-        <!-- ══ BUDGET PROPOSALS PANE ══ -->
-    <div class="subtab-pane" id="pane-proposals">
-      <div class="section-heading">Budget Proposals</div>
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <select id="prop-filter-status" onchange="renderProposals()" style="width:150px;">
-            <option value="">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="submitted">Submitted</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-        <div class="toolbar-right">
-          <button class="btn btn-primary" id="btn-new-proposal" onclick="openProposalModal(null)">+ New Proposal</button>
-        </div>
+        <button class="btn btn-primary" onclick="openDonorModal(null)">+ Add Donor</button>
       </div>
       <div class="card">
-        <div id="proposals-body"><div class="loading">Loading…</div></div>
+        <div id="donors-list"></div>
       </div>
     </div>
 
-  </div><!-- /finance-content -->
-</main>
+    <!-- ═══ PANE: SETUP ═══ -->
+    <div class="pane" id="pane-setup">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Finance Setup</div>
+          <div class="pane-sub">One-time initialisation of Google Sheets structure</div>
+        </div>
+      </div>
 
-<!-- ══ LOG EXPENSE MODAL ══ -->
-<div class="modal-overlay" id="expense-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title">Log Expense</span>
-      <button class="modal-close" onclick="closeExpenseModal()">×</button>
+      <div class="setup-banner">
+        <div>
+          <h3>Step 1 — Initialise finance sheets</h3>
+          <p>Creates Donors, Budgets, Budget_Donors, Line_Items and Expenditures sheets in your Finance Google Sheet. Safe to run multiple times.</p>
+        </div>
+        <button class="btn btn-primary" id="setup-btn" onclick="runSetup()">Initialise sheets →</button>
+      </div>
+      <div id="setup-result" style="font-size:13px;display:none;padding:12px 16px;border-radius:var(--radius);margin-bottom:16px;"></div>
+
+      <div class="card">
+        <div class="card-header">What gets created</div>
+        <div class="card-body" style="font-size:13px;color:var(--gray-600);line-height:2;">
+          <div><span style="font-family:var(--mono);background:var(--gray-100);padding:1px 6px;border-radius:4px;">Donors</span> — one row per donor (ABM, TearFund, USPG…). Set once, reused forever.</div>
+          <div><span style="font-family:var(--mono);background:var(--gray-100);padding:1px 6px;border-radius:4px;">Budgets</span> — one row per programme+diocese+period.</div>
+          <div><span style="font-family:var(--mono);background:var(--gray-100);padding:1px 6px;border-radius:4px;">Budget_Donors</span> — links donors to budgets with their MMK allocation.</div>
+          <div><span style="font-family:var(--mono);background:var(--gray-100);padding:1px 6px;border-radius:4px;">Line_Items</span> — the detailed budget rows with donor splits.</div>
+          <div><span style="font-family:var(--mono);background:var(--gray-100);padding:1px 6px;border-radius:4px;">Expenditures</span> — actual quarterly spending records with approval status.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header">Step 2 — Add your first donor</div>
+        <div class="card-body" style="font-size:13px;color:var(--gray-600);">
+          After initialising, go to <strong>Donors</strong> in the sidebar and add each of your partners:<br>
+          ABM, TearFund, USPG, ARDF, ERD, Diocese/CPM, and any others.
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header">Step 3 — Create your first budget</div>
+        <div class="card-body" style="font-size:13px;color:var(--gray-600);">
+          Go to <strong>Budgets → New Budget</strong>. Select the programme, diocese, and fiscal year. Then attach your donors and enter line items.
+        </div>
+      </div>
+    </div>
+
+  <!-- ═══ PANE: REPORTS ═══ -->
+    <div class="pane" id="pane-reports">
+      <div class="pane-header">
+        <div>
+          <div class="pane-title">Finance Reports</div>
+          <div class="pane-sub">Generate Google Sheets reports — saved to Finance Reports folder in Drive</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:24px;">
+
+        <div class="card" style="border-top:3px solid var(--teal);">
+          <div class="card-body">
+            <div style="font-size:13px;font-weight:600;color:var(--teal);margin-bottom:4px;">Per-budget report</div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">Full detail for one budget — line items, quarterly actuals, donor breakdown.</div>
+            <div class="form-group">
+              <label>Select budget</label>
+              <select id="rpt-budget-sel" style="font-size:13px;"></select>
+            </div>
+            <button class="btn btn-teal" style="width:100%;" onclick="generateReport('budget')">Generate &rarr; Google Sheets</button>
+            <div id="rpt-budget-result" class="rpt-result"></div>
+          </div>
+        </div>
+
+        <div class="card" style="border-top:3px solid var(--purple);" id="rpt-donor-card">
+          <div class="card-body">
+            <div style="font-size:13px;font-weight:600;color:var(--purple);margin-bottom:4px;">Per-donor report</div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">All budgets linked to one donor — ABM, TearFund, USPG format.</div>
+            <div class="form-group">
+              <label>Select donor</label>
+              <select id="rpt-donor-sel" style="font-size:13px;"></select>
+            </div>
+            <button class="btn" style="width:100%;background:var(--purple);color:#fff;" onclick="generateReport('donor')">Generate &rarr; Google Sheets</button>
+            <div id="rpt-donor-result" class="rpt-result"></div>
+          </div>
+        </div>
+
+        <div class="card" style="border-top:3px solid var(--amber);">
+          <div class="card-body">
+            <div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:4px;">Diocese report</div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">All budgets in one diocese — line items, quarterly actuals, expenditure log.</div>
+            <div class="form-group" id="rpt-diocese-sel-wrap">
+              <label>Select diocese</label>
+              <select id="rpt-diocese-sel" style="font-size:13px;">
+                <option value="">— Select —</option>
+                <option>Myitkyina</option><option>Mandalay</option><option>Sittwe</option>
+                <option>Taungoo</option><option>Pathein</option><option>Homalin</option>
+                <option>Yangon</option><option>Pyay</option><option>Hpa-an</option>
+              </select>
+            </div>
+            <button class="btn" style="width:100%;background:var(--amber);color:#fff;" onclick="generateReport('diocese')">Generate &rarr; Google Sheets</button>
+            <div id="rpt-diocese-result" class="rpt-result"></div>
+          </div>
+        </div>
+
+        <div class="card" style="border-top:3px solid var(--navy);" id="rpt-consolidated-card">
+          <div class="card-body">
+            <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;">Province consolidated</div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">Full province view — all dioceses, all donors, all programmes. Finance Manager &amp; Admin only.</div>
+            <div style="height:52px;"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="generateReport('consolidated')">Generate &rarr; Google Sheets</button>
+            <div id="rpt-consolidated-result" class="rpt-result"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="section-label">Generated reports this session</div>
+      <div class="card">
+        <div id="rpt-history" style="padding:16px;font-size:13px;color:var(--gray-400);">No reports generated yet this session.</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ═══ MODAL: Budget ═══ -->
+<div class="modal-bg" id="budget-modal-bg">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-title" id="bm-title">New budget</div>
+    <div class="modal-sub">Fill in the budget details. You can add line items after saving.</div>
+    <input type="hidden" id="bm-id">
+    <div class="form-row cols2">
+      <div class="form-group">
+        <label>Programme</label>
+        <select id="bm-programme"></select>
+      </div>
+      <div class="form-group">
+        <label>Diocese <span style="font-weight:400;color:var(--gray-400)">(optional)</span></label>
+        <select id="bm-diocese">
+          <option value="">— Province-wide —</option>
+          <option>Myitkyina</option><option>Mandalay</option><option>Sittwe</option>
+          <option>Taungoo</option><option>Pathein</option><option>Homalin</option>
+          <option>Yangon</option><option>Pyay</option><option>Hpa-an</option>
+        </select>
+      </div>
     </div>
     <div class="form-group">
-      <label>Program</label>
-      <select id="exp-program" onchange="loadExpenseProjects()"></select>
+      <label>Budget name</label>
+      <input type="text" id="bm-name" placeholder="e.g. ABM AID Livelihood 2025–2026">
     </div>
+    <div class="form-row cols3">
+      <div class="form-group">
+        <label>Fiscal year</label>
+        <input type="text" id="bm-fiscal" placeholder="e.g. Jul 2025–Jun 2026">
+      </div>
+      <div class="form-group">
+        <label>Period start</label>
+        <input type="date" id="bm-start">
+      </div>
+      <div class="form-group">
+        <label>Period end</label>
+        <input type="date" id="bm-end">
+      </div>
+    </div>
+
+    <!-- Donor attachment -->
+    <div class="section-label">Attached donors</div>
+    <div id="bm-donor-rows"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addBudgetDonorRow()" style="margin-bottom:14px;">+ Attach donor</button>
+
+    <div id="bm-msg" style="font-size:13px;display:none;padding:8px 12px;border-radius:6px;margin-bottom:12px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeBudgetModal()">Cancel</button>
+      <button class="btn btn-primary" id="bm-save-btn" onclick="saveBudget()">Save budget →</button>
+    </div>
+
+    <!-- Line items section — shown after budget is saved -->
+    <div id="bm-li-section" style="display:none;border-top:1px solid var(--gray-200);margin-top:20px;padding-top:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--gray-900);">Line items</div>
+          <div style="font-size:12px;color:var(--gray-400);">Add all budget rows for this programme</div>
+        </div>
+        <button class="btn btn-teal btn-sm" onclick="openLineItemModalFromBudget()">+ Add line item</button>
+      </div>
+      <div id="bm-li-list" style="font-size:13px;color:var(--gray-400);">No line items yet.</div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-secondary" onclick="closeBudgetModal()">Done — close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Donor ═══ -->
+<div class="modal-bg" id="donor-modal-bg">
+  <div class="modal" style="max-width:500px;">
+
+    <!-- Header row with color dot -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div id="dm-color-dot" style="width:40px;height:40px;border-radius:10px;background:var(--blue);flex-shrink:0;transition:background .2s;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;" id="dm-avatar-text">?</div>
+      <div>
+        <div class="modal-title" id="dm-title" style="margin-bottom:2px;">Add donor</div>
+        <div style="font-size:12px;color:var(--gray-400);">Reused across all budgets — add each partner once.</div>
+      </div>
+    </div>
+
+    <input type="hidden" id="dm-id">
+    <input type="hidden" id="dm-currency" value="MMK">
+    <input type="hidden" id="dm-format" value="Joint Budget &amp; Reporting">
+
+    <!-- Name -->
     <div class="form-group">
-      <label>Project <span style="font-weight:400;font-size:11px;color:var(--gray-400)">(optional)</span></label>
-      <select id="exp-project">
-        <option value="">— Select program first —</option>
+      <label>Donor / partner name</label>
+      <input type="text" id="dm-name" placeholder="e.g. ABM (Australian Board of Missions)" oninput="updateDonorDot(this.value)">
+    </div>
+
+    <div class="form-row cols2">
+
+      <!-- Currency chips -->
+      <div class="form-group">
+        <label>Original currency</label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px;">
+          <div class="currency-chip active" data-val="MMK" onclick="selectCurrency('MMK',this)">
+            <span class="chip-code">MMK</span><span class="chip-name">Kyat</span>
+          </div>
+          <div class="currency-chip" data-val="AUD" onclick="selectCurrency('AUD',this)">
+            <span class="chip-code">AUD</span><span class="chip-name">Australia</span>
+          </div>
+          <div class="currency-chip" data-val="GBP" onclick="selectCurrency('GBP',this)">
+            <span class="chip-code">GBP</span><span class="chip-name">UK</span>
+          </div>
+          <div class="currency-chip" data-val="USD" onclick="selectCurrency('USD',this)">
+            <span class="chip-code">USD</span><span class="chip-name">US</span>
+          </div>
+          <div class="currency-chip" data-val="SGD" onclick="selectCurrency('SGD',this)">
+            <span class="chip-code">SGD</span><span class="chip-name">Singapore</span>
+          </div>
+          <div class="currency-chip" data-val="EUR" onclick="selectCurrency('EUR',this)">
+            <span class="chip-code">EUR</span><span class="chip-name">Europe</span>
+          </div>
+          <div class="currency-chip" data-val="JPY" onclick="selectCurrency('JPY',this)">
+            <span class="chip-code">JPY</span><span class="chip-name">Japan</span>
+          </div>
+          <div class="currency-chip" data-val="OTHER" onclick="selectCurrency('OTHER',this)">
+            <span class="chip-code">···</span><span class="chip-name">Other</span>
+          </div>
+        </div>
+        <div id="dm-conversion-note" style="font-size:11px;color:var(--blue);margin-top:6px;padding:6px 8px;background:var(--blue-lt);border-radius:6px;display:none;">
+          All amounts entered as MMK at budget creation time.
+        </div>
+      </div>
+
+      <!-- Report format chips -->
+      <div class="form-group">
+        <label>Report format</label>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+          <div class="format-chip active" data-val="Joint Budget &amp; Reporting" onclick="selectFormat('Joint Budget &amp; Reporting',this)">
+            <span class="format-dot"></span>
+            <div>
+              <div class="format-name">Joint Budget &amp; Reporting</div>
+              <div class="format-sub">ABM · USPG · ARDF · ERD</div>
+            </div>
+          </div>
+          <div class="format-chip" data-val="Micah Global Proposal" onclick="selectFormat('Micah Global Proposal',this)">
+            <span class="format-dot"></span>
+            <div>
+              <div class="format-name">Micah Global Proposal</div>
+              <div class="format-sub">TearFund UK</div>
+            </div>
+          </div>
+          <div class="format-chip" data-val="Internal" onclick="selectFormat('Internal',this)">
+            <span class="format-dot"></span>
+            <div>
+              <div class="format-name">Internal / Diocese</div>
+              <div class="format-sub">CPM local contribution</div>
+            </div>
+          </div>
+          <div class="format-chip" data-val="Other" onclick="selectFormat('Other',this)">
+            <span class="format-dot"></span>
+            <div>
+              <div class="format-name">Other</div>
+              <div class="format-sub">Custom format</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="form-group">
+      <label>Notes <span style="font-weight:400;color:var(--gray-400)">(optional)</span></label>
+      <input type="text" id="dm-notes" placeholder="Contact person, reference number, grant period…">
+    </div>
+
+    <div id="dm-msg" style="font-size:13px;display:none;padding:8px 12px;border-radius:6px;margin-bottom:12px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDonorModal()">Cancel</button>
+      <button class="btn btn-primary" id="dm-save-btn" onclick="saveDonor()">Save donor →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Line Item ═══ -->
+<div class="modal-bg" id="li-modal-bg">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-title" id="li-title">Add line item</div>
+    <div class="modal-sub" id="li-sub">Enter the budget line and split across donors.</div>
+    <input type="hidden" id="li-id">
+    <div class="form-group">
+      <label>Quick-pick from common items <span style="font-weight:400;color:var(--gray-400)">(optional)</span></label>
+      <select id="li-template" onchange="applyLITemplate(this.value)">
+        <option value="">— Choose a preset or fill in manually below —</option>
+        <optgroup label="Section 1 — Training &amp; Community Mobilization">
+          <option value="1|Capacity Building for staff|1">Capacity Building for staff</option>
+          <option value="1|Socialization, Sensitisation and Mobilization|1">Socialization, Sensitisation and Mobilization</option>
+          <option value="1|Training on Trauma and Counselling|1">Training on Trauma and Counselling</option>
+          <option value="1|Disaster management workshop (Diocese level)|1">Disaster management workshop (Diocese level)</option>
+          <option value="1|Community disaster awareness workshop|1">Community disaster awareness workshop</option>
+          <option value="1|Reflection workshop|1">Reflection workshop</option>
+          <option value="1|Emergency response training (Frontline volunteers)|1">Emergency response training (Frontline volunteers)</option>
+          <option value="1|Staff retreat|1">Staff retreat</option>
+        </optgroup>
+        <optgroup label="Section 2 — Program Inputs &amp; Activities">
+          <option value="2|Seed Bank (Agriculture)|1">Seed Bank (Agriculture)</option>
+          <option value="2|Seed Bank (Livestock)|1">Seed Bank (Livestock)</option>
+          <option value="2|Cash for emergency|1">Cash for emergency</option>
+          <option value="2|Provide livelihood supports (Tools, Training or Grants)|1">Provide livelihood supports</option>
+          <option value="2|Capacity building training (Youth)|1">Capacity building training (Youth)</option>
+        </optgroup>
+        <optgroup label="Section 3 — Monitoring &amp; Evaluation">
+          <option value="3|Monitoring|6">Monitoring (×6 months)</option>
+          <option value="3|Baseline (Data Base)|1">Baseline (Data Base)</option>
+          <option value="3|Disaster Preparedness Training|1">Disaster Preparedness Training</option>
+        </optgroup>
+        <optgroup label="Section 4 — Travel &amp; Networking">
+          <option value="4|Stakeholder meeting|1">Stakeholder meeting</option>
+          <option value="4|Advocacy meeting|1">Advocacy meeting</option>
+          <option value="4|Networking|1">Networking</option>
+          <option value="4|Petrol and Transportation cost|1">Petrol and Transportation cost</option>
+        </optgroup>
+        <optgroup label="Section 5 — Office &amp; Administrative">
+          <option value="5|Office expense|6">Office expense (×6 months)</option>
+          <option value="5|Communication|6">Communication (×6 months)</option>
+          <option value="5|Transportation cost|1">Transportation cost</option>
+          <option value="5|Bank Charges and service fees|6">Bank Charges and service fees (×6 months)</option>
+          <option value="5|Management cost 6%|1">Management cost 6%</option>
+          <option value="5|ICR cost 6%|1">ICR cost 6%</option>
+          <option value="5|Committee Meeting|1">Committee Meeting</option>
+          <option value="5|Stationery|1">Stationery</option>
+          <option value="5|Rent and utilities|1">Rent and utilities</option>
+        </optgroup>
+        <optgroup label="Section 6 — Equipment &amp; Maintenance">
+          <option value="6|Printer / Office Accessory|1">Printer / Office Accessory</option>
+          <option value="6|Computer / Laptop|1">Computer / Laptop</option>
+        </optgroup>
+        <optgroup label="Section 7 — Personnel">
+          <option value="7|Staff Salary|12">Staff Salary (×12 months)</option>
+          <option value="7|Health Benefit|1">Health Benefit</option>
+          <option value="7|Staffing cost|1">Staffing cost</option>
+          <option value="7|DDD Head of Department|12">DDD Head of Department (×12 months)</option>
+        </optgroup>
       </select>
     </div>
-    <div class="form-group">
-      <label>Category</label>
-      <select id="exp-category">
-        <option value="Travel">Travel</option>
-        <option value="Training">Training</option>
-        <option value="Equipment">Equipment</option>
-        <option value="Supplies">Supplies</option>
-        <option value="Services">Services</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Amount (MMK)</label>
-      <input type="number" id="exp-amount" placeholder="0" min="0">
+    <div class="form-row cols2">
+      <div class="form-group">
+        <label>Section number</label>
+        <select id="li-section-no">
+          <option value="1">1 — Training & Community Mobilization</option>
+          <option value="2">2 — Program Inputs & Activities</option>
+          <option value="3">3 — Monitoring & Evaluation</option>
+          <option value="4">4 — Other Travel / Networking</option>
+          <option value="5">5 — Office & Administrative</option>
+          <option value="6">6 — Equipment & Maintenance</option>
+          <option value="7">7 — Personnel</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Section name <span style="font-weight:400;color:var(--gray-400)">(auto-filled)</span></label>
+        <input type="text" id="li-section-name" readonly style="background:var(--gray-50);color:var(--gray-500);">
+      </div>
     </div>
     <div class="form-group">
       <label>Description</label>
-      <textarea id="exp-desc" rows="3" placeholder="Brief description of the expense…"></textarea>
+      <input type="text" id="li-desc" placeholder="e.g. Training on Trauma and Counselling">
     </div>
+    <div class="form-row cols2">
+      <div class="form-group">
+        <label>Unit cost (MMK)</label>
+        <input type="number" id="li-unit-cost" placeholder="0" min="0" oninput="updateLITotal()" style="font-family:var(--mono);">
+      </div>
+      <div class="form-group">
+        <label>Number of units</label>
+        <input type="number" id="li-units" placeholder="1" min="1" value="1" oninput="updateLITotal()" style="font-family:var(--mono);">
+      </div>
+    </div>
+    <div style="background:var(--blue-lt);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="color:var(--blue);font-weight:600;">Total MMK</span>
+      <span style="font-size:18px;font-weight:600;font-family:var(--mono);color:var(--navy);" id="li-total-display">0</span>
+    </div>
+    <div class="section-label">Donor splits <span style="text-transform:none;letter-spacing:0;font-size:11px;color:var(--gray-400);">— must sum to total MMK</span></div>
+    <div id="li-split-rows"></div>
+    <div id="li-split-check" style="font-size:12px;margin-top:6px;"></div>
+    <div class="form-group" style="margin-top:14px;">
+      <label>Notes <span style="font-weight:400;color:var(--gray-400)">(optional)</span></label>
+      <input type="text" id="li-notes" placeholder="Any extra notes for this line item">
+    </div>
+    <div id="li-msg" style="font-size:13px;display:none;padding:8px 12px;border-radius:6px;margin-bottom:12px;"></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeExpenseModal()">Cancel</button>
-      <button class="btn btn-primary" id="exp-submit-btn" onclick="submitExpense()">Submit for Approval</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ REJECT MODAL ══ -->
-<div class="modal-overlay" id="reject-modal">
-  <div class="modal" style="width:380px;">
-    <div class="modal-header">
-      <span class="modal-title">Reject Expense</span>
-      <button class="modal-close" onclick="closeRejectModal()">×</button>
-    </div>
-    <div class="form-group">
-      <label>Reason (optional)</label>
-      <textarea id="reject-notes" rows="3" placeholder="Reason for rejection…"></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="confirmReject()">Reject Expense</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ UPDATE BUDGET MODAL ══ -->
-<div class="modal-overlay" id="budget-modal">
-  <div class="modal" style="width:380px;">
-    <div class="modal-header">
-      <span class="modal-title">Edit Budget Line</span>
-      <button class="modal-close" onclick="closeBudgetModal()">×</button>
-    </div>
-    <div class="form-group">
-      <label>Budget Line</label>
-      <input type="text" id="bm-label" disabled style="background:var(--gray-50);color:var(--gray-500);">
-    </div>
-    <div class="form-group">
-      <label>Allocated Amount (MMK)</label>
-      <input type="number" id="bm-allocated" min="0">
-    </div>
-    <div class="form-group">
-      <label>Notes</label>
-      <input type="text" id="bm-notes" placeholder="Optional notes…">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeBudgetModal()">Cancel</button>
-      <button class="btn btn-primary" id="bm-submit-btn" onclick="submitBudgetUpdate()">Save Changes</button>
+      <button class="btn btn-secondary" onclick="closeLIModal()">Cancel</button>
+      <button class="btn btn-primary" id="li-save-btn" onclick="saveLineItem()">Save line item →</button>
     </div>
   </div>
 </div>
@@ -715,979 +1071,1320 @@
 <div id="toast"></div>
 
 <script>
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  CONFIG
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 const WORKER_URL = 'https://pdp-dashboard.gamalieltun282.workers.dev/';
+const PDP_USER   = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
+const PDP_PW     = sessionStorage.getItem('pdp_pw') || '';
+const PDP_ROLE   = PDP_USER?.role || '';
+const PDP_NAME   = PDP_USER?.name || '';
+const PDP_DIOCESE = PDP_USER?.diocese || null;
 
-// ── Auth (same pattern as dcr_form.html) ──
-const PDP_USER = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
-const PDP_PW   = sessionStorage.getItem('pdp_pw') || '';
-const PDP_ROLE = PDP_USER?.role || '';
-const PDP_NAME = PDP_USER?.name || '';
+const FIN_ROLES    = ['admin','manager','finance_manager','finance_staff','finance'];
+const MGR_ROLES    = ['admin','manager','finance_manager'];
+const IS_MANAGER   = MGR_ROLES.includes(PDP_ROLE);
+const IS_ADMIN     = PDP_ROLE === 'admin';
 
-const ALLOWED_ROLES = ['admin', 'manager', 'finance', 'finance_staff', 'finance_manager'];
-const CAN_APPROVE   = ['admin', 'manager'].includes(PDP_ROLE);
-const CAN_LOG       = ALLOWED_ROLES.includes(PDP_ROLE);
-const CAN_PROPOSE   = ['admin', 'manager', 'finance_staff', 'finance_manager', 'finance'].includes(PDP_ROLE);
-const IS_ADMIN      = PDP_ROLE === 'admin';
+const SECTION_NAMES = {
+  '1':'Training & Community Mobilization',
+  '2':'Program Inputs & Activities',
+  '3':'Monitoring & Evaluation',
+  '4':'Other Travel / Networking',
+  '5':'Office & Administrative',
+  '6':'Equipment & Maintenance',
+  '7':'Personnel',
+};
 
-// ════════════════════════════════════════════════════════════
+const DONOR_COLORS = ['#2563eb','#0f766e','#7c3aed','#b45309','#dc2626','#0891b2','#15803d','#db2777'];
+
+// ── State ─────────────────────────────────────────────
+let FIN = { donors:[], budgets:[], budgetDonors:[], lineItems:[], expenditures:[], programmes:[] };
+let CURRENT_BUDGET_ID = null;
+let BUDGET_DETAIL = null;
+
+// ══════════════════════════════════════════════════════
 //  INIT
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // Populate header
-  document.getElementById('hdr-name').textContent = PDP_NAME || PDP_USER?.username || 'Unknown';
-  document.getElementById('hdr-role').textContent = PDP_ROLE || '—';
-
-  // Access gate
-  if (!ALLOWED_ROLES.includes(PDP_ROLE)) {
-    document.getElementById('access-denied').style.display   = 'flex';
-    document.getElementById('finance-content').style.display = 'none';
-    return;
+  document.getElementById('hdr-name').textContent  = PDP_NAME || PDP_USER?.username || 'User';
+  document.getElementById('hdr-role').textContent  = PDP_ROLE || '—';
+  if (PDP_DIOCESE) {
+    const el = document.getElementById('hdr-diocese');
+    el.textContent = PDP_DIOCESE; el.style.display = '';
   }
 
-  // Hide log expense button for non-finance roles (managers/admins can still use it)
-  if (!CAN_LOG) document.getElementById('btn-log-expense').style.display = 'none';
-  const propBtn = document.getElementById('btn-new-proposal');
-  if (propBtn && !CAN_PROPOSE) propBtn.style.display = 'none';
+  if (!FIN_ROLES.includes(PDP_ROLE)) {
+    document.getElementById('access-denied').style.display   = 'flex';
+    return;
+  }
+  document.getElementById('main-layout').style.display = 'flex';
+
+  // Hide manager-only items for finance_staff
+  if (!IS_MANAGER) {
+    document.getElementById('nav-admin-section').style.display = 'none';
+    document.getElementById('nav-donors').style.display = 'none';
+    document.getElementById('nav-setup').style.display  = 'none';
+    document.getElementById('nav-approvals').style.display = 'none';
+  }
 
   loadAll();
 });
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  WORKER CALL
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 async function workerCall(action, extra = {}) {
   const res = await fetch(WORKER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action,
-      username: PDP_USER?.username || '',
-      password: PDP_PW,
-      ...extra
-    })
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action, username: PDP_USER?.username || '', password: PDP_PW, ...extra }),
   });
   return res.json();
 }
 
-// ════════════════════════════════════════════════════════════
-//  DATA
-// ════════════════════════════════════════════════════════════
-let FIN = { budget: [], transactions: [], queue: [], programs: [], proposals: [] };
-let PENDING_REJECT_TX = null;
-let PENDING_BUDGET_ID = null;
-
+// ══════════════════════════════════════════════════════
+//  LOAD
+// ══════════════════════════════════════════════════════
 async function loadAll() {
-  document.getElementById('budget-body').innerHTML  = '<div class="loading">Loading…</div>';
-  document.getElementById('tx-body').innerHTML      = '<div class="loading">Loading…</div>';
-  document.getElementById('queue-body').innerHTML   = '<div class="loading">Loading…</div>';
-
+  document.getElementById('dash-loading').style.display = 'flex';
+  document.getElementById('dash-content').style.display = 'none';
   try {
-    const res = await workerCall('get_finance_data');
-    if (!res.ok) {
-      showErr('budget-body',  res.error || 'Failed to load');
-      showErr('tx-body',      res.error || 'Failed to load');
-      showErr('queue-body',   res.error || 'Failed to load');
-      return;
-    }
-    FIN.budget       = res.budget       || [];
-    FIN.transactions = res.transactions || [];
-    FIN.queue        = res.queue        || [];
-    FIN.programs     = res.programs     || [];
-    FIN.proposals    = res.proposals    || [];
+    const res = await workerCall('get_finance_v2');
+    if (!res.ok) { toast('Failed to load: ' + (res.error || 'Unknown'), 'red'); return; }
+    FIN.donors       = res.donors       || [];
+    FIN.budgets      = res.budgets      || [];
+    FIN.budgetDonors = res.budgetDonors || [];
+    FIN.lineItems    = res.lineItems    || [];
+    FIN.expenditures = res.expenditures || [];
+    FIN.programmes   = res.programmes   || [];
 
-    updateStats();
-    renderBudget();
-    populateFilters();
-    renderTransactions();
-    renderQueue();
-    if (document.getElementById('pane-manage')?.classList.contains('active')) renderManageBudget();
-    renderProposals();
-    // Proposals badge — submitted proposals visible to admin
-    const submittedCount = FIN.proposals.filter(p => p['Status'] === 'submitted').length;
-    const propBadge = document.getElementById('proposals-badge');
-    if (propBadge) { propBadge.textContent = submittedCount; propBadge.style.display = submittedCount > 0 ? '' : 'none'; }
+    renderAll();
   } catch(e) {
-    showErr('budget-body', 'Network error: ' + e.message);
-    showErr('tx-body',     'Network error: ' + e.message);
-    showErr('queue-body',  'Network error: ' + e.message);
+    toast('Network error: ' + e.message, 'red');
+  } finally {
+    document.getElementById('dash-loading').style.display = 'none';
+    document.getElementById('dash-content').style.display = 'block';
   }
 }
 
-function showErr(id, msg) {
-  document.getElementById(id).innerHTML =
-    `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text" style="color:var(--red)">${msg}</div></div>`;
+function renderAll() {
+  renderDashboard();
+  renderBudgets();
+  renderDonors();
+  renderApprovals();
+  renderMyExpenditures();
+  populateDropdowns();
+
+  // Pending badge
+  const pending = FIN.expenditures.filter(e => e['Status'] === 'pending').length;
+  const badge = document.getElementById('approvals-badge');
+  badge.textContent   = pending;
+  badge.style.display = pending > 0 && IS_MANAGER ? '' : 'none';
 }
 
-// ════════════════════════════════════════════════════════════
-//  STATS
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════
+function switchPane(name) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('pane-' + name)?.classList.add('active');
+  document.getElementById('nav-' + name)?.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════
+//  FORMAT HELPERS
+// ══════════════════════════════════════════════════════
 function fmtMMK(v) {
   const n = parseFloat(v || 0);
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000)     return (n / 1_000).toFixed(0) + 'K';
-  return n.toLocaleString();
+  if (n >= 1_000_000_000) return (n/1_000_000_000).toFixed(1) + 'B';
+  if (n >= 1_000_000)     return (n/1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000)         return (n/1_000).toFixed(0) + 'K';
+  return Math.round(n).toLocaleString();
+}
+function fmtFull(v) { return Math.round(parseFloat(v||0)).toLocaleString(); }
+function pct(a, b)  { return b > 0 ? Math.round(a/b*100) : 0; }
+function donorColor(i) { return DONOR_COLORS[i % DONOR_COLORS.length]; }
+function getDonorName(donorId) { return FIN.donors.find(d => d['Donor ID'] === donorId)?.['Name'] || donorId; }
+function getBDsForBudget(budgetId) { return FIN.budgetDonors.filter(bd => bd['Budget ID'] === budgetId); }
+function getLIsForBudget(budgetId) { return FIN.lineItems.filter(li => li['Budget ID'] === budgetId && !li['Description']?.startsWith('[DELETED]')); }
+function getExpsForBudget(budgetId) { return FIN.expenditures.filter(e => e['Budget ID'] === budgetId); }
+
+function budgetTotals(budgetId) {
+  const bds      = getBDsForBudget(budgetId);
+  const exps     = getExpsForBudget(budgetId);
+  const allocated = bds.reduce((s, bd) => s + parseFloat(bd['Allocated MMK']||0), 0);
+  const approved  = exps.filter(e => e['Status']==='approved').reduce((s,e) => s + parseFloat(e['Amount MMK']||0), 0);
+  const pending   = exps.filter(e => e['Status']==='pending').reduce((s,e) => s + parseFloat(e['Amount MMK']||0), 0);
+  return { allocated, approved, pending, balance: allocated - approved };
 }
 
-function updateStats() {
-  const totalAlloc   = FIN.budget.reduce((s,r) => s + parseFloat(r.Allocated || 0), 0);
-  const totalSpent   = FIN.budget.reduce((s,r) => s + parseFloat(r.Spent     || 0), 0);
-  const totalRem     = totalAlloc - totalSpent;
-  const pct          = totalAlloc > 0 ? Math.round(totalSpent / totalAlloc * 100) : 0;
-  const pendingCount = FIN.queue.filter(q => q.Status === 'pending').length;
+// ══════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════
+function renderDashboard() {
+  const totalAllocated = FIN.budgetDonors.reduce((s,bd) => s+parseFloat(bd['Allocated MMK']||0), 0);
+  const totalApproved  = FIN.expenditures.filter(e=>e['Status']==='approved').reduce((s,e)=>s+parseFloat(e['Amount MMK']||0),0);
+  const totalPending   = FIN.expenditures.filter(e=>e['Status']==='pending').reduce((s,e)=>s+parseFloat(e['Amount MMK']||0),0);
+  const utilPct        = pct(totalApproved, totalAllocated);
 
-  document.getElementById('st-total').textContent   = fmtMMK(totalAlloc);
-  document.getElementById('st-spent').textContent   = fmtMMK(totalSpent);
-  document.getElementById('st-spent').style.color   = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
-  document.getElementById('st-pct').textContent     = pct + '% utilised';
-  document.getElementById('st-rem').textContent     = fmtMMK(totalRem);
-  document.getElementById('st-rem').style.color     = totalRem < 0 ? 'var(--red)' : 'inherit';
-  document.getElementById('st-pending').textContent = pendingCount;
+  document.getElementById('dash-scope').textContent = PDP_DIOCESE
+    ? `Diocese: ${PDP_DIOCESE}`
+    : `Province-wide · ${FIN.budgets.length} budget${FIN.budgets.length!==1?'s':''}`;
 
-  const badge = document.getElementById('queue-badge');
-  badge.textContent   = pendingCount;
-  badge.style.display = pendingCount > 0 ? '' : 'none';
+  document.getElementById('dash-stats').innerHTML = [
+    { label:'Total allocated', value: fmtMMK(totalAllocated)+' MMK', sub: FIN.budgets.length+' budget(s)', color:'var(--navy)' },
+    { label:'Total spent',     value: fmtMMK(totalApproved)+' MMK',  sub: utilPct+'% utilised',            color: utilPct>90?'var(--red)':utilPct>70?'var(--amber)':'var(--green)' },
+    { label:'Pending approval',value: fmtMMK(totalPending)+' MMK',   sub: FIN.expenditures.filter(e=>e['Status']==='pending').length+' record(s)', color:'var(--amber)' },
+    { label:'Balance',         value: fmtMMK(totalAllocated-totalApproved)+' MMK', sub:'unspent', color:'var(--teal)' },
+  ].map(s => `<div class="stat-card">
+    <div class="stat-label">${s.label}</div>
+    <div class="stat-value" style="color:${s.color};font-size:18px;">${s.value}</div>
+    <div class="stat-sub">${s.sub}</div>
+  </div>`).join('');
+
+  // By programme
+  const byProg = {};
+  FIN.budgets.forEach(b => {
+    const prog = b['Programme ID'] || 'Unknown';
+    if (!byProg[prog]) byProg[prog] = { alloc:0, approved:0 };
+    const t = budgetTotals(b['Budget ID']);
+    byProg[prog].alloc    += t.allocated;
+    byProg[prog].approved += t.approved;
+  });
+  const progHtml = Object.entries(byProg).length
+    ? `<table class="tbl"><thead><tr><th>Programme</th><th>Allocated</th><th>Spent</th><th>Balance</th><th>Usage</th></tr></thead><tbody>
+      ${Object.entries(byProg).map(([prog, s]) => {
+        const u = pct(s.approved, s.alloc);
+        const barColor = u>90?'var(--red)':u>70?'var(--amber)':'var(--blue)';
+        return `<tr onclick="filterAndGoToBudgets('${prog}')" style="cursor:pointer;">
+          <td style="font-weight:500">${prog}</td>
+          <td style="font-family:var(--mono)">${fmtMMK(s.alloc)} MMK</td>
+          <td style="font-family:var(--mono)">${fmtMMK(s.approved)} MMK</td>
+          <td style="font-family:var(--mono);color:var(--teal)">${fmtMMK(s.alloc-s.approved)} MMK</td>
+          <td style="min-width:100px"><div class="prog-wrap"><div style="font-size:11px;color:${barColor};margin-bottom:2px;">${u}%</div><div class="prog-bar"><div class="prog-fill" style="width:${u}%;background:${barColor}"></div></div></div></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`
+    : '<div class="empty"><div class="empty-text">No budgets yet.</div></div>';
+  document.getElementById('dash-by-programme').innerHTML = progHtml;
+
+  // By diocese
+  const byDiocese = {};
+  FIN.budgets.forEach(b => {
+    const d = b['Diocese'] || 'Province-wide';
+    if (!byDiocese[d]) byDiocese[d] = { alloc:0, approved:0, count:0 };
+    const t = budgetTotals(b['Budget ID']);
+    byDiocese[d].alloc    += t.allocated;
+    byDiocese[d].approved += t.approved;
+    byDiocese[d].count++;
+  });
+  const dioceseHtml = Object.entries(byDiocese).length
+    ? `<table class="tbl"><thead><tr><th>Diocese</th><th>Budgets</th><th>Allocated</th><th>Spent</th><th>Usage</th></tr></thead><tbody>
+      ${Object.entries(byDiocese).map(([d, s]) => {
+        const u = pct(s.approved, s.alloc);
+        return `<tr>
+          <td style="font-weight:500">${d}</td>
+          <td>${s.count}</td>
+          <td style="font-family:var(--mono)">${fmtMMK(s.alloc)} MMK</td>
+          <td style="font-family:var(--mono)">${fmtMMK(s.approved)} MMK</td>
+          <td><div class="prog-bar" style="min-width:80px"><div class="prog-fill" style="width:${u}%;background:var(--blue)"></div></div></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`
+    : '<div class="empty"><div class="empty-text">No data yet.</div></div>';
+  document.getElementById('dash-by-diocese').innerHTML = dioceseHtml;
 }
 
-// ════════════════════════════════════════════════════════════
-//  BUDGET
-// ════════════════════════════════════════════════════════════
-function renderBudget() {
-  const el = document.getElementById('budget-body');
-  if (!FIN.budget.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No budget data yet.<br>Use Manage Budgets to add budget lines.</div></div>`;
+function filterAndGoToBudgets(progId) {
+  document.getElementById('filter-prog').value = progId;
+  switchPane('budgets');
+  renderBudgets();
+}
+
+// ══════════════════════════════════════════════════════
+//  BUDGETS LIST
+// ══════════════════════════════════════════════════════
+function renderBudgets() {
+  const filterProg    = document.getElementById('filter-prog')?.value    || '';
+  const filterDiocese = document.getElementById('filter-diocese')?.value || '';
+
+  let budgets = FIN.budgets;
+  if (filterProg)    budgets = budgets.filter(b => b['Programme ID'] === filterProg);
+  if (filterDiocese) budgets = budgets.filter(b => b['Diocese'] === filterDiocese);
+
+  const el = document.getElementById('budgets-list');
+  if (!budgets.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No budgets found.<br>Create one using the button above.</div></div>`;
     return;
   }
 
-  // ── Program summary cards ──
-  const byProgram = {};
-  FIN.budget.forEach(r => {
-    const pid = r.Program || 'Unknown';
-    if (!byProgram[pid]) byProgram[pid] = { alloc: 0, spent: 0 };
-    byProgram[pid].alloc += parseFloat(r.Allocated || 0);
-    byProgram[pid].spent += parseFloat(r.Spent     || 0);
-  });
-
-  let summaryHtml = '';
-  Object.entries(byProgram).forEach(([pid, s]) => {
-    const pct = s.alloc > 0 ? Math.min(100, Math.round(s.spent / s.alloc * 100)) : 0;
-    const statusColor = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
-    summaryHtml += `<div class="proj-summary-card">
-      <div class="proj-summary-name">${pid}</div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 4px;">
-        <span style="font-size:18px;font-weight:700;">${fmtMMK(s.spent)}</span>
-        <span style="font-size:12px;color:var(--gray-400);">of ${fmtMMK(s.alloc)}</span>
-      </div>
-      <div class="progress-bar" style="margin-bottom:4px;">
-        <div class="progress-fill ${pct>90?'over':pct>70?'warn':''}" style="width:${pct}%"></div>
-      </div>
-      <div style="font-size:11px;font-weight:600;color:${statusColor}">${pct}% utilised</div>
-    </div>`;
-  });
-
-
-  // ── Budget lines table ──
-  let html = `<table class="fin-table"><thead><tr>
-    <th>Program</th><th>Project</th><th>Category</th><th>Allocated</th><th>Spent</th>
-    <th>Remaining</th><th style="min-width:110px">Usage</th>
-    ${PDP_ROLE === 'admin' ? '<th></th>' : ''}
-  </tr></thead><tbody>`;
-
-  FIN.budget.forEach(r => {
-    const alloc  = parseFloat(r.Allocated || 0);
-    const spent  = parseFloat(r.Spent     || 0);
-    const rem    = alloc - spent;
-    const pct    = alloc > 0 ? Math.min(100, Math.round(spent / alloc * 100)) : 0;
-    const cls    = pct > 90 ? 'over' : pct > 70 ? 'warn' : '';
-    const remColor = rem < 0 ? 'var(--red)' : rem === 0 ? 'var(--amber)' : 'inherit';
-    const prog   = r['Project ID'] || '—';
-
-    html += `<tr>
-      <td style="font-weight:500">${r.Program || '—'}</td>
-      <td class="hide-mobile" style="font-size:12px;color:var(--gray-500);font-family:monospace">${prog}</td>
-      <td><span class="cat-pill">${r.Category || '—'}</span></td>
-      <td>${fmtMMK(alloc)}</td>
-      <td style="color:${spent>0?'var(--amber)':'inherit'}">${fmtMMK(spent)}</td>
-      <td style="font-weight:600;color:${remColor}">${fmtMMK(rem)}</td>
-      <td>
-        <div class="progress-wrap">
-          <div class="progress-label" style="color:${pct>90?'var(--red)':pct>70?'var(--amber)':'var(--gray-500)'}">${pct}%</div>
-          <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>
+  el.innerHTML = budgets.map(b => {
+    const t    = budgetTotals(b['Budget ID']);
+    const u    = pct(t.approved, t.allocated);
+    const bds  = getBDsForBudget(b['Budget ID']);
+    const barColor = u > 90 ? 'var(--red)' : u > 70 ? 'var(--amber)' : 'var(--blue)';
+    const donorPills = bds.map((bd, i) => `<span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:${donorColor(i)}22;color:${donorColor(i)};border:1px solid ${donorColor(i)}44;">${bd['Donor Name'] || getDonorName(bd['Donor ID'])}</span>`).join(' ');
+    return `<div class="budget-card" onclick="openBudgetDetail('${b['Budget ID']}')">
+      <div class="budget-card-top">
+        <span class="budget-card-prog">${b['Programme ID'] || '—'}</span>
+        <div style="flex:1;min-width:0;">
+          <div class="budget-card-name">${b['Name'] || '—'}</div>
+          <div class="budget-card-meta">${b['Diocese'] ? b['Diocese']+' diocese · ' : ''}${b['Fiscal Year'] || '—'}</div>
+          <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px;">${donorPills}</div>
         </div>
-      </td>
-      ${PDP_ROLE === 'admin' ? `<td><button class="btn btn-secondary btn-sm" onclick="openBudgetModal(this)"
-        data-id="${(r['Budget ID']||'').replace(/"/g,'&quot;')}"
-        data-alloc="${alloc}"
-        data-notes="${(r.Notes||'').replace(/"/g,'&quot;')}"
-        data-label="${(r.Program||'').replace(/"/g,'&quot;')} — ${(r.Category||'').replace(/"/g,'&quot;')}">Edit</button></td>` : ''}
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  // Render summary into separate cards container, table into budget-body
-  const summaryEl = document.getElementById('proj-summary-cards');
-  if (summaryEl) summaryEl.innerHTML = summaryHtml;
-  el.innerHTML = html;
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:17px;font-weight:600;font-family:var(--mono);color:var(--navy);">${fmtMMK(t.allocated)}</div>
+          <div style="font-size:11px;color:var(--gray-400);">MMK allocated</div>
+          <div style="font-size:11px;margin-top:2px;color:${barColor};font-weight:500;">${u}% used</div>
+        </div>
+      </div>
+      <div class="budget-card-bar"><div class="budget-card-fill" style="width:${u}%;background:${barColor};"></div></div>
+    </div>`;
+  }).join('');
 }
 
-// ════════════════════════════════════════════════════════════
-//  TRANSACTIONS
-// ════════════════════════════════════════════════════════════
-function populateFilters() {
-  const categories = [...new Set(FIN.transactions.map(t => t.Category).filter(Boolean))];
+// ══════════════════════════════════════════════════════
+//  BUDGET DETAIL
+// ══════════════════════════════════════════════════════
+async function openBudgetDetail(budgetId) {
+  CURRENT_BUDGET_ID = budgetId;
+  switchPane('budget-detail');
 
-  const pSel = document.getElementById('filter-program');
-  const cSel = document.getElementById('filter-category');
-  const pExp = document.getElementById('exp-program');
+  const budget = FIN.budgets.find(b => b['Budget ID'] === budgetId);
+  if (!budget) return;
 
-  pSel.innerHTML = '<option value="">All Programs</option>';
-  cSel.innerHTML = '<option value="">All Categories</option>';
-  pExp.innerHTML = '<option value="">Select program…</option>';
+  document.getElementById('detail-title').textContent = budget['Name'] || '—';
+  document.getElementById('detail-sub').textContent   = (budget['Diocese'] ? budget['Diocese']+' · ' : '') + (budget['Fiscal Year'] || '');
+  document.getElementById('detail-actions').innerHTML = IS_MANAGER
+    ? `<button class="btn btn-secondary btn-sm" onclick="openBudgetModal('${budgetId}')">Edit</button>`
+    : '';
 
-  // Show manage tab for admin/manager
-  const manageTab = document.getElementById('st-manage');
-  if (manageTab) manageTab.style.display = (PDP_ROLE === 'admin') ? '' : 'none';
+  document.getElementById('btn-add-li').style.display = IS_MANAGER ? '' : 'none';
 
-  // Populate nb-program (add budget form)
-  const nbProj = document.getElementById('nb-program');
-  if (nbProj) {
-    nbProj.innerHTML = '<option value="">Select program…</option>';
-    if (FIN.programs.length) {
-      FIN.programs.forEach(p => nbProj.add(new Option(`${p.id} — ${p.name}`, p.id)));
-    }
-  }
+  renderBudgetDetail(budgetId);
+}
 
-  // Populate nb-project-id with a note it's optional
-  const nbProg = document.getElementById('nb-project-id');
-  if (nbProg) {
-    nbProg.innerHTML = '<option value="">— Entire program —</option>';
-    // Projects will be loaded when user selects program
-  }
+function renderBudgetDetail(budgetId) {
+  const bds   = getBDsForBudget(budgetId);
+  const lis   = getLIsForBudget(budgetId);
+  const exps  = getExpsForBudget(budgetId);
 
-  // Priority: synced programs from Main Programs sheet > budget > transactions
-  let programList = [];
-  if (FIN.programs.length) {
-    programList = FIN.programs.map(p => ({ value: p.id, label: `${p.id} — ${p.name}` }));
-  } else if (FIN.budget.length) {
-    const fromBudget = [...new Set(FIN.budget.map(b => b.Program).filter(Boolean))];
-    programList = fromBudget.map(p => ({ value: p, label: p }));
+  // Donor summary cards
+  document.getElementById('detail-donor-summary').innerHTML = bds.map((bd, i) => {
+    const alloc    = parseFloat(bd['Allocated MMK'] || 0);
+    const approved = exps.filter(e => e['BD ID'] === bd['BD ID'] && e['Status'] === 'approved')
+                         .reduce((s,e) => s + parseFloat(e['Amount MMK']||0), 0);
+    const pending  = exps.filter(e => e['BD ID'] === bd['BD ID'] && e['Status'] === 'pending')
+                         .reduce((s,e) => s + parseFloat(e['Amount MMK']||0), 0);
+    const u = pct(approved, alloc);
+    const color = donorColor(i);
+    return `<div class="stat-card" style="border-top:3px solid ${color};">
+      <div class="stat-label" style="color:${color};">${bd['Donor Name'] || getDonorName(bd['Donor ID'])}</div>
+      <div class="stat-value" style="color:var(--navy);font-size:16px;">${fmtMMK(alloc)} <span style="font-size:11px;font-weight:400;color:var(--gray-400);">MMK</span></div>
+      <div class="prog-wrap">
+        <div style="font-size:11px;color:${color};margin-bottom:2px;">${fmtMMK(approved)} spent · ${u}%</div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${u}%;background:${color};"></div></div>
+      </div>
+      ${pending > 0 ? `<div style="font-size:11px;color:var(--amber);margin-top:4px;">${fmtMMK(pending)} MMK pending</div>` : ''}
+    </div>`;
+  }).join('') || '<div style="color:var(--gray-400);font-size:13px;padding:8px;">No donors attached.</div>';
+
+  // Quarter breakdown
+  const quarters = ['Q1','Q2','Q3','Q4'];
+  const qData = quarters.map(q => {
+    const total = exps.filter(e => e['Quarter']===q && e['Status']==='approved').reduce((s,e)=>s+parseFloat(e['Amount MMK']||0),0);
+    const pend  = exps.filter(e => e['Quarter']===q && e['Status']==='pending').reduce((s,e)=>s+parseFloat(e['Amount MMK']||0),0);
+    return { q, total, pend };
+  });
+  document.getElementById('detail-quarters').innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--gray-100);">
+    ${qData.map(d => `<div style="background:#fff;padding:14px;">
+      <div style="font-size:11px;font-weight:600;color:var(--gray-400);margin-bottom:4px;">${d.q}</div>
+      <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:var(--navy);">${fmtMMK(d.total)}</div>
+      <div style="font-size:11px;color:var(--gray-400);">MMK approved</div>
+      ${d.pend > 0 ? `<div style="font-size:11px;color:var(--amber);margin-top:2px;">${fmtMMK(d.pend)} pending</div>` : ''}
+    </div>`).join('')}
+  </div>`;
+
+  // Line items grouped by section
+  const bySection = {};
+  lis.forEach(li => {
+    const sec = li['Section No'] || '?';
+    if (!bySection[sec]) bySection[sec] = [];
+    bySection[sec].push(li);
+  });
+
+  if (!Object.keys(bySection).length) {
+    document.getElementById('detail-line-items').innerHTML = `<div class="empty"><div class="empty-text">No line items yet. Click "+ Add line item" above.</div></div>`;
   } else {
-    const fromTx = [...new Set(FIN.transactions.map(t => t.Program).filter(Boolean))];
-    programList = fromTx.map(p => ({ value: p, label: p }));
+    document.getElementById('detail-line-items').innerHTML = Object.entries(bySection).sort((a,b)=>a[0]-b[0]).map(([sec, items]) => {
+      const sectionTotal = items.reduce((s,li) => s + parseFloat(li['Total MMK']||0), 0);
+      return `<div class="card" style="margin-bottom:12px;">
+        <div class="li-section-header">${sec}. ${SECTION_NAMES[sec] || 'Section '+sec} &nbsp;&nbsp;<span style="font-size:11px;opacity:.7;font-weight:400;">${fmtMMK(sectionTotal)} MMK total</span></div>
+        <table class="tbl"><thead><tr>
+          <th>Description</th><th>Unit cost</th><th>Units</th><th>Total MMK</th><th>Donors</th>
+          ${IS_MANAGER ? '<th></th>' : ''}
+        </tr></thead><tbody>
+        ${items.map(li => {
+          let splits = {};
+          try { splits = JSON.parse(li['Donor Splits JSON'] || '{}'); } catch(_){}
+          const splitHtml = Object.entries(splits).map(([bdId, amt]) => {
+            const bd = bds.find(b => b['BD ID'] === bdId);
+            const i  = bds.indexOf(bd);
+            return `<span style="font-size:11px;padding:1px 6px;border-radius:8px;background:${donorColor(i)}22;color:${donorColor(i)};border:1px solid ${donorColor(i)}44;">${bd?.['Donor Name']||bdId}: ${fmtMMK(amt)}</span>`;
+          }).join(' ');
+          return `<tr>
+            <td>${li['Description']}</td>
+            <td style="font-family:var(--mono)">${fmtFull(li['Unit Cost MMK'])}</td>
+            <td style="font-family:var(--mono)">${li['Num Units']}</td>
+            <td style="font-family:var(--mono);font-weight:500">${fmtFull(li['Total MMK'])}</td>
+            <td>${splitHtml || '—'}</td>
+            ${IS_MANAGER ? `<td><div class="actions">
+              <button class="btn btn-secondary btn-sm" onclick="openLineItemModal('${li['LI ID']}');event.stopPropagation();">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteLineItem('${li['LI ID']}');event.stopPropagation();">Del</button>
+            </div></td>` : ''}
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+      </div>`;
+    }).join('');
   }
 
-  programList.forEach(p => {
-    pSel.add(new Option(p.label, p.value));
-    pExp.add(new Option(p.label, p.value));
-  });
-
-  categories.forEach(c => cSel.add(new Option(c, c)));
+  // Expenditure records
+  if (!exps.length) {
+    document.getElementById('detail-expenditures').innerHTML = '<div class="empty"><div class="empty-text">No expenditure records yet.</div></div>';
+  } else {
+    document.getElementById('detail-expenditures').innerHTML = `<table class="tbl"><thead><tr>
+      <th>Line item</th><th>Donor</th><th>Quarter</th><th>Amount MMK</th><th>By</th><th>Status</th>
+      ${IS_MANAGER ? '<th></th>' : ''}
+    </tr></thead><tbody>
+    ${exps.sort((a,b) => (b['Submitted At']||'').localeCompare(a['Submitted At']||'')).map(e => {
+      const li  = lis.find(l => l['LI ID'] === e['Line Item ID']);
+      const bd  = bds.find(b => b['BD ID'] === e['BD ID']);
+      const st  = e['Status'] || 'pending';
+      return `<tr>
+        <td style="font-size:12px;">${li?.['Description'] || e['Line Item ID']}</td>
+        <td style="font-size:12px;">${bd?.['Donor Name'] || e['Donor ID'] || '—'}</td>
+        <td><span class="pill pill-q">${e['Quarter']}</span></td>
+        <td style="font-family:var(--mono);font-weight:500;">${fmtFull(e['Amount MMK'])}</td>
+        <td style="font-size:12px;">${e['Submitted By'] || '—'}</td>
+        <td><span class="pill pill-${st}">${st}</span></td>
+        ${IS_MANAGER ? `<td><div class="actions">
+          ${st==='pending' ? `<button class="btn btn-success btn-sm" onclick="approveExp('${e['Exp ID']}')">Approve</button>
+          <button class="btn btn-danger btn-sm"  onclick="rejectExp('${e['Exp ID']}')">Reject</button>` : ''}
+        </div></td>` : ''}
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+  }
 }
 
-function renderTransactions() {
-  const el          = document.getElementById('tx-body');
-  const filterProj  = document.getElementById('filter-program')?.value  || '';
-  const filterCat   = document.getElementById('filter-category')?.value || '';
-  const filterSt    = document.getElementById('filter-status')?.value   || '';
+// ══════════════════════════════════════════════════════
+//  DONORS
+// ══════════════════════════════════════════════════════
+function currencyTagClass(cur) {
+  const map = {MMK:'tag-mmk',AUD:'tag-aud',GBP:'tag-gbp',USD:'tag-usd',SGD:'tag-sgd',EUR:'tag-eur'};
+  return map[cur] || 'tag-other';
+}
+function donorInitials(name) {
+  return name.split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
+}
 
-  let txs = [...FIN.transactions];
-  if (filterProj) txs = txs.filter(t => t.Program  === filterProj);
-  if (filterCat)  txs = txs.filter(t => t.Category === filterCat);
-  if (filterSt)   txs = txs.filter(t => t.Status   === filterSt);
-  txs.sort((a, b) => (b.Date || '').localeCompare(a.Date || ''));
-
-  if (!txs.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No transactions match your filters.</div></div>`;
+function renderDonors() {
+  const el = document.getElementById('donors-list');
+  if (!el) return;
+  if (!FIN.donors.length) {
+    el.innerHTML = `<div class="empty"><div style="font-size:32px;margin-bottom:10px;opacity:.5;">🤝</div><div class="empty-text">No donors yet.<br>Add ABM, TearFund, USPG, Diocese and any others.</div></div>`;
     return;
   }
-
-  let html = `<table class="fin-table"><thead><tr>
-    <th>Date</th><th>Program</th><th>Project</th><th>Category</th>
-    <th>Amount</th><th>Description</th><th>By</th><th>Status</th>
-    ${CAN_APPROVE ? '<th></th>' : ''}
-  </tr></thead><tbody>`;
-
-  txs.forEach(t => {
-    const st = t.Status || 'pending';
-    html += `<tr>
-      <td class="hide-mobile" style="white-space:nowrap;color:var(--gray-500)">${t.Date || '—'}</td>
-      <td style="font-weight:500">${t.Program || '—'}</td>
-      <td class="hide-mobile" style="font-size:12px;color:var(--gray-500)">${t['Project ID'] || '—'}</td>
-      <td><span class="cat-pill">${t.Category || '—'}</span></td>
-      <td style="font-weight:600">${parseFloat(t.Amount || 0).toLocaleString()}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.Description || ''}">${t.Description || '—'}</td>
-      <td>${t['Submitted By'] || '—'}</td>
-      <td><span class="pill pill-${st}">${st}</span></td>
-      ${CAN_APPROVE ? `<td><div class="actions">${st === 'pending'
-        ? `<button class="btn btn-success btn-sm" onclick="approveExpense('${t['Tx ID']||''}')">Approve</button>
-           <button class="btn btn-danger btn-sm"  onclick="openRejectModal('${t['Tx ID']||''}')">Reject</button>`
-        : `<span style="font-size:11px;color:var(--gray-400)">${t['Approved By']||'—'}</span>`
-      }</div></td>` : ''}
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  el.innerHTML = html;
+  el.innerHTML = FIN.donors.map((d, i) => {
+    const cur    = d['Currency'] || 'MMK';
+    const fmt    = d['Report Format'] || '';
+    const color  = donorColor(i);
+    const initials = donorInitials(d['Name'] || '?');
+    return `<div class="donor-card">
+      <div class="donor-avatar" style="background:${color};">${initials}</div>
+      <div class="donor-info">
+        <div class="donor-card-name">${d['Name']}</div>
+        <div class="donor-card-meta">
+          <span class="donor-tag ${currencyTagClass(cur)}">${cur}</span>
+          ${fmt ? `<span class="donor-tag tag-format">${fmt}</span>` : ''}
+          ${d['Notes'] ? `<span style="font-size:12px;color:var(--gray-400);">${d['Notes']}</span>` : ''}
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openDonorModal('${d['Donor ID']}')">Edit</button>
+    </div>`;
+  }).join('');
 }
 
-// ════════════════════════════════════════════════════════════
-//  APPROVAL QUEUE
-// ════════════════════════════════════════════════════════════
-function renderQueue() {
-  const el      = document.getElementById('queue-body');
-  const pending = FIN.queue.filter(q => q.Status === 'pending');
-
-  document.getElementById('queue-label').textContent =
-    pending.length ? `${pending.length} pending approval${pending.length > 1 ? 's' : ''}` : 'No pending approvals';
-
+// ══════════════════════════════════════════════════════
+//  APPROVALS
+// ══════════════════════════════════════════════════════
+function renderApprovals() {
+  const el = document.getElementById('approvals-list');
+  if (!el) return;
+  const pending = FIN.expenditures.filter(e => e['Status'] === 'pending');
   if (!pending.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">All clear — no pending approvals.</div></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">All clear — no pending approvals.</div></div>`;
     return;
   }
-
-  let html = `<table class="fin-table"><thead><tr>
-    <th>Request ID</th><th>Requested By</th><th>Date</th>
-    <th>Amount</th><th>Description</th>
-    ${CAN_APPROVE ? '<th></th>' : ''}
-  </tr></thead><tbody>`;
-
-  pending.forEach(q => {
-    html += `<tr>
-      <td style="font-size:11px;color:var(--gray-400);font-family:monospace">${q['Request ID'] || '—'}</td>
-      <td style="font-weight:500">${q['Requested By'] || '—'}</td>
-      <td style="white-space:nowrap;color:var(--gray-500)">${(q['Requested At'] || '').slice(0, 10)}</td>
-      <td style="font-weight:700;color:var(--amber)">${parseFloat(q.Amount || 0).toLocaleString()}</td>
-      <td>${q.Description || '—'}</td>
-      ${CAN_APPROVE ? `<td><div class="actions">
-        <button class="btn btn-success btn-sm" onclick="approveExpense('${q['Tx ID']||''}')">Approve</button>
-        <button class="btn btn-danger btn-sm"  onclick="openRejectModal('${q['Tx ID']||''}')">Reject</button>
-      </div></td>` : ''}
+  el.innerHTML = `<table class="tbl"><thead><tr>
+    <th>Budget</th><th>Line item</th><th>Donor</th><th>Quarter</th><th>Amount MMK</th><th>Submitted by</th><th></th>
+  </tr></thead><tbody>
+  ${pending.map(e => {
+    const b  = FIN.budgets.find(b => b['Budget ID'] === e['Budget ID']);
+    const li = FIN.lineItems.find(l => l['LI ID'] === e['Line Item ID']);
+    const bd = FIN.budgetDonors.find(bd => bd['BD ID'] === e['BD ID']);
+    return `<tr>
+      <td style="font-size:12px;font-weight:500;">${b?.['Name'] || '—'}</td>
+      <td style="font-size:12px;">${li?.['Description'] || '—'}</td>
+      <td style="font-size:12px;">${bd?.['Donor Name'] || '—'}</td>
+      <td><span class="pill pill-q">${e['Quarter']}</span></td>
+      <td style="font-family:var(--mono);font-weight:600;">${fmtFull(e['Amount MMK'])}</td>
+      <td style="font-size:12px;">${e['Submitted By']}</td>
+      <td><div class="actions">
+        <button class="btn btn-success btn-sm" onclick="approveExp('${e['Exp ID']}')">Approve</button>
+        <button class="btn btn-danger btn-sm"  onclick="rejectExp('${e['Exp ID']}')">Reject</button>
+      </div></td>
     </tr>`;
-  });
-
-  html += '</tbody></table>';
-  el.innerHTML = html;
+  }).join('')}
+  </tbody></table>`;
 }
 
-// ════════════════════════════════════════════════════════════
-//  SUB-TAB SWITCH
-// ════════════════════════════════════════════════════════════
-function switchTab(name) {
-  ['budget', 'transactions', 'queue', 'manage', 'proposals'].forEach(n => {
-    document.getElementById(`pane-${n}`)?.classList.toggle('active', n === name);
-    document.getElementById(`st-${n}`)?.classList.toggle('active', n === name);
-  });
-  if (name === 'manage') renderManageBudget();
-  if (name === 'proposals') renderProposals();
+// ══════════════════════════════════════════════════════
+//  MY EXPENDITURES
+// ══════════════════════════════════════════════════════
+function renderMyExpenditures() {
+  const el = document.getElementById('my-expenditures');
+  if (!el) return;
+  const mine = FIN.expenditures
+    .filter(e => e['Submitted By'] === PDP_NAME)
+    .sort((a,b) => (b['Submitted At']||'').localeCompare(a['Submitted At']||''))
+    .slice(0, 20);
+  if (!mine.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-text">No submissions yet.</div></div>';
+    return;
+  }
+  el.innerHTML = `<table class="tbl"><thead><tr>
+    <th>Budget</th><th>Description</th><th>Quarter</th><th>Amount MMK</th><th>Status</th>
+  </tr></thead><tbody>
+  ${mine.map(e => {
+    const b  = FIN.budgets.find(b => b['Budget ID'] === e['Budget ID']);
+    const li = FIN.lineItems.find(l => l['LI ID'] === e['Line Item ID']);
+    const st = e['Status'] || 'pending';
+    return `<tr>
+      <td style="font-size:12px;">${b?.['Name'] || '—'}</td>
+      <td style="font-size:12px;">${li?.['Description'] || e['Description'] || '—'}</td>
+      <td><span class="pill pill-q">${e['Quarter']}</span></td>
+      <td style="font-family:var(--mono);">${fmtFull(e['Amount MMK'])}</td>
+      <td><span class="pill pill-${st}">${st}</span></td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
 }
 
-// ════════════════════════════════════════════════════════════
-//  LOG EXPENSE
-// ════════════════════════════════════════════════════════════
-function openExpenseModal() {
-  document.getElementById('exp-amount').value = '';
-  document.getElementById('exp-desc').value   = '';
-  document.getElementById('exp-project').innerHTML = '<option value="">— Select program first —</option>';
-  document.getElementById('exp-submit-btn').disabled = false;
-  document.getElementById('exp-submit-btn').textContent = 'Submit for Approval';
-  document.getElementById('expense-modal').classList.add('open');
-}
-function closeExpenseModal() {
-  document.getElementById('expense-modal').classList.remove('open');
-}
-
-async function loadExpenseProjects() {
-  const projId  = document.getElementById('exp-program').value;
-  const progSel = document.getElementById('exp-project');
-  progSel.innerHTML = '<option value="">— No project —</option>';
-  if (!projId) return;
-  try {
-    const res = await workerCall('get_projects', { programId: projId });
-    (res.projects || []).forEach(p => {
-      progSel.add(new Option(`${p['Project Name']} (${p['Project ID']})`, p['Project ID']));
+// ══════════════════════════════════════════════════════
+//  POPULATE DROPDOWNS
+// ══════════════════════════════════════════════════════
+function populateDropdowns() {
+  // Programme filter + budget modal programme
+  const progs = [...new Set(FIN.programmes.map(p => p.id))];
+  ['filter-prog','bm-programme'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = id === 'filter-prog'
+      ? '<option value="">All programmes</option>'
+      : '<option value="">— Select —</option>';
+    progs.forEach(p => {
+      const prog = FIN.programmes.find(pr => pr.id === p);
+      el.add(new Option(`${p}${prog?.name && prog.name!==p ? ' — '+prog.name : ''}`, p));
     });
-  } catch(_) {}
-}
+    if (cur) el.value = cur;
+  });
 
-async function submitExpense() {
-  const program     = document.getElementById('exp-program').value;
-  const projectId   = document.getElementById('exp-project').value;
-  const category    = document.getElementById('exp-category').value;
-  const amount      = document.getElementById('exp-amount').value;
-  const description = document.getElementById('exp-desc').value.trim();
-
-  if (!program || !amount || !description) {
-    toast('Please fill in all required fields', 'red'); return;
+  // Diocese filter
+  const dioceses = [...new Set(FIN.budgets.map(b => b['Diocese']).filter(Boolean))];
+  const dfEl = document.getElementById('filter-diocese');
+  if (dfEl) {
+    dfEl.innerHTML = '<option value="">All dioceses</option>';
+    dioceses.forEach(d => dfEl.add(new Option(d, d)));
   }
 
-  const btn = document.getElementById('exp-submit-btn');
+  // Expenditure — budget dropdown
+  const expBudEl = document.getElementById('exp-budget');
+  if (expBudEl) {
+    expBudEl.innerHTML = '<option value="">— Select budget —</option>';
+    FIN.budgets.forEach(b => {
+      expBudEl.add(new Option(`${b['Programme ID'] || '?'} — ${b['Name']} ${b['Diocese'] ? '('+b['Diocese']+')' : ''}`, b['Budget ID']));
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  EXPENDITURE FORM
+// ══════════════════════════════════════════════════════
+function onExpBudgetChange() {
+  const budgetId = document.getElementById('exp-budget').value;
+  const liSel    = document.getElementById('exp-line-item');
+  const bdSel    = document.getElementById('exp-bd');
+  liSel.innerHTML = '<option value="">— Select line item —</option>';
+  bdSel.innerHTML = '<option value="">— Select line item first —</option>';
+  if (!budgetId) return;
+  const lis = getLIsForBudget(budgetId);
+  lis.forEach(li => liSel.add(new Option(`${li['Section No']}. ${li['Description']} (${fmtMMK(li['Total MMK'])} MMK)`, li['LI ID'])));
+}
+
+function onExpLineItemChange() {
+  const liId     = document.getElementById('exp-line-item').value;
+  const budgetId = document.getElementById('exp-budget').value;
+  const bdSel    = document.getElementById('exp-bd');
+  const hint     = document.getElementById('exp-budget-hint');
+  bdSel.innerHTML = '<option value="">— Select donor —</option>';
+  hint.textContent = '';
+  if (!liId) return;
+
+  const li  = FIN.lineItems.find(l => l['LI ID'] === liId);
+  const bds = getBDsForBudget(budgetId);
+
+  // Parse donor splits to know which donors are on this line item
+  let splits = {};
+  try { splits = JSON.parse(li?.['Donor Splits JSON'] || '{}'); } catch(_){}
+  const splitBdIds = Object.keys(splits);
+
+  const relevantBDs = splitBdIds.length
+    ? bds.filter(bd => splitBdIds.includes(bd['BD ID']))
+    : bds;
+
+  relevantBDs.forEach(bd => {
+    const splitAmt = splits[bd['BD ID']];
+    const label = `${bd['Donor Name'] || getDonorName(bd['Donor ID'])}${splitAmt ? ' (budgeted: '+fmtMMK(splitAmt)+' MMK)' : ''}`;
+    bdSel.add(new Option(label, bd['BD ID']));
+  });
+
+  if (li) hint.textContent = `Line item total: ${fmtFull(li['Total MMK'])} MMK`;
+}
+
+async function submitExpenditure() {
+  const lineItemId = document.getElementById('exp-line-item').value;
+  const bdId       = document.getElementById('exp-bd').value;
+  const budgetId   = document.getElementById('exp-budget').value;
+  const quarter    = document.getElementById('exp-quarter').value;
+  const amountMmk  = document.getElementById('exp-amount').value;
+  const description= document.getElementById('exp-desc').value.trim();
+  const msg        = document.getElementById('exp-msg');
+  const btn        = document.getElementById('exp-submit-btn');
+
+  if (!lineItemId || !bdId || !amountMmk) {
+    showMsg('exp-msg', 'Please fill in line item, donor and amount.', 'error'); return;
+  }
+
+  // Find donor ID from BD
+  const bd = FIN.budgetDonors.find(b => b['BD ID'] === bdId);
   btn.disabled = true; btn.textContent = 'Submitting…';
+  msg.style.display = 'none';
 
   try {
-    const res = await workerCall('log_expense', { program, projectId, category, amount, description });
+    const res = await workerCall('log_expenditure_v2', {
+      lineItemId, bdId, budgetId, donorId: bd?.['Donor ID'] || '',
+      quarter, amountMmk, description,
+    });
     if (res.ok) {
-      toast('Expense logged — pending approval', 'green');
-      closeExpenseModal();
+      showMsg('exp-msg', '✓ Expenditure submitted for approval.', 'success');
+      document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-desc').value   = '';
       await loadAll();
-      switchTab('queue');
     } else {
-      toast(res.error || 'Failed to log expense', 'red');
-      btn.disabled = false; btn.textContent = 'Submit for Approval';
+      showMsg('exp-msg', res.error || 'Submission failed.', 'error');
     }
   } catch(e) {
-    toast('Network error', 'red');
-    btn.disabled = false; btn.textContent = 'Submit for Approval';
+    showMsg('exp-msg', 'Network error: ' + e.message, 'error');
   }
+  btn.disabled = false; btn.textContent = 'Submit for approval';
 }
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 //  APPROVE / REJECT
-// ════════════════════════════════════════════════════════════
-async function approveExpense(txId) {
-  if (!txId || !confirm('Approve this expense?')) return;
-  try {
-    const res = await workerCall('approve_expense', { txId });
-    if (res.ok) { toast('Expense approved', 'green'); await loadAll(); }
-    else toast(res.error || 'Failed to approve', 'red');
-  } catch(e) { toast('Network error', 'red'); }
+// ══════════════════════════════════════════════════════
+async function approveExp(expId) {
+  if (!confirm('Approve this expenditure?')) return;
+  const res = await workerCall('approve_expenditure_v2', { expId });
+  if (res.ok) { toast('Approved ✓', 'green'); await loadAll(); if (CURRENT_BUDGET_ID) renderBudgetDetail(CURRENT_BUDGET_ID); }
+  else toast(res.error || 'Failed', 'red');
 }
 
-function openRejectModal(txId) {
-  PENDING_REJECT_TX = txId;
-  document.getElementById('reject-notes').value = '';
-  document.getElementById('reject-modal').classList.add('open');
-}
-function closeRejectModal() {
-  document.getElementById('reject-modal').classList.remove('open');
-  PENDING_REJECT_TX = null;
-}
-async function confirmReject() {
-  if (!PENDING_REJECT_TX) return;
-  const notes = document.getElementById('reject-notes').value.trim();
-  try {
-    const res = await workerCall('reject_expense', { txId: PENDING_REJECT_TX, notes });
-    if (res.ok) { toast('Expense rejected', 'green'); closeRejectModal(); await loadAll(); }
-    else toast(res.error || 'Failed to reject', 'red');
-  } catch(e) { toast('Network error', 'red'); }
+async function rejectExp(expId) {
+  if (!confirm('Reject this expenditure?')) return;
+  const res = await workerCall('reject_expenditure_v2', { expId });
+  if (res.ok) { toast('Rejected', 'blue'); await loadAll(); if (CURRENT_BUDGET_ID) renderBudgetDetail(CURRENT_BUDGET_ID); }
+  else toast(res.error || 'Failed', 'red');
 }
 
-// ════════════════════════════════════════════════════════════
-//  UPDATE BUDGET (admin only)
-// ════════════════════════════════════════════════════════════
-function openBudgetModal(btnOrId, allocated, notes, label) {
-  // Support both data-attribute buttons and direct calls
-  let budgetId = btnOrId;
-  if (btnOrId && typeof btnOrId === 'object' && btnOrId.dataset) {
-    budgetId  = btnOrId.dataset.id;
-    allocated = btnOrId.dataset.alloc;
-    notes     = btnOrId.dataset.notes;
-    label     = btnOrId.dataset.label;
+// ══════════════════════════════════════════════════════
+//  BUDGET MODAL
+// ══════════════════════════════════════════════════════
+function openBudgetModal(budgetId) {
+  const bg  = document.getElementById('budget-modal-bg');
+  const bid = document.getElementById('bm-id');
+  populateDropdowns();
+
+  document.getElementById('bm-msg').style.display = 'none';
+  document.getElementById('bm-save-btn').disabled = false;
+  document.getElementById('bm-save-btn').textContent = 'Save budget →';
+
+  if (budgetId) {
+    const b = FIN.budgets.find(b => b['Budget ID'] === budgetId);
+    document.getElementById('bm-title').textContent     = 'Edit budget';
+    bid.value = budgetId;
+    document.getElementById('bm-programme').value = b['Programme ID'] || '';
+    document.getElementById('bm-diocese').value   = b['Diocese']      || '';
+    document.getElementById('bm-name').value      = b['Name']         || '';
+    document.getElementById('bm-fiscal').value    = b['Fiscal Year']  || '';
+    document.getElementById('bm-start').value     = b['Period Start'] || '';
+    document.getElementById('bm-end').value       = b['Period End']   || '';
+
+    // Render existing budget donor rows
+    const bds = getBDsForBudget(budgetId);
+    document.getElementById('bm-donor-rows').innerHTML = '';
+    const oldHdrs2 = document.getElementById('bm-donor-col-hdrs'); if (oldHdrs2) oldHdrs2.remove();
+    bds.forEach(bd => addBudgetDonorRow(bd));
+    document.getElementById('bm-li-section').style.display = '';
+    refreshBMLIList();
+  } else {
+    document.getElementById('bm-title').textContent = 'New budget';
+    bid.value = '';
+    ['bm-name','bm-fiscal','bm-start','bm-end'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('bm-programme').value = '';
+    document.getElementById('bm-diocese').value   = PDP_DIOCESE || '';
+    document.getElementById('bm-donor-rows').innerHTML = '';
+    const oldHdrs = document.getElementById('bm-donor-col-hdrs'); if (oldHdrs) oldHdrs.remove();
+    document.getElementById('bm-li-section').style.display = 'none';
   }
-  PENDING_BUDGET_ID = budgetId;
-  document.getElementById('bm-label').value     = label || '';
-  document.getElementById('bm-allocated').value = allocated || '';
-  document.getElementById('bm-notes').value     = notes || '';
-  document.getElementById('bm-submit-btn').disabled   = false;
-  document.getElementById('bm-submit-btn').textContent = 'Save Changes';
-  document.getElementById('budget-modal').classList.add('open');
-}
-function closeBudgetModal() {
-  document.getElementById('budget-modal').classList.remove('open');
-  PENDING_BUDGET_ID = null;
-}
-async function submitBudgetUpdate() {
-  const allocated = document.getElementById('bm-allocated').value;
-  const notes     = document.getElementById('bm-notes').value.trim();
-  if (!allocated || isNaN(parseFloat(allocated))) { toast('Enter a valid amount', 'red'); return; }
 
-  const btn = document.getElementById('bm-submit-btn');
+  bg.classList.add('open');
+}
+
+function closeBudgetModal() { document.getElementById('budget-modal-bg').classList.remove('open'); }
+
+function getDonorCurrency(donorId) {
+  const d = FIN.donors.find(x => x['Donor ID'] === donorId);
+  return d ? (d['Currency'] || 'MMK') : 'MMK';
+}
+
+function updateRatePreview(row) {
+  const donorId  = row.querySelector('.bd-donor-sel').value;
+  const currency = getDonorCurrency(donorId);
+  const rateEl   = row.querySelector('.bd-rate');
+  const previewEl= row.querySelector('.bd-rate-preview');
+  const fxEl     = row.querySelector('.bd-fx-amount');
+  const allocEl  = row.querySelector('.bd-alloc');
+  const rateWrap = row.querySelector('.bd-rate-wrap');
+
+  const isMMK = currency === 'MMK';
+  rateWrap.style.opacity = isMMK ? '0.4' : '1';
+  rateEl.disabled = isMMK;
+  rateEl.placeholder = isMMK ? 'N/A' : 'e.g. 2500';
+
+  const rate  = parseFloat(rateEl.value) || 0;
+  const alloc = parseFloat(allocEl.value) || 0;
+
+  if (!isMMK && rate > 0) {
+    const fx = Math.round(alloc / rate);
+    previewEl.textContent = '1 ' + currency + ' = ' + rate.toLocaleString() + ' MMK';
+    fxEl.textContent = fx.toLocaleString() + ' ' + currency;
+    fxEl.style.color = 'var(--blue)';
+  } else if (isMMK) {
+    previewEl.textContent = 'MMK donor — no rate needed';
+    fxEl.textContent = '—';
+    fxEl.style.color = 'var(--gray-400)';
+  } else {
+    previewEl.textContent = '';
+    fxEl.textContent = '—';
+    fxEl.style.color = 'var(--gray-400)';
+  }
+}
+
+function addBudgetDonorRow(existing = null) {
+  const container = document.getElementById('bm-donor-rows');
+
+  // Add column headers once
+  if (!document.getElementById('bm-donor-col-hdrs')) {
+    const hdrs = document.createElement('div');
+    hdrs.id = 'bm-donor-col-hdrs';
+    hdrs.className = 'split-col-hdr';
+    hdrs.innerHTML = '<span>Donor</span><span>Allocated (MMK)</span><span>Exchange rate</span><span>= foreign amt</span><span></span>';
+    container.before(hdrs);
+  }
+
+  const row = document.createElement('div');
+  row.className = 'split-row';
+
+  const donorOptions = FIN.donors.map(d =>
+    `<option value="${d['Donor ID']}" ${existing && existing['Donor ID']===d['Donor ID']?'selected':''}>${d['Name']} (${d['Currency']||'MMK'})</option>`
+  ).join('');
+
+  const existingRate = existing?.['Ref Rate'] || '';
+  const existingCur  = existing?.['Ref Currency'] || '';
+
+  row.innerHTML = `
+    <div>
+      <select class="bd-donor-sel" style="font-size:13px;padding:6px 8px;width:100%;" onchange="updateRatePreview(this.closest('.split-row'))">${donorOptions}</select>
+      <input type="hidden" class="bd-id-hidden" value="${existing?.['BD ID']||''}">
+    </div>
+    <div>
+      <input type="number" class="bd-alloc" placeholder="e.g. 30000000" min="0"
+        style="font-family:var(--mono);font-size:13px;width:100%;"
+        value="${existing?.['Allocated MMK']||''}"
+        oninput="updateRatePreview(this.closest('.split-row'))">
+    </div>
+    <div class="bd-rate-wrap">
+      <input type="number" class="bd-rate" placeholder="e.g. 2500" min="0"
+        style="font-family:var(--mono);font-size:13px;width:100%;"
+        value="${existingRate}"
+        oninput="updateRatePreview(this.closest('.split-row'))">
+      <div class="bd-rate-preview" style="font-size:11px;color:var(--blue);margin-top:3px;"></div>
+    </div>
+    <div>
+      <div class="bd-fx-amount" style="font-size:13px;font-weight:500;font-family:var(--mono);padding:8px 0;color:var(--gray-400);">—</div>
+    </div>
+    <button onclick="this.closest('.split-row').remove()" style="border:none;background:none;cursor:pointer;color:var(--red);font-size:18px;padding:4px;margin-top:4px;">×</button>`;
+
+  container.appendChild(row);
+  // Trigger preview on load
+  updateRatePreview(row);
+}
+
+async function saveBudget() {
+  const budgetId   = document.getElementById('bm-id').value;
+  const programmeId= document.getElementById('bm-programme').value;
+  const diocese    = document.getElementById('bm-diocese').value;
+  const name       = document.getElementById('bm-name').value.trim();
+  const fiscalYear = document.getElementById('bm-fiscal').value.trim();
+  const periodStart= document.getElementById('bm-start').value;
+  const periodEnd  = document.getElementById('bm-end').value;
+  const btn        = document.getElementById('bm-save-btn');
+
+  if (!programmeId || !name || !fiscalYear) {
+    showMsg('bm-msg', 'Programme, name and fiscal year are required.', 'error'); return;
+  }
+
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
-    const res = await workerCall('update_budget', { budgetId: PENDING_BUDGET_ID, allocated, notes });
-    if (res.ok) { toast('Budget updated', 'green'); closeBudgetModal(); await loadAll(); }
-    else toast(res.error || 'Failed to update', 'red');
-  } catch(e) { toast('Network error', 'red'); }
+    // 1. Save budget header
+    const res = await workerCall('save_budget', { budgetId: budgetId||undefined, programmeId, name, fiscalYear, periodStart, periodEnd, diocese });
+    if (!res.ok) { showMsg('bm-msg', res.error || 'Failed to save budget.', 'error'); btn.disabled=false; btn.textContent='Save budget →'; return; }
+    const savedBudgetId = res.budgetId;
 
-  btn.disabled = false; btn.textContent = 'Save Changes';
-}
+    // 2. Save each budget donor row
+    const rows = document.querySelectorAll('#bm-donor-rows .split-row');
+    const errors = [];
+    for (const row of rows) {
+      const donorId    = row.querySelector('.bd-donor-sel').value;
+      const bdIdHidden = row.querySelector('.bd-id-hidden').value;
+      const allocMmk   = row.querySelector('.bd-alloc').value;
+      const refRate    = row.querySelector('.bd-rate')?.value || '';
+      if (!donorId || !allocMmk) continue;
+      const donor    = FIN.donors.find(d => d['Donor ID'] === donorId);
+      const currency = donor?.['Currency'] || 'MMK';
+      const refCurrency = currency !== 'MMK' ? currency : '';
+      const bdr = await workerCall('save_budget_donor', {
+        bdId: bdIdHidden || undefined,
+        budgetId: savedBudgetId, donorId,
+        donorName: donor?.['Name'] || '',
+        refRate: refRate || undefined,
+        refCurrency: refCurrency || undefined,
+        allocatedMmk: allocMmk,
+      });
+      if (!bdr.ok) errors.push(donorId);
+    }
 
-// ════════════════════════════════════════════════════════════
-//  MANAGE BUDGETS
-// ════════════════════════════════════════════════════════════
-function renderManageBudget() {
-  const el = document.getElementById('manage-budget-body');
-  if (!el) return;
-  if (!FIN.budget.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No budget lines yet. Use the form above to add the first one.</div></div>';
-    return;
-  }
-
-  let html = `<table class="fin-table"><thead><tr>
-    <th>Budget ID</th><th>Program</th><th>Project</th><th>Category</th>
-    <th>Allocated</th><th>Spent</th><th>Remaining</th><th>Period</th><th>Notes</th><th></th>
-  </tr></thead><tbody>`;
-
-  FIN.budget.forEach(r => {
-    const alloc = parseFloat(r.Allocated || 0);
-    const spent = parseFloat(r.Spent || 0);
-    const rem   = alloc - spent;
-    html += `<tr>
-      <td style="font-family:monospace;font-size:11px;color:var(--gray-400)">${r['Budget ID'] || '—'}</td>
-      <td style="font-weight:500">${r.Program || '—'}</td>
-      <td style="font-size:12px;color:var(--gray-500)">${r['Project ID'] || '<span style="color:var(--gray-300)">All</span>'}</td>
-      <td><span class="cat-pill">${r.Category || '—'}</span></td>
-      <td>${fmtMMK(alloc)}</td>
-      <td>${fmtMMK(spent)}</td>
-      <td style="color:${rem < 0 ? 'var(--red)' : 'inherit'}">${fmtMMK(rem)}</td>
-      <td style="color:var(--gray-500)">${r.Period || '—'}</td>
-      <td style="color:var(--gray-500);font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.Notes || '—'}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="openBudgetModal(this)"
-        data-id="${(r['Budget ID']||'').replace(/"/g,'&quot;')}"
-        data-alloc="${r.Allocated||0}"
-        data-notes="${(r.Notes||'').replace(/"/g,'&quot;')}"
-        data-label="${(r.Program||'').replace(/"/g,'&quot;')} — ${(r.Category||'').replace(/"/g,'&quot;')}">Edit</button></td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  el.innerHTML = html;
-}
-
-async function loadBudgetProjects() {
-  const projId = document.getElementById('nb-program').value;
-  const progSel = document.getElementById('nb-project-id');
-  if (!progSel) return;
-  progSel.innerHTML = '<option value="">— Entire program —</option>';
-  if (!projId) return;
-  try {
-    const res = await workerCall('get_projects', { programId: projId });
-    (res.projects || []).forEach(p => {
-      progSel.add(new Option(`${p['Project Name']} (${p['Project ID']})`, p['Project ID']));
-    });
-  } catch(_) {}
-}
-
-async function submitAddBudget() {
-  const program   = document.getElementById('nb-program').value;
-  const category  = document.getElementById('nb-category').value;
-  const allocated = document.getElementById('nb-allocated').value;
-  const period    = document.getElementById('nb-period').value;
-  const notes     = document.getElementById('nb-notes').value.trim();
-  const msgEl     = document.getElementById('nb-msg');
-  const btn       = document.getElementById('nb-submit-btn');
-
-  if (!program || !allocated) {
-    msgEl.style.display = 'block';
-    msgEl.style.color   = 'var(--red)';
-    msgEl.textContent   = 'Program and allocated amount are required.';
-    return;
-  }
-
-  btn.disabled = true; btn.textContent = 'Adding…';
-  msgEl.style.display = 'none';
-
-  try {
-    const projectId = document.getElementById('nb-project-id')?.value || '';
-    const res = await workerCall('add_budget', { program, projectId, category, allocated, period, notes });
-    if (res.ok) {
-      msgEl.style.display = 'block';
-      msgEl.style.color   = 'var(--green)';
-      msgEl.textContent   = `✓ Budget line added (${res.budgetId})`;
-      // Clear form
-      document.getElementById('nb-program').value   = '';
-      document.getElementById('nb-allocated').value = '';
-      document.getElementById('nb-notes').value     = '';
+    if (errors.length) {
+      showMsg('bm-msg', `Budget saved but donor(s) failed: ${errors.join(', ')}`, 'error');
+    } else {
+      toast('Budget saved ✓ — now add your line items below', 'green');
+      CURRENT_BUDGET_ID = savedBudgetId;
       await loadAll();
-      renderManageBudget();
-      toast('Budget line added', 'green');
-    } else {
-      msgEl.style.display = 'block';
-      msgEl.style.color   = 'var(--red)';
-      msgEl.textContent   = res.error || 'Failed to add budget line';
+      // Stay in modal, reveal line items section
+      document.getElementById('bm-save-btn').textContent = 'Update budget →';
+      document.getElementById('bm-msg').style.display = 'none';
+      document.getElementById('bm-li-section').style.display = '';
+      refreshBMLIList();
     }
   } catch(e) {
-    msgEl.style.display = 'block';
-    msgEl.style.color   = 'var(--red)';
-    msgEl.textContent   = 'Network error: ' + e.message;
+    showMsg('bm-msg', 'Network error: ' + e.message, 'error');
   }
-
-  btn.disabled = false; btn.textContent = '+ Add Budget Line';
+  btn.disabled = false; btn.textContent = 'Save budget →';
 }
 
-// ════════════════════════════════════════════════════════════
-//  PROGRAMS
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  DONOR MODAL
+// ══════════════════════════════════════════════════════
+function selectCurrency(val, el) {
+  document.getElementById('dm-currency').value = val;
+  document.querySelectorAll('.currency-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const note = document.getElementById('dm-conversion-note');
+  note.style.display = val !== 'MMK' ? '' : 'none';
+  updateDonorDot();
+}
+function selectFormat(val, el) {
+  document.getElementById('dm-format').value = val;
+  document.querySelectorAll('.format-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+function updateDonorDot(name) {
+  const i = FIN.donors.length % DONOR_COLORS.length;
+  const dot = document.getElementById('dm-color-dot');
+  if (!dot) return;
+  dot.style.background = donorColor(i);
+  // Show initials in dot
+  const initials = (name || '').split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase() || '?';
+  dot.textContent = initials;
+}
 
-function renderProposals() {
-  const el = document.getElementById('proposals-body');
-  if (!el) return;
-  const filterStatus = document.getElementById('prop-filter-status')?.value || '';
-  let props = FIN.proposals || [];
-  if (filterStatus) props = props.filter(p => p['Status'] === filterStatus);
-  props = [...props].sort((a,b) => (b['Proposed At']||'').localeCompare(a['Proposed At']||''));
+function openDonorModal(donorId) {
+  document.getElementById('dm-msg').style.display = 'none';
+  document.getElementById('dm-save-btn').disabled = false;
+  document.getElementById('dm-save-btn').textContent = 'Save donor →';
 
-  if (!props.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No proposals found.</div></div>';
-    return;
+  const resetChips = (sel, val) => {
+    document.querySelectorAll(sel).forEach(c => {
+      // dataset.val decodes HTML entities automatically, so & matches &amp; in HTML
+      c.classList.toggle('active', c.dataset.val === val);
+    });
+  };
+
+  if (donorId) {
+    const d = FIN.donors.find(d => d['Donor ID'] === donorId);
+    document.getElementById('dm-title').textContent = 'Edit donor';
+    document.getElementById('dm-id').value          = donorId;
+    document.getElementById('dm-name').value        = d['Name']  || '';
+    document.getElementById('dm-notes').value       = d['Notes'] || '';
+    const cur = d['Currency'] || 'MMK';
+    const fmt = d['Report Format'] || 'Joint Budget & Reporting';
+    document.getElementById('dm-currency').value = cur;
+    document.getElementById('dm-format').value   = fmt;
+    resetChips('.currency-chip', cur);
+    resetChips('.format-chip',   fmt);
+    const note = document.getElementById('dm-conversion-note');
+    note.style.display = cur !== 'MMK' ? '' : 'none';
+    // Set dot color
+    const idx = FIN.donors.findIndex(x => x['Donor ID'] === donorId);
+    const dotI = idx >= 0 ? idx : 0;
+    document.getElementById('dm-color-dot').style.background = donorColor(dotI);
+    document.getElementById('dm-color-dot').textContent = donorInitials(d['Name'] || '');
+  } else {
+    document.getElementById('dm-title').textContent = 'Add donor';
+    document.getElementById('dm-id').value  = '';
+    document.getElementById('dm-name').value  = '';
+    document.getElementById('dm-notes').value = '';
+    document.getElementById('dm-currency').value = 'MMK';
+    document.getElementById('dm-format').value   = 'Joint Budget & Reporting';
+    resetChips('.currency-chip', 'MMK');
+    resetChips('.format-chip',   'Joint Budget & Reporting');
+    document.getElementById('dm-conversion-note').style.display = 'none';
+    updateDonorDot('');
+  }
+  document.getElementById('donor-modal-bg').classList.add('open');
+}
+function closeDonorModal() { document.getElementById('donor-modal-bg').classList.remove('open'); }
+
+async function saveDonor() {
+  const donorId    = document.getElementById('dm-id').value;
+  const name       = document.getElementById('dm-name').value.trim();
+  const notes      = document.getElementById('dm-notes').value.trim();
+  const currency   = document.getElementById('dm-currency').value;
+  const reportFormat = document.getElementById('dm-format').value;
+  const btn        = document.getElementById('dm-save-btn');
+
+  if (!name) { showMsg('dm-msg', 'Donor name is required.', 'error'); return; }
+
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await workerCall('save_donor', { donorId: donorId||undefined, name, currency, reportFormat, notes });
+    if (res.ok) { toast('Donor saved ✓', 'green'); closeDonorModal(); await loadAll(); }
+    else showMsg('dm-msg', res.error || 'Failed.', 'error');
+  } catch(e) { showMsg('dm-msg', 'Network error: ' + e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Save donor →';
+}
+
+// ══════════════════════════════════════════════════════
+//  LINE ITEM MODAL
+// ══════════════════════════════════════════════════════
+function openLineItemModal(liId) {
+  if (!CURRENT_BUDGET_ID) return;
+  const bds = getBDsForBudget(CURRENT_BUDGET_ID);
+  document.getElementById('li-msg').style.display = 'none';
+  document.getElementById('li-save-btn').disabled = false;
+  document.getElementById('li-save-btn').textContent = 'Save line item →';
+
+  document.getElementById('li-id').value = liId || '';
+  document.getElementById('li-sub').textContent = 'Budget: ' + (FIN.budgets.find(b => b['Budget ID']===CURRENT_BUDGET_ID)?.['Name'] || '');
+
+  if (liId) {
+    const li = FIN.lineItems.find(l => l['LI ID'] === liId);
+    document.getElementById('li-title').textContent    = 'Edit line item';
+    document.getElementById('li-section-no').value     = li['Section No']   || '1';
+    document.getElementById('li-section-name').value   = SECTION_NAMES[li['Section No']] || '';
+    document.getElementById('li-desc').value           = li['Description']  || '';
+    document.getElementById('li-unit-cost').value      = li['Unit Cost MMK']|| '';
+    document.getElementById('li-units').value          = li['Num Units']    || '1';
+    document.getElementById('li-notes').value          = li['Notes']        || '';
+    updateLITotal();
+
+    // Render existing splits
+    let splits = {};
+    try { splits = JSON.parse(li['Donor Splits JSON'] || '{}'); } catch(_){}
+    buildSplitRows(bds, splits);
+  } else {
+    document.getElementById('li-title').textContent  = 'Add line item';
+    ['li-desc','li-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('li-section-no').value  = '1';
+    document.getElementById('li-section-name').value= SECTION_NAMES['1'];
+    document.getElementById('li-unit-cost').value   = '';
+    document.getElementById('li-units').value        = '1';
+    document.getElementById('li-total-display').textContent = '0';
+    buildSplitRows(bds, {});
   }
 
-  const statusColor = { draft:'var(--gray-400)', submitted:'var(--amber)', approved:'var(--green)', rejected:'var(--red)' };
+  document.getElementById('li-modal-bg').classList.add('open');
+}
+function closeLIModal() { document.getElementById('li-modal-bg').classList.remove('open'); }
 
-  let html = `<table class="fin-table"><thead><tr>
-    <th>ID</th><th>Program</th><th>Project</th><th>Category</th>
-    <th>Amount</th><th>Period</th><th>By</th><th>Status</th><th></th>
-  </tr></thead><tbody>`;
+document.getElementById('li-section-no').addEventListener('change', function() {
+  document.getElementById('li-section-name').value = SECTION_NAMES[this.value] || '';
+});
 
-  props.forEach(p => {
-    const st = p['Status'] || 'draft';
-    const projName = FIN.programs.find(pr => pr.id === p['Program ID'])?.name || p['Program ID'] || '—';
-    const canEdit = (st === 'draft') && (IS_ADMIN || p['Proposed By'] === PDP_NAME);
-    const canSubmit = (st === 'draft') && (IS_ADMIN || p['Proposed By'] === PDP_NAME);
-    const canReview = IS_ADMIN && st === 'submitted';
+function buildSplitRows(bds, existingSplits) {
+  const container = document.getElementById('li-split-rows');
+  container.innerHTML = '';
+  bds.forEach((bd, i) => {
+    const row = document.createElement('div');
+    row.className = 'split-row';
+    const existingAmt = existingSplits[bd['BD ID']] || '';
+    row.innerHTML = `
+      <div>
+        <div class="split-donor-name" style="color:${donorColor(i)};">${bd['Donor Name'] || getDonorName(bd['Donor ID'])}</div>
+        <div class="split-donor-sub">Allocated: ${fmtMMK(bd['Allocated MMK'])} MMK total</div>
+      </div>
+      <input type="number" class="split-amt" data-bd="${bd['BD ID']}" placeholder="0" value="${existingAmt}" min="0" style="font-family:var(--mono);font-size:13px;" oninput="validateSplits()">
+      <div class="split-donor-sub" id="split-pct-${bd['BD ID']}"></div>`;
+    container.appendChild(row);
+  });
+  validateSplits();
+}
 
-    html += `<tr>
-      <td style="font-family:monospace;font-size:11px;color:var(--gray-400)">${p['Proposal ID']||'—'}</td>
-      <td style="font-weight:500">${projName}</td>
-      <td>${p['Project ID']||'—'}</td>
-      <td><span class="cat-pill">${p['Category']||'—'}</span></td>
-      <td style="font-weight:600">${parseFloat(p['Requested Amount']||0).toLocaleString()}</td>
-      <td style="color:var(--gray-500)">${p['Period']||'—'}</td>
-      <td>${p['Proposed By']||'—'}</td>
-      <td><span class="pill pill-${st}">${st}</span></td>
-      <td><div class="actions">
-        ${canEdit ? `<button class="btn btn-secondary btn-sm" onclick="openProposalModal('${p['Proposal ID']}')">Edit</button>` : ''}
-        ${canSubmit ? `<button class="btn btn-primary btn-sm" onclick="quickSubmitProposal('${p['Proposal ID']}')">Submit</button>` : ''}
-        ${canReview ? `<button class="btn btn-success btn-sm" onclick="openReviewModal('${p['Proposal ID']}')">Review</button>` : ''}
-        ${!canEdit && !canSubmit && !canReview ? `<button class="btn btn-secondary btn-sm" onclick="openProposalModal('${p['Proposal ID']}', true)">View</button>` : ''}
-      </div></td>
-    </tr>`;
+function updateLITotal() {
+  const cost  = parseFloat(document.getElementById('li-unit-cost').value) || 0;
+  const units = parseFloat(document.getElementById('li-units').value) || 0;
+  const total = Math.round(cost * units);
+  document.getElementById('li-total-display').textContent = total.toLocaleString();
+  validateSplits();
+}
+
+function validateSplits() {
+  const total  = parseFloat(document.getElementById('li-total-display').textContent.replace(/,/g,'')) || 0;
+  const inputs = document.querySelectorAll('#li-split-rows .split-amt');
+  let   sumSplits = 0;
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value) || 0;
+    sumSplits += v;
+    const bdId   = inp.dataset.bd;
+    const pctEl  = document.getElementById('split-pct-' + bdId);
+    if (pctEl) pctEl.textContent = total > 0 ? pct(v, total) + '%' : '';
+  });
+  const check = document.getElementById('li-split-check');
+  if (!inputs.length) { check.textContent = ''; return; }
+  if (sumSplits === total) {
+    check.style.color = 'var(--green)';
+    check.textContent = '✓ Splits balance (' + total.toLocaleString() + ' MMK)';
+  } else {
+    check.style.color = 'var(--red)';
+    check.textContent = `⚠ Splits sum to ${sumSplits.toLocaleString()} MMK — total is ${total.toLocaleString()} MMK (difference: ${(total-sumSplits).toLocaleString()})`;
+  }
+}
+
+async function saveLineItem() {
+  const liId      = document.getElementById('li-id').value;
+  const sectionNo = document.getElementById('li-section-no').value;
+  const desc      = document.getElementById('li-desc').value.trim();
+  const unitCost  = document.getElementById('li-unit-cost').value;
+  const units     = document.getElementById('li-units').value;
+  const notes     = document.getElementById('li-notes').value.trim();
+  const btn       = document.getElementById('li-save-btn');
+
+  if (!desc || !unitCost || !units) {
+    showMsg('li-msg', 'Description, unit cost and units are required.', 'error'); return;
+  }
+
+  // Collect splits
+  const splits = {};
+  document.querySelectorAll('#li-split-rows .split-amt').forEach(inp => {
+    const v = parseFloat(inp.value) || 0;
+    if (v > 0) splits[inp.dataset.bd] = v;
   });
 
-  html += '</tbody></table>';
-  el.innerHTML = html;
-}
-
-// ── Proposal Modal ──
-function openProposalModal(proposalId, readOnly = false) {
-  CURRENT_PROPOSAL_ID = proposalId;
-  const modal = document.getElementById('proposal-modal');
-  const titleEl = document.getElementById('proposal-modal-title');
-  titleEl.textContent = proposalId ? (readOnly ? 'View Proposal' : 'Edit Proposal') : 'New Budget Proposal';
-
-  // Populate program dropdown
-  const projSel = document.getElementById('prop-program');
-  projSel.innerHTML = '<option value="">Select program…</option>';
-  FIN.programs.forEach(p => projSel.add(new Option(`${p.id} — ${p.name}`, p.id)));
-
-  // Populate with existing data if editing
-  if (proposalId) {
-    const prop = FIN.proposals.find(p => p['Proposal ID'] === proposalId);
-    if (prop) {
-      projSel.value = prop['Program ID'] || '';
-      const isEntire = prop['Project ID'] === 'ALL_PROJECTS';
-      document.getElementById('prop-entire-program').checked = isEntire;
-      if (isEntire) {
-        const progSel = document.getElementById('prop-project');
-        progSel.disabled = true;
-        progSel.innerHTML = '<option value="ALL_PROJECTS">— Entire program —</option>';
-        progSel.value = 'ALL_PROJECTS';
-      } else {
-        loadProposalProjects(prop['Project ID']);
-      }
-      document.getElementById('prop-category').value = prop['Category'] || 'Travel';
-      document.getElementById('prop-period').value   = prop['Period'] || 'Q1 2026';
-      document.getElementById('prop-amount').value   = prop['Requested Amount'] || '';
-      document.getElementById('prop-justification').value = prop['Justification'] || '';
-      document.getElementById('prop-notes').value    = prop['Notes'] || '';
-    }
-  } else {
-    // Reset
-    projSel.value = '';
-    document.getElementById('prop-project').innerHTML = '<option value="">— Select program first —</option>';
-    document.getElementById('prop-project').disabled = false;
-    document.getElementById('prop-entire-program').checked = false;
-    document.getElementById('prop-amount').value   = '';
-    document.getElementById('prop-justification').value = '';
-    document.getElementById('prop-notes').value = '';
-  }
-
-  // Read-only state
-  ['prop-program','prop-project','prop-category','prop-period','prop-amount','prop-justification','prop-notes','prop-entire-program'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = readOnly;
-  });
-  document.getElementById('prop-save-btn').style.display   = readOnly ? 'none' : '';
-  document.getElementById('prop-submit-btn').style.display = readOnly ? 'none' : '';
-  document.getElementById('prop-modal-msg').style.display  = 'none';
-
-  modal.classList.add('open');
-}
-
-function closeProposalModal() {
-  document.getElementById('proposal-modal').classList.remove('open');
-  CURRENT_PROPOSAL_ID = null;
-}
-
-async function toggleEntireProgram(checked) {
-  const progSel = document.getElementById('prop-project');
-  if (checked) {
-    progSel.disabled = true;
-    progSel.innerHTML = '<option value="ALL_PROJECTS">— Entire program —</option>';
-    progSel.value = 'ALL_PROJECTS';
-  } else {
-    progSel.disabled = false;
-    loadProposalProjects();
-  }
-}
-
-async function loadProposalProjects(selectprojectId) {
-  const projId  = document.getElementById('prop-program').value;
-  const progSel = document.getElementById('prop-project');
-  progSel.innerHTML = '<option value="">Loading…</option>';
-  progSel.disabled = true;
+  btn.disabled = true; btn.textContent = 'Saving…';
   try {
-    const res = await workerCall('get_projects', { programId: projId });
-    const projects = (res.projects || []).filter(p => !projId || p['Program ID'] === projId);
-    progSel.innerHTML = '<option value="">— Select project —</option>';
-    projects.forEach(p => {
-      progSel.add(new Option(`${p['Project Name']} (${p['Project ID']})`, p['Project ID']));
+    const res = await workerCall('save_line_item', {
+      liId: liId || undefined,
+      budgetId: CURRENT_BUDGET_ID,
+      sectionNo, sectionName: SECTION_NAMES[sectionNo] || '',
+      description: desc, unitCostMmk: unitCost, numUnits: units,
+      donorSplits: splits, notes,
     });
-    if (selectprojectId) progSel.value = selectprojectId;
-  } catch(e) {
-    progSel.innerHTML = '<option value="">Error loading projects</option>';
-  }
-  progSel.disabled = false;
-}
-
-async function saveProposal(submitAfter) {
-  const programId = document.getElementById('prop-program').value;
-  const projectId = document.getElementById('prop-project').value;
-  const category  = document.getElementById('prop-category').value;
-  const period    = document.getElementById('prop-period').value;
-  const requestedAmount = document.getElementById('prop-amount').value;
-  const justification   = document.getElementById('prop-justification').value.trim();
-  const notes     = document.getElementById('prop-notes').value.trim();
-  const msgEl     = document.getElementById('prop-modal-msg');
-
-  if (!programId || !projectId || !requestedAmount || !justification) {
-    msgEl.style.display = 'block'; msgEl.style.color = 'var(--red)';
-    msgEl.textContent = 'Program, Project, Amount and Justification are required.'; return;
-  }
-
-  const saveBtn   = document.getElementById('prop-save-btn');
-  const submitBtn = document.getElementById('prop-submit-btn');
-  saveBtn.disabled = true; submitBtn.disabled = true;
-  saveBtn.textContent = 'Saving…'; msgEl.style.display = 'none';
-
-  try {
-    const saveRes = await workerCall('save_proposal', {
-      proposalId: CURRENT_PROPOSAL_ID, programId, projectId, category,
-      requestedAmount, justification, period, notes
-    });
-
-    if (!saveRes.ok) {
-      msgEl.style.display = 'block'; msgEl.style.color = 'var(--red)';
-      msgEl.textContent = saveRes.error || 'Failed to save';
-      saveBtn.disabled = false; submitBtn.disabled = false;
-      saveBtn.textContent = 'Save Draft'; return;
-    }
-
-    const pid = saveRes.proposalId;
-    if (submitAfter) {
-      const subRes = await workerCall('submit_proposal', { proposalId: pid });
-      if (subRes.ok) {
-        toast('Proposal submitted for approval', 'green');
+    if (res.ok) {
+      toast('Line item saved ✓', 'green');
+      closeLIModal();
+      await loadAll();
+      // If budget modal is in LI-entry mode, return to it
+      const budgetModal = document.getElementById('budget-modal-bg');
+      if (budgetModal._liMode) {
+        budgetModal._liMode = false;
+        budgetModal.classList.add('open');
+        refreshBMLIList();
       } else {
-        toast(subRes.error || 'Saved but failed to submit', 'blue');
+        renderBudgetDetail(CURRENT_BUDGET_ID);
       }
     } else {
-      toast('Proposal saved as draft', 'blue');
+      showMsg('li-msg', res.error || 'Failed.', 'error');
     }
-    closeProposalModal();
+  } catch(e) { showMsg('li-msg', 'Network error: ' + e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Save line item →';
+}
+
+async function deleteLineItem(liId) {
+  if (!confirm('Delete this line item? It will be marked as deleted and hidden.')) return;
+  const res = await workerCall('delete_line_item', { liId });
+  if (res.ok) {
+    toast('Line item deleted', 'blue');
     await loadAll();
-    switchTab('proposals');
-  } catch(e) {
-    msgEl.style.display = 'block'; msgEl.style.color = 'var(--red)';
-    msgEl.textContent = 'Network error: ' + e.message;
-  }
-  saveBtn.disabled = false; submitBtn.disabled = false;
-  saveBtn.textContent = 'Save Draft';
+    renderBudgetDetail(CURRENT_BUDGET_ID);
+  } else toast(res.error || 'Failed', 'red');
 }
 
-async function quickSubmitProposal(proposalId) {
-  if (!confirm('Submit this proposal for admin approval?')) return;
+// ══════════════════════════════════════════════════════
+//  SETUP
+// ══════════════════════════════════════════════════════
+async function runSetup() {
+  const btn = document.getElementById('setup-btn');
+  const res_el = document.getElementById('setup-result');
+  btn.disabled = true; btn.textContent = 'Initialising…';
+  res_el.style.display = 'none';
   try {
-    const res = await workerCall('submit_proposal', { proposalId });
-    if (res.ok) { toast('Proposal submitted', 'green'); await loadAll(); renderProposals(); }
-    else toast(res.error || 'Failed to submit', 'red');
-  } catch(e) { toast('Network error', 'red'); }
-}
-
-// ── Review Modal (Admin) ──
-function openReviewModal(proposalId) {
-  PENDING_REVIEW_PROPOSAL_ID = proposalId;
-  const prop = FIN.proposals.find(p => p['Proposal ID'] === proposalId);
-  if (!prop) return;
-  const projName = FIN.programs.find(pr => pr.id === prop['Program ID'])?.name || prop['Program ID'];
-  document.getElementById('review-modal-title').textContent = `Review: ${prop['Proposal ID']}`;
-  document.getElementById('review-proposal-summary').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-      <div><b>Program:</b> ${projName}</div>
-      <div><b>Project:</b> ${prop['Project ID']}</div>
-      <div><b>Category:</b> ${prop['Category']}</div>
-      <div><b>Period:</b> ${prop['Period']}</div>
-      <div style="grid-column:1/-1"><b>Amount:</b> <span style="font-size:16px;font-weight:700;color:var(--amber)">${parseFloat(prop['Requested Amount']||0).toLocaleString()} MMK</span></div>
-      <div style="grid-column:1/-1"><b>Justification:</b> ${prop['Justification']}</div>
-      ${prop['Notes'] ? `<div style="grid-column:1/-1"><b>Notes:</b> ${prop['Notes']}</div>` : ''}
-      <div><b>Proposed by:</b> ${prop['Proposed By']}</div>
-    </div>`;
-  document.getElementById('review-notes-input').value = '';
-  document.getElementById('review-modal-msg').style.display = 'none';
-  document.getElementById('review-modal').classList.add('open');
-}
-function closeReviewModal() {
-  document.getElementById('review-modal').classList.remove('open');
-  PENDING_REVIEW_PROPOSAL_ID = null;
-}
-async function submitReview(decision) {
-  if (!PENDING_REVIEW_PROPOSAL_ID) return;
-  const reviewNotes = document.getElementById('review-notes-input').value.trim();
-  if (decision === 'approved' && !confirm('Approve this proposal? A Budget line will be created automatically.')) return;
-  try {
-    const res = await workerCall('review_proposal', { proposalId: PENDING_REVIEW_PROPOSAL_ID, decision, reviewNotes });
+    const res = await workerCall('setup_finance_sheets');
+    res_el.style.display = 'block';
     if (res.ok) {
-      const msg = decision === 'approved'
-        ? 'Proposal approved — Budget line created automatically'
-        : 'Proposal rejected';
-      toast(msg, decision === 'approved' ? 'green' : 'blue');
-      closeReviewModal();
-      await loadAll();
-      if (decision === 'approved') switchTab('budget');
-      else renderProposals();
+      res_el.style.background = 'var(--green-lt)';
+      res_el.style.color      = 'var(--green)';
+      const created = res.created?.length ? 'Created: ' + res.created.join(', ') + '. ' : '';
+      const skipped = res.skipped?.length ? 'Already existed: ' + res.skipped.join(', ') + '.' : '';
+      res_el.textContent = '✓ ' + (created || skipped ? created + skipped : 'All sheets are ready.');
+      toast('Sheets initialised ✓', 'green');
     } else {
-      document.getElementById('review-modal-msg').style.display = 'block';
-      document.getElementById('review-modal-msg').style.color = 'var(--red)';
-      document.getElementById('review-modal-msg').textContent = res.error || 'Failed';
+      res_el.style.background = 'var(--red-lt)';
+      res_el.style.color      = 'var(--red)';
+      res_el.textContent      = '⚠ ' + (res.error || 'Failed');
     }
-  } catch(e) { toast('Network error', 'red'); }
+  } catch(e) {
+    res_el.style.display = 'block';
+    res_el.style.background = 'var(--red-lt)';
+    res_el.style.color      = 'var(--red)';
+    res_el.textContent      = 'Network error: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Initialise sheets →';
 }
 
-// ════════════════════════════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════════
+function showMsg(elId, text, type) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.display    = 'block';
+  el.style.background = type === 'success' ? 'var(--green-lt)' : 'var(--red-lt)';
+  el.style.color      = type === 'success' ? 'var(--green)'    : 'var(--red)';
+  el.textContent      = text;
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
 let _toastTimer;
 function toast(msg, type = 'blue') {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className   = `show ${type}`;
+  el.className   = 'show ' + type;
   clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+  _toastTimer = setTimeout(() => { el.className = ''; }, 2800);
 }
 
-// Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
-  });
+// ══════════════════════════════════════════════════════
+//  TEMPLATE QUICK-PICK
+// ══════════════════════════════════════════════════════
+function applyLITemplate(val) {
+  if (!val) return;
+  const [sec, desc, units] = val.split('|');
+  document.getElementById('li-section-no').value   = sec;
+  document.getElementById('li-section-name').value = SECTION_NAMES[sec] || '';
+  document.getElementById('li-desc').value          = desc;
+  document.getElementById('li-units').value         = units;
+  document.getElementById('li-unit-cost').value     = '';
+  document.getElementById('li-total-display').textContent = '0';
+  // Focus unit cost so user types it next
+  document.getElementById('li-unit-cost').focus();
+}
+
+// Open LI modal from inside budget modal (after save)
+function openLineItemModalFromBudget() {
+  const bm = document.getElementById('budget-modal-bg');
+  bm.classList.remove('open');
+  bm._liMode = true;
+  openLineItemModal(null);
+}
+
+// After saving LI from budget context, re-open budget modal at LI section
+function afterLISaveFromBudget() {
+  document.getElementById('budget-modal-bg').classList.add('open');
+  refreshBMLIList();
+}
+
+function refreshBMLIList() {
+  if (!CURRENT_BUDGET_ID) return;
+  document.getElementById('bm-li-section').style.display = '';
+  const lis = getLIsForBudget(CURRENT_BUDGET_ID);
+  const el  = document.getElementById('bm-li-list');
+  if (!lis.length) {
+    el.innerHTML = '<div style="color:var(--gray-400);padding:8px 0;">No line items yet.</div>';
+    return;
+  }
+  el.innerHTML = lis.map(li => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+      <div>
+        <span style="font-size:11px;background:var(--navy);color:#fff;padding:1px 6px;border-radius:4px;margin-right:6px;">§${li['Section No']}</span>
+        <span style="font-weight:500;">${li['Description']}</span>
+      </div>
+      <span style="font-family:var(--mono);font-size:13px;color:var(--teal);">${fmtFull(li['Total MMK'])} MMK</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  REPORTS
+// ══════════════════════════════════════════════════════
+const RPT_HISTORY = [];
+
+function populateReportDropdowns() {
+  // Budget selector
+  const bSel = document.getElementById('rpt-budget-sel');
+  if (bSel) {
+    bSel.innerHTML = '<option value="">— Select budget —</option>';
+    FIN.budgets.forEach(b => {
+      bSel.add(new Option(`${b['Programme ID'] || '?'} — ${b['Name']}${b['Diocese'] ? ' (' + b['Diocese'] + ')' : ''}`, b['Budget ID']));
+    });
+  }
+  // Donor selector
+  const dSel = document.getElementById('rpt-donor-sel');
+  if (dSel) {
+    dSel.innerHTML = '<option value="">— Select donor —</option>';
+    FIN.donors.forEach(d => dSel.add(new Option(d['Name'], d['Donor ID'])));
+  }
+  // Diocese selector — pre-fill if finance_staff
+  const diocSel = document.getElementById('rpt-diocese-sel');
+  if (diocSel && PDP_DIOCESE) {
+    diocSel.value = PDP_DIOCESE;
+    document.getElementById('rpt-diocese-sel-wrap').style.display = IS_MANAGER ? '' : 'none';
+  }
+  // Hide manager-only cards for finance_staff
+  if (!IS_MANAGER) {
+    const dc = document.getElementById('rpt-donor-card');
+    const cc = document.getElementById('rpt-consolidated-card');
+    if (dc) dc.style.display = 'none';
+    if (cc) cc.style.display = 'none';
+  }
+}
+
+async function generateReport(type) {
+  const resultIds = { budget:'rpt-budget-result', donor:'rpt-donor-result', diocese:'rpt-diocese-result', consolidated:'rpt-consolidated-result' };
+  const resultEl  = document.getElementById(resultIds[type]);
+  if (!resultEl) return;
+
+  resultEl.className = 'rpt-result';
+  resultEl.style.display = 'none';
+
+  const payload = { reportType: type };
+
+  if (type === 'budget') {
+    payload.budgetId = document.getElementById('rpt-budget-sel').value;
+    if (!payload.budgetId) { showRptResult(resultEl, 'Please select a budget.', false); return; }
+  }
+  if (type === 'donor') {
+    payload.donorId = document.getElementById('rpt-donor-sel').value;
+    if (!payload.donorId) { showRptResult(resultEl, 'Please select a donor.', false); return; }
+  }
+  if (type === 'diocese') {
+    payload.diocese = document.getElementById('rpt-diocese-sel')?.value || PDP_DIOCESE;
+    if (!payload.diocese) { showRptResult(resultEl, 'Please select a diocese.', false); return; }
+  }
+
+  // Show loading state
+  resultEl.style.display = 'block';
+  resultEl.className = 'rpt-result';
+  resultEl.style.background = 'var(--gray-50)';
+  resultEl.style.color = 'var(--gray-500)';
+  resultEl.textContent = 'Generating… this may take a few seconds.';
+
+  try {
+    const res = await workerCall('generate_report', payload);
+    if (res.ok) {
+      showRptResult(resultEl, `✓ Report ready — <a href="${res.spreadsheetUrl}" target="_blank">Open in Google Sheets ↗</a>`, true);
+      // Add to history
+      RPT_HISTORY.unshift({ type, title: res.title, url: res.spreadsheetUrl, time: new Date().toLocaleTimeString() });
+      renderRptHistory();
+      toast('Report generated ✓', 'green');
+    } else {
+      showRptResult(resultEl, '⚠ ' + (res.error || 'Generation failed.'), false);
+    }
+  } catch(e) {
+    showRptResult(resultEl, 'Network error: ' + e.message, false);
+  }
+}
+
+function showRptResult(el, html, ok) {
+  el.style.display = 'block';
+  el.style.background = '';
+  el.style.color = '';
+  el.className = 'rpt-result ' + (ok ? 'ok' : 'err');
+  el.innerHTML = html;
+}
+
+function renderRptHistory() {
+  const el = document.getElementById('rpt-history');
+  if (!el) return;
+  if (!RPT_HISTORY.length) {
+    el.innerHTML = '<span style="color:var(--gray-400);">No reports generated yet this session.</span>';
+    return;
+  }
+  const typeLabels = { budget:'Per-budget', donor:'Per-donor', diocese:'Diocese', consolidated:'Consolidated' };
+  const typeColors = { budget:'var(--teal)', donor:'var(--purple)', diocese:'var(--amber)', consolidated:'var(--navy)' };
+  el.innerHTML = RPT_HISTORY.map(r => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100);">
+      <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:${typeColors[r.type]}22;color:${typeColors[r.type]};">${typeLabels[r.type]}</span>
+      <span style="flex:1;font-size:13px;font-weight:500;">${r.title}</span>
+      <span style="font-size:11px;color:var(--gray-400);">${r.time}</span>
+      <a href="${r.url}" target="_blank" class="btn btn-secondary btn-sm">Open ↗</a>
+    </div>`).join('');
+}
+
+// Hook into switchPane to populate dropdowns when reports tab opened
+const _origSwitchPane = switchPane;
+switchPane = function(name) {
+  _origSwitchPane(name);
+  if (name === 'reports') populateReportDropdowns();
+};
+
+// Close modals on background click
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
 });
 </script>
-
-<!-- ══ PROPOSAL MODAL ══ -->
-<div class="modal-overlay" id="proposal-modal">
-  <div class="modal" style="width:520px;">
-    <div class="modal-header">
-      <span class="modal-title" id="proposal-modal-title">New Budget Proposal</span>
-      <button class="modal-close" onclick="closeProposalModal()">×</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group" style="grid-column:1/-1;">
-        <label>Program</label>
-        <select id="prop-program" onchange="loadProposalProjects()"></select>
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <label style="margin-bottom:0;">Project</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:var(--gray-500);cursor:pointer;">
-            <input type="checkbox" id="prop-entire-program" onchange="toggleEntireProgram(this.checked)" style="width:auto;margin:0;">
-            Apply to entire program
-          </label>
-        </div>
-        <select id="prop-project">
-          <option value="">— Select program first —</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select id="prop-category">
-          <option value="Travel">Travel</option>
-          <option value="Training">Training</option>
-          <option value="Equipment">Equipment</option>
-          <option value="Supplies">Supplies</option>
-          <option value="Services">Services</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Period</label>
-        <select id="prop-period">
-          <option value="Q1 2026">Q1 2026</option>
-          <option value="Q2 2026">Q2 2026</option>
-          <option value="Q3 2026">Q3 2026</option>
-          <option value="Q4 2026">Q4 2026</option>
-          <option value="Annual 2026">Annual 2026</option>
-          <option value="Q1 2027">Q1 2027</option>
-          <option value="Q2 2027">Q2 2027</option>
-          <option value="Q3 2027">Q3 2027</option>
-          <option value="Q4 2027">Q4 2027</option>
-          <option value="Annual 2027">Annual 2027</option>
-        </select>
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label>Requested Amount (MMK)</label>
-        <input type="number" id="prop-amount" placeholder="e.g. 1500000" min="0">
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label>Justification <span style="color:var(--red)">*</span></label>
-        <textarea id="prop-justification" rows="3" placeholder="Why is this budget needed?"></textarea>
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label>Supporting Notes (optional)</label>
-        <textarea id="prop-notes" rows="2" placeholder="Additional context, references, etc."></textarea>
-      </div>
-    </div>
-    <div id="prop-modal-msg" style="display:none;font-size:13px;margin-top:8px;"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeProposalModal()">Cancel</button>
-      <button class="btn btn-secondary" id="prop-save-btn" onclick="saveProposal(false)">Save Draft</button>
-      <button class="btn btn-primary" id="prop-submit-btn" onclick="saveProposal(true)">Submit for Approval</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ REVIEW PROPOSAL MODAL ══ -->
-<div class="modal-overlay" id="review-modal">
-  <div class="modal" style="width:400px;">
-    <div class="modal-header">
-      <span class="modal-title" id="review-modal-title">Review Proposal</span>
-      <button class="modal-close" onclick="closeReviewModal()">×</button>
-    </div>
-    <div id="review-proposal-summary" style="background:var(--gray-50);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--gray-700);"></div>
-    <div class="form-group">
-      <label>Review Notes (optional)</label>
-      <textarea id="review-notes-input" rows="3" placeholder="Reason for decision…"></textarea>
-    </div>
-    <div id="review-modal-msg" style="display:none;font-size:13px;margin-top:8px;"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeReviewModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="submitReview('rejected')">Reject</button>
-      <button class="btn btn-success" onclick="submitReview('approved')">Approve → Create Budget</button>
-    </div>
-  </div>
-</div>
-
-
 </body>
 </html>
