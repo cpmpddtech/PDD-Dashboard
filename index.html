@@ -49,6 +49,7 @@
     max-width: 400px;
     box-shadow: 0 25px 60px rgba(0,0,0,0.35);
     animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1);
+    margin: 16px;
   }
   @keyframes slideUp {
     from { opacity:0; transform:translateY(24px); }
@@ -386,10 +387,84 @@
   .hl-str { color:#86efac; }
   .hl-cm  { color:#64748b; }
 
-  @media (max-width:860px) {
-    .stat-grid { grid-template-columns:1fr 1fr; }
-    .grid-2    { grid-template-columns:1fr; }
-    .main, .header, .tabs { padding-left:16px; padding-right:16px; }
+  /* ═══ RESPONSIVE — TABLET (≤900px) ══════════════════════════════════ */
+  @media (max-width:900px) {
+    .stat-grid  { grid-template-columns:1fr 1fr; gap:10px; }
+    .grid-2     { grid-template-columns:1fr; gap:12px; }
+    .digest-grid{ grid-template-columns:1fr 1fr; }
+    .main       { padding:16px 20px; }
+    .header     { padding:12px 20px; flex-wrap:wrap; gap:8px; }
+    .header-right{ flex-wrap:wrap; gap:6px; }
+    .tabs       { padding:0 20px; }
+    .rm-grid    { grid-template-columns:1fr; }
+    .tier-grid  { grid-template-columns:1fr 1fr; }
+    .add-user-grid { grid-template-columns:1fr 1fr !important; }
+    .form-row   { grid-template-columns:1fr !important; gap:10px; }
+    /* task add col headers — hide on tablet, rows go inline-label mode */
+    .nt-col-hdrs { display:none !important; }
+    .mt-col-hdrs { display:none !important; }
+    /* nt row: 2-col grid on tablet */
+    .nt-task-row { grid-template-columns:1fr 1fr 1fr 1fr 32px !important; }
+    .mt-task-row { grid-template-columns:1fr 1fr 1fr 32px !important; }
+  }
+
+  /* ═══ RESPONSIVE — PHONE (≤640px) ════════════════════════════════════ */
+  @media (max-width:640px) {
+    .header     { flex-direction:column; align-items:flex-start; gap:8px; padding:12px 14px; }
+    .header-right{ width:100%; flex-wrap:wrap; gap:6px; }
+    .header-title{ font-size:14px; }
+    .tabs       { gap:0; padding:0 14px; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
+    .tab        { font-size:12px; padding:10px 12px; white-space:nowrap; flex-shrink:0; }
+    .main       { padding:12px 14px; }
+    .stat-grid  { grid-template-columns:1fr 1fr; gap:8px; }
+    .stat-card  { padding:12px 14px; }
+    .stat-val   { font-size:22px; }
+    .grid-2     { grid-template-columns:1fr; gap:10px; }
+    .digest-grid{ grid-template-columns:1fr 1fr; }
+    .panel      { padding:14px 14px; }
+    .panel-title{ font-size:12px; }
+    .filter-bar { padding:8px 10px; gap:5px; }
+    .fchip      { font-size:11px; padding:3px 8px; }
+    .tbl        { font-size:12px; }
+    .logout-btn { font-size:11px; padding:5px 10px; }
+    .login-card { padding:28px 22px; margin:16px; }
+    .modal-box  { padding:20px 18px; margin:12px; }
+    .form-row   { grid-template-columns:1fr !important; gap:8px; }
+    /* Role management */
+    .rm-grid    { grid-template-columns:1fr; }
+    .tier-grid  { grid-template-columns:1fr; }
+    .add-user-grid{ grid-template-columns:1fr !important; }
+    /* Task rows — fully stacked on phone */
+    .nt-col-hdrs{ display:none !important; }
+    .mt-col-hdrs{ display:none !important; }
+    .nt-task-row{ grid-template-columns:1fr 1fr 32px !important; }
+    .mt-task-row{ grid-template-columns:1fr 1fr 32px !important; }
+    .nt-task-row .nt-col-owner,
+    .nt-task-row .nt-col-status { display:none; }
+    /* Gantt */
+    .gantt-label { width:90px; }
+    .gantt-name  { font-size:11px; }
+    .gantt-sub   { display:none; }
+    .prog-gantt-label{ width:90px; }
+    .prog-gantt-name { font-size:11px; }
+    .prog-gantt-sub  { display:none; }
+    /* Check-in */
+    .checkin-banner { flex-direction:column; gap:12px; }
+    .checkin-open-btn{ width:100%; text-align:center; }
+    /* Digest */
+    .digest-header{ flex-direction:column; gap:8px; }
+    .digest-print-btn{ width:100%; }
+    /* Program mgmt */
+    .pm-proj-row{ flex-direction:column; align-items:flex-start; }
+    /* My tasks */
+    .mytasks-header{ flex-direction:column; gap:8px; }
+    /* Heatmap — scroll horizontally */
+    #heatmap    { overflow-x:auto; }
+    /* User management table — horizontal scroll */
+    #um-user-list{ overflow-x:auto; }
+    .um-table   { min-width:500px; }
+    /* Stat grid in KPI */
+    #k-stats,#s-stats{ grid-template-columns:1fr 1fr; }
   }
 
   /* ── FILTER BAR ── */
@@ -1007,7 +1082,6 @@
     <button class="tab" id="tab-btn-setup" onclick="switchTab('setup',this)">⚙ Setup</button>
     <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report">📄 DCR Reports</button>
     <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department">💰 Finance</button>
-    <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff">📢 Announcements</button>
   </div>
 
   <div class="main">
@@ -1048,7 +1122,7 @@
               </div>
             </div>
             <!-- Column headers -->
-            <div style="display:grid;grid-template-columns:1fr 140px 100px 28px;gap:6px;margin-bottom:4px;padding:0 2px;">
+            <div class="mt-col-hdrs" style="display:grid;grid-template-columns:1fr 140px 100px 28px;gap:6px;margin-bottom:4px;padding:0 2px;">
               <div class="rm-label">Task Name</div>
               <div class="rm-label">Due Date</div>
               <div class="rm-label">Quarter</div>
@@ -1459,7 +1533,7 @@
             <span style="width:20px;height:20px;background:var(--blue);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;flex-shrink:0;">+</span>
             Add New User
           </div>
-          <div class="add-user-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+          <div class="add-user-grid" style="grid-template-columns:repeat(4,1fr);">
             <div>
               <div class="rm-label">Username</div>
               <input class="form-input" id="nu-username" placeholder="e.g. john.doe" style="font-family:var(--font);">
@@ -1991,9 +2065,6 @@ function applyRBAC() {
   setTabVisible('setup',    isAdmin());
   const isFinance = () => ['finance','finance_staff','finance_manager'].includes(CURRENT_USER?.role);
   setTabVisible('finance',  isAdmin() || isManager() || isFinance());             // external: NO
-  // Announcements: admin always; other roles based on ANNOUNCEMENT_PERMS checked on the page itself
-  // Show the tab for admin + manager + finance_manager by default; page handles finer permission check
-  setTabVisible('announcements', isAdmin() || isManager() || isFinance());
 
   // Update header badge
   const nameBadge = document.getElementById('user-name-badge');
@@ -3531,7 +3602,7 @@ function mtAddRow() {
   const qOpts = quarterOptions();
   const row = document.createElement('div');
   row.id = `mt-row-${i}`;
-  row.style.cssText = 'display:grid;grid-template-columns:1fr 140px 100px 28px;gap:6px;margin-bottom:6px;align-items:center;';
+  row.className = 'mt-task-row'; row.style.cssText = 'display:grid;grid-template-columns:1fr 140px 100px 28px;gap:6px;margin-bottom:6px;align-items:center;';
   row.innerHTML = `
     <input class="form-input" id="mt-name-${i}" placeholder="Task name" style="font-family:var(--font);font-size:12px;padding:6px 8px;">
     <div>
@@ -4241,7 +4312,7 @@ function ntAddRow() {
   const rowId = `nt-${++ntRowCount}`;
   const row   = document.createElement('div');
   row.id = `task-row-${rowId}`;
-  row.style.cssText = 'display:grid;grid-template-columns:1fr 140px 100px 130px 90px 28px;gap:6px;margin-bottom:6px;align-items:start;';
+  row.className = 'nt-task-row'; row.style.cssText = 'display:grid;grid-template-columns:1fr 140px 100px 130px 90px 28px;gap:6px;margin-bottom:6px;align-items:start;';
 
   const staffOpts = getStaffNames().map(n => `<option value="${n}">${n}</option>`).join('');
 
@@ -4253,10 +4324,10 @@ function ntAddRow() {
       <input type="hidden" data-field="cw">
     </div>
     <select class="rm-select" style="font-size:12px;" data-field="quarter">${quarterOptions()}</select>
-    <select class="rm-select" style="font-size:12px;" data-field="owner">
+    <select class="rm-select nt-col-owner" style="font-size:12px;" data-field="owner">
       <option value="">— Staff —</option>${staffOpts}
     </select>
-    <select class="rm-select" style="font-size:12px;" data-field="status">
+    <select class="rm-select nt-col-status" style="font-size:12px;" data-field="status">
       <option value="Planned">Planned</option>
       <option value="Delivered">Delivered</option>
     </select>
@@ -4756,10 +4827,6 @@ function openDCR() {
 
 function openFinance() {
   window.location.href = 'finance.html';
-}
-
-function openAnnouncements() {
-  window.location.href = 'announcements.html';
 }
 
 function renderRoleManagement() {
