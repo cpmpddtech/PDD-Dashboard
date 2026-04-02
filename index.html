@@ -49,7 +49,6 @@
     max-width: 400px;
     box-shadow: 0 25px 60px rgba(0,0,0,0.35);
     animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1);
-    margin: 16px;
   }
   @keyframes slideUp {
     from { opacity:0; transform:translateY(24px); }
@@ -387,84 +386,91 @@
   .hl-str { color:#86efac; }
   .hl-cm  { color:#64748b; }
 
-  /* ═══ RESPONSIVE — TABLET (≤900px) ══════════════════════════════════ */
+  /* ── RESPONSIVE ─────────────────────────────────────── */
   @media (max-width:900px) {
-    .stat-grid  { grid-template-columns:1fr 1fr; gap:10px; }
-    .grid-2     { grid-template-columns:1fr; gap:12px; }
-    .digest-grid{ grid-template-columns:1fr 1fr; }
-    .main       { padding:16px 20px; }
-    .header     { padding:12px 20px; flex-wrap:wrap; gap:8px; }
+    .stat-grid   { grid-template-columns:1fr 1fr; gap:10px; }
+    .grid-2      { grid-template-columns:1fr; gap:12px; }
+    .digest-grid { grid-template-columns:1fr 1fr; }
+    .main        { padding:16px 20px; }
+    .header      { padding:12px 20px; flex-wrap:wrap; gap:8px; }
     .header-right{ flex-wrap:wrap; gap:6px; }
-    .tabs       { padding:0 20px; }
-    .rm-grid    { grid-template-columns:1fr; }
-    .tier-grid  { grid-template-columns:1fr 1fr; }
-    .add-user-grid { grid-template-columns:1fr 1fr !important; }
-    .form-row   { grid-template-columns:1fr !important; gap:10px; }
-    /* task add col headers — hide on tablet, rows go inline-label mode */
-    .nt-col-hdrs { display:none !important; }
-    .mt-col-hdrs { display:none !important; }
-    /* nt row: 2-col grid on tablet */
-    .nt-task-row { grid-template-columns:1fr 1fr 1fr 1fr 32px !important; }
-    .mt-task-row { grid-template-columns:1fr 1fr 1fr 32px !important; }
+    .tabs        { padding:0 20px; }
+    .rm-grid     { grid-template-columns:1fr; }
+    .tier-grid   { grid-template-columns:1fr 1fr; }
+    .add-user-grid{ grid-template-columns:1fr 1fr !important; }
+    .form-row    { grid-template-columns:1fr !important; gap:10px; }
   }
-
-  /* ═══ RESPONSIVE — PHONE (≤640px) ════════════════════════════════════ */
   @media (max-width:640px) {
-    .header     { flex-direction:column; align-items:flex-start; gap:8px; padding:12px 14px; }
+    .header      { flex-direction:column; align-items:flex-start; gap:8px; padding:12px 14px; }
     .header-right{ width:100%; flex-wrap:wrap; gap:6px; }
     .header-title{ font-size:14px; }
-    .tabs       { gap:0; padding:0 14px; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
-    .tab        { font-size:12px; padding:10px 12px; white-space:nowrap; flex-shrink:0; }
-    .main       { padding:12px 14px; }
-    .stat-grid  { grid-template-columns:1fr 1fr; gap:8px; }
-    .stat-card  { padding:12px 14px; }
-    .stat-val   { font-size:22px; }
-    .grid-2     { grid-template-columns:1fr; gap:10px; }
-    .digest-grid{ grid-template-columns:1fr 1fr; }
-    .panel      { padding:14px 14px; }
-    .panel-title{ font-size:12px; }
-    .filter-bar { padding:8px 10px; gap:5px; }
-    .fchip      { font-size:11px; padding:3px 8px; }
-    .tbl        { font-size:12px; }
-    .logout-btn { font-size:11px; padding:5px 10px; }
-    .login-card { padding:28px 22px; margin:16px; }
-    .modal-box  { padding:20px 18px; margin:12px; }
-    .form-row   { grid-template-columns:1fr !important; gap:8px; }
-    /* Role management */
-    .rm-grid    { grid-template-columns:1fr; }
-    .tier-grid  { grid-template-columns:1fr; }
+    .tabs        { gap:0; padding:0 14px; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
+    .tab         { font-size:12px; padding:10px 12px; white-space:nowrap; flex-shrink:0; }
+    .main        { padding:12px 14px; }
+    .stat-grid   { grid-template-columns:1fr 1fr; gap:8px; }
+    .stat-card   { padding:12px 14px; }
+    .stat-val    { font-size:22px; }
+    .grid-2      { grid-template-columns:1fr; gap:10px; }
+    .digest-grid { grid-template-columns:1fr 1fr; }
+    .panel       { padding:14px; }
+    .filter-bar  { padding:8px 10px; gap:5px; }
+    .fchip       { font-size:11px; padding:3px 8px; }
+    .tbl         { font-size:12px; }
+    .logout-btn  { font-size:11px; padding:5px 10px; }
+    .login-card  { padding:28px 22px; margin:16px; max-width:100%; }
+    .modal-box   { padding:20px 18px; margin:12px; }
+    .form-row    { grid-template-columns:1fr !important; gap:8px; }
+    .rm-grid     { grid-template-columns:1fr; }
+    .tier-grid   { grid-template-columns:1fr; }
     .add-user-grid{ grid-template-columns:1fr !important; }
-    /* Task rows — fully stacked on phone */
-    .nt-col-hdrs{ display:none !important; }
-    .mt-col-hdrs{ display:none !important; }
-    .nt-task-row{ grid-template-columns:1fr 1fr 32px !important; }
-    .mt-task-row{ grid-template-columns:1fr 1fr 32px !important; }
-    .nt-task-row .nt-col-owner,
-    .nt-task-row .nt-col-status { display:none; }
-    /* Gantt */
     .gantt-label { width:90px; }
-    .gantt-name  { font-size:11px; }
     .gantt-sub   { display:none; }
     .prog-gantt-label{ width:90px; }
-    .prog-gantt-name { font-size:11px; }
     .prog-gantt-sub  { display:none; }
-    /* Check-in */
-    .checkin-banner { flex-direction:column; gap:12px; }
+    .checkin-banner  { flex-direction:column; gap:12px; }
     .checkin-open-btn{ width:100%; text-align:center; }
-    /* Digest */
-    .digest-header{ flex-direction:column; gap:8px; }
+    .digest-header   { flex-direction:column; gap:8px; }
     .digest-print-btn{ width:100%; }
-    /* Program mgmt */
-    .pm-proj-row{ flex-direction:column; align-items:flex-start; }
-    /* My tasks */
-    .mytasks-header{ flex-direction:column; gap:8px; }
-    /* Heatmap — scroll horizontally */
-    #heatmap    { overflow-x:auto; }
-    /* User management table — horizontal scroll */
-    #um-user-list{ overflow-x:auto; }
-    .um-table   { min-width:500px; }
-    /* Stat grid in KPI */
+    .pm-proj-row     { flex-direction:column; align-items:flex-start; }
+    .mytasks-header  { flex-direction:column; gap:8px; }
+    #heatmap         { overflow-x:auto; }
+    #um-user-list    { overflow-x:auto; }
+    .um-table        { min-width:500px; }
     #k-stats,#s-stats{ grid-template-columns:1fr 1fr; }
+    /* Hide task-row col headers on mobile — rows use inline labels instead */
+    .task-col-hdrs   { display:none !important; }
+  }
+  /* Task row responsive layout */
+  .task-add-row {
+    display:grid;
+    grid-template-columns: 1fr 130px 90px 110px 80px 28px;
+    gap:6px; margin-bottom:6px; align-items:start;
+  }
+  @media (max-width:900px) {
+    .task-add-row { grid-template-columns: 1fr 120px 90px 110px 28px; }
+    .task-col-hdrs > .tc-status { display:none; }
+    .task-add-row  .ta-status   { display:none; }
+  }
+  @media (max-width:640px) {
+    .task-add-row { grid-template-columns: 1fr 28px; gap:8px; }
+    .task-add-row > *:not(:first-child):not(:last-child) { display:none; }
+    .task-add-row .ta-date-wrap,
+    .task-add-row .ta-quarter   { display:none; }
+    /* Show as stacked card instead */
+    .task-add-row { display:flex; flex-direction:column; gap:6px;
+      background:var(--gray-50); border:1px solid var(--gray-200);
+      border-radius:8px; padding:10px; position:relative; }
+    .task-add-row .ta-del-btn { position:absolute; top:8px; right:8px; }
+    .task-add-row > * { display:block !important; width:100%; }
+    .task-add-row .ta-del-btn { width:28px; }
+    .task-col-hdrs { display:none !important; }
+    /* mt-task-row same treatment */
+    .mt-task-row { display:flex; flex-direction:column; gap:6px;
+      background:var(--gray-50); border:1px solid var(--gray-200);
+      border-radius:8px; padding:10px; position:relative; margin-bottom:8px; }
+    .mt-task-row .mt-del-btn { position:absolute; top:8px; right:8px; }
+    .mt-task-row > * { display:block !important; width:100%; }
+    .mt-task-row .mt-del-btn { width:28px !important; }
   }
 
   /* ── FILTER BAR ── */
@@ -1122,7 +1128,7 @@
               </div>
             </div>
             <!-- Column headers -->
-            <div class="mt-col-hdrs" style="display:grid;grid-template-columns:1fr 140px 100px 28px;gap:6px;margin-bottom:4px;padding:0 2px;">
+            <div style="display:grid;grid-template-columns:1fr 140px 100px 28px;gap:6px;margin-bottom:4px;padding:0 2px;" class="task-col-hdrs">
               <div class="rm-label">Task Name</div>
               <div class="rm-label">Due Date</div>
               <div class="rm-label">Quarter</div>
@@ -1395,7 +1401,7 @@
             </div>
           </div>
           <!-- Column headers -->
-          <div style="display:grid;grid-template-columns:1fr 130px 100px 120px 90px 28px;gap:6px;margin-bottom:4px;padding:0 2px;">
+          <div class="task-col-hdrs" style="display:grid;grid-template-columns:1fr 130px 100px 120px 90px 28px;gap:6px;margin-bottom:4px;padding:0 2px;">
             <div class="rm-label">Task Name</div>
             <div class="rm-label">Due Date</div>
             <div class="rm-label">Quarter</div>
@@ -1533,7 +1539,7 @@
             <span style="width:20px;height:20px;background:var(--blue);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;flex-shrink:0;">+</span>
             Add New User
           </div>
-          <div class="add-user-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="add-user-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
             <div>
               <div class="rm-label">Username</div>
               <input class="form-input" id="nu-username" placeholder="e.g. john.doe" style="font-family:var(--font);">
@@ -3602,7 +3608,8 @@ function mtAddRow() {
   const qOpts = quarterOptions();
   const row = document.createElement('div');
   row.id = `mt-row-${i}`;
-  row.className = 'mt-task-row'; row.style.cssText = 'display:grid;grid-template-columns:1fr 140px 100px 28px;gap:6px;margin-bottom:6px;align-items:center;';
+  row.className = 'mt-task-row';
+  row.style.cssText = 'display:grid;grid-template-columns:1fr 130px 90px 28px;gap:6px;margin-bottom:6px;align-items:center;';
   row.innerHTML = `
     <input class="form-input" id="mt-name-${i}" placeholder="Task name" style="font-family:var(--font);font-size:12px;padding:6px 8px;">
     <div>
@@ -3611,7 +3618,8 @@ function mtAddRow() {
       <input type="hidden" id="mt-cw-${i}">
     </div>
     <select class="rm-select" id="mt-q-${i}" style="font-size:12px;padding:5px 6px;">${qOpts}</select>
-    <button onclick="document.getElementById('mt-row-${i}').remove()" style="width:24px;height:24px;border:1px solid #fecaca;border-radius:5px;background:#fff;color:var(--red);cursor:pointer;font-size:14px;line-height:1;padding:0;">×</button>
+    <button class="mt-del-btn" onclick="document.getElementById('mt-row-${i}').remove()"
+      style="width:28px;height:28px;border:1px solid #fecaca;border-radius:5px;background:#fff;color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0;">×</button>
   `;
   document.getElementById('mt-rows').appendChild(row);
 }
@@ -4312,43 +4320,42 @@ function ntAddRow() {
   const rowId = `nt-${++ntRowCount}`;
   const row   = document.createElement('div');
   row.id = `task-row-${rowId}`;
-  row.className = 'nt-task-row'; row.style.cssText = 'display:grid;grid-template-columns:1fr 140px 100px 130px 90px 28px;gap:6px;margin-bottom:6px;align-items:start;';
+  row.className = 'task-add-row';
 
   const staffOpts = getStaffNames().map(n => `<option value="${n}">${n}</option>`).join('');
 
   row.innerHTML = `
     <input class="form-input" placeholder="Task name…" style="font-family:var(--font);font-size:12px;" data-field="name">
-    <div>
+    <div class="ta-date-wrap">
       <input class="form-input" type="date" style="font-family:var(--font);font-size:12px;" data-field="date">
       <div style="font-size:10px;color:var(--gray-400);margin-top:2px;"></div>
       <input type="hidden" data-field="cw">
     </div>
-    <select class="rm-select" style="font-size:12px;" data-field="quarter">${quarterOptions()}</select>
-    <select class="rm-select nt-col-owner" style="font-size:12px;" data-field="owner">
+    <select class="rm-select ta-quarter" style="font-size:12px;" data-field="quarter">${quarterOptions()}</select>
+    <select class="rm-select ta-owner" style="font-size:12px;" data-field="owner">
       <option value="">— Staff —</option>${staffOpts}
     </select>
-    <select class="rm-select nt-col-status" style="font-size:12px;" data-field="status">
+    <select class="rm-select ta-status" style="font-size:12px;" data-field="status">
       <option value="Planned">Planned</option>
       <option value="Delivered">Delivered</option>
     </select>
-    <button onclick="this.closest('[id^=task-row]').remove()"
-      style="width:24px;height:24px;border:1px solid #fecaca;border-radius:6px;background:#fff;color:var(--red);cursor:pointer;font-size:14px;line-height:1;padding:0;margin-top:4px;">✕</button>
+    <button class="ta-del-btn" onclick="this.closest('[id^=task-row]').remove()"
+      style="width:28px;height:28px;border:1px solid #fecaca;border-radius:6px;background:#fff;color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0;flex-shrink:0;">×</button>
   `;
 
   const dateInput = row.querySelector('[data-field=date]');
   const cwInput   = row.querySelector('[data-field=cw]');
-  const hintEl    = row.querySelector('div[style*="gray-400"]');
+  const hintEl    = row.querySelector('.ta-date-wrap div');
   const qSel      = row.querySelector('[data-field=quarter]');
   dateInput?.addEventListener('change', () => {
     const cw = dateToCW(dateInput.value);
     cwInput.value = cw || '';
     if (hintEl) hintEl.textContent = cw ? `CW ${cw}` : '';
-    // Auto-select quarter from date
     if (qSel && dateInput.value) {
-      const yr     = new Date(dateInput.value).getFullYear();
+      const yr = new Date(dateInput.value).getFullYear();
       const yShort = String(yr).slice(-2);
-      const q      = cw <= 13 ? 'Q1' : cw <= 26 ? 'Q2' : cw <= 39 ? 'Q3' : 'Q4';
-      qSel.value   = `${yShort}${q}`;
+      const q = cw <= 13 ? 'Q1' : cw <= 26 ? 'Q2' : cw <= 39 ? 'Q3' : 'Q4';
+      qSel.value = `${yShort}${q}`;
     }
   });
 
