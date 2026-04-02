@@ -1088,6 +1088,7 @@
     <button class="tab" id="tab-btn-setup" onclick="switchTab('setup',this)">⚙ Setup</button>
     <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report">📄 DCR Reports</button>
     <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department">💰 Finance</button>
+    <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff">📢 Announcements</button>
   </div>
 
   <div class="main">
@@ -2071,6 +2072,7 @@ function applyRBAC() {
   setTabVisible('setup',    isAdmin());
   const isFinance = () => ['finance','finance_staff','finance_manager'].includes(CURRENT_USER?.role);
   setTabVisible('finance',  isAdmin() || isManager() || isFinance());             // external: NO
+  setTabVisible('announcements', isAdmin() || isManager() || isFinance());
 
   // Update header badge
   const nameBadge = document.getElementById('user-name-badge');
@@ -4834,6 +4836,10 @@ function openDCR() {
 
 function openFinance() {
   window.location.href = 'finance.html';
+}
+
+function openAnnouncements() {
+  window.location.href = 'announcements.html';
 }
 
 function renderRoleManagement() {
