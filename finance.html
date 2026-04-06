@@ -583,10 +583,10 @@ textarea { resize:vertical; min-height:80px; }
             <div class="form-group">
               <label>Quarter</label>
               <select id="exp-quarter">
-                <option value="Q1">Q1 (Jul–Sep)</option>
-                <option value="Q2">Q2 (Oct–Dec)</option>
-                <option value="Q3">Q3 (Jan–Mar)</option>
-                <option value="Q4">Q4 (Apr–Jun)</option>
+                <option value="Q1">Q1</option>
+                <option value="Q2">Q2</option>
+                <option value="Q3">Q3</option>
+                <option value="Q4">Q4</option>
               </select>
             </div>
           </div>
@@ -1131,6 +1131,51 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAll();
 });
 
+
+// ── Compute dynamic quarters from budget period start ──────────────────
+// Returns [{key:'Q1', label:'Q1 (Jan–Mar 2026)', start: Date, end: Date}, ...]
+function computeQuarters(periodStart) {
+  // periodStart: 'YYYY-MM-DD' string, e.g. '2026-01-01'
+  // Returns 4 quarters of 3 months each starting from that month
+  if (!periodStart) {
+    // Default fallback: Myanmar fiscal year Jul–Jun
+    return [
+      { key:'Q1', label:'Q1 (Jul–Sep)', months:'Jul–Sep' },
+      { key:'Q2', label:'Q2 (Oct–Dec)', months:'Oct–Dec' },
+      { key:'Q3', label:'Q3 (Jan–Mar)', months:'Jan–Mar' },
+      { key:'Q4', label:'Q4 (Apr–Jun)', months:'Apr–Jun' },
+    ];
+  }
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const start  = new Date(periodStart + 'T00:00:00');
+  const sm     = start.getMonth(); // 0-based
+  const sy     = start.getFullYear();
+  return [1,2,3,4].map(q => {
+    const qStartM = (sm + (q-1)*3) % 12;
+    const qEndM   = (sm + (q-1)*3 + 2) % 12;
+    const qStartY = sy + Math.floor((sm + (q-1)*3) / 12);
+    const qEndY   = sy + Math.floor((sm + (q-1)*3 + 2) / 12);
+    const monthRange = qStartM === qEndM
+      ? MONTHS[qStartM]
+      : MONTHS[qStartM] + '–' + MONTHS[qEndM];
+    const yearSuffix = qStartY === qEndY ? ' ' + qStartY : ' ' + qStartY + '/' + String(qEndY).slice(-2);
+    return {
+      key:    'Q' + q,
+      label:  'Q' + q + ' (' + monthRange + yearSuffix.trim() + ')',
+      months: monthRange,
+    };
+  });
+}
+
+// Populate the expenditure quarter dropdown based on selected budget's period
+function updateExpQuarterDropdown(budgetId) {
+  const sel = document.getElementById('exp-quarter');
+  if (!sel) return;
+  const budget = FIN.budgets.find(b => b['Budget ID'] === budgetId);
+  const qs = computeQuarters(budget?.['Period Start'] || null);
+  sel.innerHTML = qs.map(q => `<option value="${q.key}">${q.label}</option>`).join('');
+}
+
 // ══════════════════════════════════════════════════════
 //  WORKER CALL
 // ══════════════════════════════════════════════════════
@@ -1350,6 +1395,8 @@ function renderBudgets() {
 async function openBudgetDetail(budgetId) {
   CURRENT_BUDGET_ID = budgetId;
   switchPane('budget-detail');
+  // Pre-set the expenditure quarter dropdown for this budget
+  updateExpQuarterDropdown(budgetId);
 
   const budget = FIN.budgets.find(b => b['Budget ID'] === budgetId);
   if (!budget) return;
@@ -1390,16 +1437,18 @@ function renderBudgetDetail(budgetId) {
     </div>`;
   }).join('') || '<div style="color:var(--gray-400);font-size:13px;padding:8px;">No donors attached.</div>';
 
-  // Quarter breakdown
-  const quarters = ['Q1','Q2','Q3','Q4'];
-  const qData = quarters.map(q => {
+  // Quarter breakdown — dynamic from budget period start
+  const budget = FIN.budgets.find(b => b['Budget ID'] === budgetId);
+  const dynamicQuarters = computeQuarters(budget?.['Period Start'] || null);
+  const qData = dynamicQuarters.map(qDef => {
+    const q = qDef.key;
     const total = exps.filter(e => e['Quarter']===q && e['Status']==='approved').reduce((s,e)=>s+parseFloat(e['Amount MMK']||0),0);
     const pend  = exps.filter(e => e['Quarter']===q && e['Status']==='pending').reduce((s,e)=>s+parseFloat(e['Amount MMK']||0),0);
-    return { q, total, pend };
+    return { q, label: qDef.label, months: qDef.months, total, pend };
   });
   document.getElementById('detail-quarters').innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--gray-100);">
     ${qData.map(d => `<div style="background:#fff;padding:14px;">
-      <div style="font-size:11px;font-weight:600;color:var(--gray-400);margin-bottom:4px;">${d.q}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--gray-400);margin-bottom:4px;">${d.label}</div>
       <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:var(--navy);">${fmtMMK(d.total)}</div>
       <div style="font-size:11px;color:var(--gray-400);">MMK approved</div>
       ${d.pend > 0 ? `<div style="font-size:11px;color:var(--amber);margin-top:2px;">${fmtMMK(d.pend)} pending</div>` : ''}
@@ -1465,7 +1514,7 @@ function renderBudgetDetail(budgetId) {
       return `<tr>
         <td style="font-size:12px;">${li?.['Description'] || e['Line Item ID']}</td>
         <td style="font-size:12px;">${bd?.['Donor Name'] || e['Donor ID'] || '—'}</td>
-        <td><span class="pill pill-q">${e['Quarter']}</span></td>
+        <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
         <td style="font-family:var(--mono);font-weight:500;">${fmtFull(e['Amount MMK'])}</td>
         <td style="font-size:12px;">${e['Submitted By'] || '—'}</td>
         <td><span class="pill pill-${st}">${st}</span></td>
@@ -1539,7 +1588,7 @@ function renderApprovals() {
       <td style="font-size:12px;font-weight:500;">${b?.['Name'] || '—'}</td>
       <td style="font-size:12px;">${li?.['Description'] || '—'}</td>
       <td style="font-size:12px;">${bd?.['Donor Name'] || '—'}</td>
-      <td><span class="pill pill-q">${e['Quarter']}</span></td>
+      <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
       <td style="font-family:var(--mono);font-weight:600;">${fmtFull(e['Amount MMK'])}</td>
       <td style="font-size:12px;">${e['Submitted By']}</td>
       <td><div class="actions">
@@ -1575,7 +1624,7 @@ function renderMyExpenditures() {
     return `<tr>
       <td style="font-size:12px;">${b?.['Name'] || '—'}</td>
       <td style="font-size:12px;">${li?.['Description'] || e['Description'] || '—'}</td>
-      <td><span class="pill pill-q">${e['Quarter']}</span></td>
+      <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
       <td style="font-family:var(--mono);">${fmtFull(e['Amount MMK'])}</td>
       <td><span class="pill pill-${st}">${st}</span></td>
     </tr>`;
@@ -1631,6 +1680,7 @@ function onExpBudgetChange() {
   liSel.innerHTML = '<option value="">— Select line item —</option>';
   bdSel.innerHTML = '<option value="">— Select line item first —</option>';
   if (!budgetId) return;
+  updateExpQuarterDropdown(budgetId);
   const lis = getLIsForBudget(budgetId);
   lis.forEach(li => liSel.add(new Option(`${li['Section No']}. ${li['Description']} (${fmtMMK(li['Total MMK'])} MMK)`, li['LI ID'])));
 }
