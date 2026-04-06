@@ -611,8 +611,21 @@ textarea { resize:vertical; min-height:80px; }
               <div class="field-hint" id="exp-budget-hint"></div>
             </div>
             <div class="form-group">
+              <label>Expense date <span style="font-weight:400;color:var(--gray-400)">(actual date incurred)</span></label>
+              <input type="date" id="exp-date">
+              <div class="field-hint">Leave blank to use today's date</div>
+            </div>
+          </div>
+          <div class="form-row cols2">
+            <div class="form-group">
               <label>Description / note</label>
               <input type="text" id="exp-desc" placeholder="Brief description…">
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end;">
+              <div style="font-size:11px;color:var(--gray-400);padding-bottom:2px;line-height:1.6;">
+                <strong style="color:var(--gray-600);">Submitted date</strong> is set automatically when you click Submit.<br>
+                <strong style="color:var(--gray-600);">Approved date</strong> is set by the Finance Manager.
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:4px;">
@@ -1504,7 +1517,7 @@ function renderBudgetDetail(budgetId) {
     document.getElementById('detail-expenditures').innerHTML = '<div class="empty"><div class="empty-text">No expenditure records yet.</div></div>';
   } else {
     document.getElementById('detail-expenditures').innerHTML = `<table class="tbl"><thead><tr>
-      <th>Line item</th><th>Donor</th><th>Quarter</th><th>Amount MMK</th><th>By</th><th>Status</th>
+      <th>Line item</th><th>Donor</th><th>Expense date</th><th>Quarter</th><th>Amount MMK</th><th>By</th><th>Status</th>
       ${IS_MANAGER ? '<th></th>' : ''}
     </tr></thead><tbody>
     ${exps.sort((a,b) => (b['Submitted At']||'').localeCompare(a['Submitted At']||'')).map(e => {
@@ -1514,6 +1527,8 @@ function renderBudgetDetail(budgetId) {
       return `<tr>
         <td style="font-size:12px;">${li?.['Description'] || e['Line Item ID']}</td>
         <td style="font-size:12px;">${bd?.['Donor Name'] || e['Donor ID'] || '—'}</td>
+        
+        <td style="font-size:12px;color:var(--gray-500);">${e['Expense Date'] ? new Date(e['Expense Date']).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—'}</td>
         <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
         <td style="font-family:var(--mono);font-weight:500;">${fmtFull(e['Amount MMK'])}</td>
         <td style="font-size:12px;">${e['Submitted By'] || '—'}</td>
@@ -1588,7 +1603,9 @@ function renderApprovals() {
       <td style="font-size:12px;font-weight:500;">${b?.['Name'] || '—'}</td>
       <td style="font-size:12px;">${li?.['Description'] || '—'}</td>
       <td style="font-size:12px;">${bd?.['Donor Name'] || '—'}</td>
-      <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
+      
+        <td style="font-size:12px;color:var(--gray-500);">${e['Expense Date'] ? new Date(e['Expense Date']).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—'}</td>
+        <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
       <td style="font-family:var(--mono);font-weight:600;">${fmtFull(e['Amount MMK'])}</td>
       <td style="font-size:12px;">${e['Submitted By']}</td>
       <td><div class="actions">
@@ -1615,7 +1632,7 @@ function renderMyExpenditures() {
     return;
   }
   el.innerHTML = `<table class="tbl"><thead><tr>
-    <th>Budget</th><th>Description</th><th>Quarter</th><th>Amount MMK</th><th>Status</th>
+    <th>Budget</th><th>Description</th><th>Expense date</th><th>Quarter</th><th>Amount MMK</th><th>Status</th>
   </tr></thead><tbody>
   ${mine.map(e => {
     const b  = FIN.budgets.find(b => b['Budget ID'] === e['Budget ID']);
@@ -1624,7 +1641,9 @@ function renderMyExpenditures() {
     return `<tr>
       <td style="font-size:12px;">${b?.['Name'] || '—'}</td>
       <td style="font-size:12px;">${li?.['Description'] || e['Description'] || '—'}</td>
-      <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
+      
+        <td style="font-size:12px;color:var(--gray-500);">${e['Expense Date'] ? new Date(e['Expense Date']).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—'}</td>
+        <td><span class="pill pill-q" title="${(() => { const b = FIN.budgets.find(b=>b['Budget ID']===e['Budget ID']); const qs = computeQuarters(b?.['Period Start']||null); return qs.find(q=>q.key===e['Quarter'])?.label || e['Quarter']; })()}">${e['Quarter']}</span></td>
       <td style="font-family:var(--mono);">${fmtFull(e['Amount MMK'])}</td>
       <td><span class="pill pill-${st}">${st}</span></td>
     </tr>`;
@@ -1720,8 +1739,9 @@ async function submitExpenditure() {
   const bdId       = document.getElementById('exp-bd').value;
   const budgetId   = document.getElementById('exp-budget').value;
   const quarter    = document.getElementById('exp-quarter').value;
-  const amountMmk  = document.getElementById('exp-amount').value;
-  const description= document.getElementById('exp-desc').value.trim();
+  const amountMmk   = document.getElementById('exp-amount').value;
+  const expenseDate = document.getElementById('exp-date').value || new Date().toISOString().slice(0,10);
+  const description = document.getElementById('exp-desc').value.trim();
   const msg        = document.getElementById('exp-msg');
   const btn        = document.getElementById('exp-submit-btn');
 
@@ -1737,11 +1757,12 @@ async function submitExpenditure() {
   try {
     const res = await workerCall('log_expenditure_v2', {
       lineItemId, bdId, budgetId, donorId: bd?.['Donor ID'] || '',
-      quarter, amountMmk, description,
+      quarter, amountMmk, expenseDate, description,
     });
     if (res.ok) {
       showMsg('exp-msg', '✓ Expenditure submitted for approval.', 'success');
       document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-date').value   = '';
       document.getElementById('exp-desc').value   = '';
       await loadAll();
     } else {

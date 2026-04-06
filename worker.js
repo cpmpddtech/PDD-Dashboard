@@ -2508,7 +2508,7 @@ export default {
         },
         {
           name: 'Expenditures',
-          headers: ['Exp ID', 'Line Item ID', 'BD ID', 'Budget ID', 'Donor ID', 'Quarter', 'Amount MMK', 'Description', 'Submitted By', 'Submitted At', 'Approved By', 'Approved At', 'Status'],
+          headers: ['Exp ID', 'Line Item ID', 'BD ID', 'Budget ID', 'Donor ID', 'Quarter', 'Amount MMK', 'Description', 'Expense Date', 'Submitted By', 'Submitted At', 'Approved By', 'Approved At', 'Status'],
         },
       ];
 
@@ -2764,7 +2764,7 @@ export default {
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
-      const { lineItemId, bdId, budgetId, donorId, quarter, amountMmk, description } = body;
+      const { lineItemId, bdId, budgetId, donorId, quarter, amountMmk, expenseDate, description } = body;
       if (!lineItemId || !bdId || !quarter || !amountMmk)
         return new Response(JSON.stringify({ error: 'Line item, BD ID, quarter and amount are required' }), { status: 400, headers });
 
@@ -2778,6 +2778,7 @@ export default {
       await appendFin(token, 'Expenditures', [
         id, lineItemId, bdId, budgetId || '', donorId || '',
         quarter, amountMmk, description || '',
+        expenseDate || now.slice(0,10),
         u.name, now, '', '', 'pending'
       ]);
 
