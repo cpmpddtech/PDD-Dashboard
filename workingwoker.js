@@ -20,6 +20,7 @@
  *    ALERT_THRESHOLD       → number e.g. 0.70 for 70% threshold
  *    DRIVE_REFRESH_TOKEN   → OAuth2 refresh token with drive.file + spreadsheets + gmail.send scopes
  *    DRIVE_FOLDER_ID       → Google Drive folder ID for PDP_DCR_Reports
+ *    ANNOUNCEMENTS_FOLDER_ID → Google Drive folder ID for Announcement logs
  *
  *  ── INITIAL USERS_CONFIG SETUP ──────────────────────────────
  *  Add this minimal JSON as a Secret in Cloudflare:
@@ -2507,7 +2508,7 @@ export default {
         },
         {
           name: 'Expenditures',
-          headers: ['Exp ID', 'Line Item ID', 'BD ID', 'Budget ID', 'Donor ID', 'Quarter', 'Amount MMK', 'Description', 'Submitted By', 'Submitted At', 'Approved By', 'Approved At', 'Status'],
+          headers: ['Exp ID', 'Line Item ID', 'BD ID', 'Budget ID', 'Donor ID', 'Quarter', 'Amount MMK', 'Description', 'Expense Date', 'Submitted By', 'Submitted At', 'Approved By', 'Approved At', 'Status', 'Voucher IDs'],
         },
       ];
 
@@ -2763,7 +2764,7 @@ export default {
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
-      const { lineItemId, bdId, budgetId, donorId, quarter, amountMmk, description } = body;
+      const { lineItemId, bdId, budgetId, donorId, quarter, amountMmk, expenseDate, description } = body;
       if (!lineItemId || !bdId || !quarter || !amountMmk)
         return new Response(JSON.stringify({ error: 'Line item, BD ID, quarter and amount are required' }), { status: 400, headers });
 
@@ -2777,7 +2778,8 @@ export default {
       await appendFin(token, 'Expenditures', [
         id, lineItemId, bdId, budgetId || '', donorId || '',
         quarter, amountMmk, description || '',
-        u.name, now, '', '', 'pending'
+        "'" + (expenseDate || now.slice(0,10)),
+        u.name, "'" + now, '', '', 'pending', ''
       ]);
 
       // Notify submitter + managers — non-blocking
@@ -2798,9 +2800,168 @@ export default {
     }
 
     // ════════════════════════════════════════════════════════════════
+    //  upload_voucher
+    //  Uploads one file to Drive under Vouchers/{BudgetName}-{BudgetId}/
+    //  then appends the file ID to the Expenditures row's Voucher IDs column.
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'upload_voucher') {
+      const u = validateUser(body.username, body.password);
+      if (!u || !FIN_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
+
+      const { expId, budgetId, budgetName, fileName, mimeType, fileBase64 } = body;
+      if (!expId || !fileBase64 || !fileName)
+        return new Response(JSON.stringify({ error: 'expId, fileName and fileBase64 are required' }), { status: 400, headers });
+
+      const vouchersFolderId = env.VOUCHERS_FOLDER_ID;
+      if (!vouchersFolderId)
+        return new Response(JSON.stringify({ error: 'VOUCHERS_FOLDER_ID secret not set' }), { status: 500, headers });
+
+      const token = await getDriveToken(env);
+
+      // 1. Find or create the budget subfolder under Vouchers/
+      // Keep letters, digits, spaces, hyphens, dots, parentheses — safe for Drive folder names
+      const safeName = (budgetName || budgetId || 'Unknown')
+        .replace(/[\\/:*?"<>|]/g, '-')  // strip only chars illegal in Drive
+        .trim().slice(0, 80);
+      const subfolderName = `${safeName} (${budgetId || 'B'})`;
+
+      // Search for existing subfolder
+      const searchQ = `'${vouchersFolderId}' in parents and name='${subfolderName.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+      const searchRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(searchQ)}&fields=files(id,name)`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const searchData = await searchRes.json();
+      let subFolderId;
+      if (searchData.files && searchData.files.length > 0) {
+        subFolderId = searchData.files[0].id;
+      } else {
+        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: subfolderName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [vouchersFolderId],
+          }),
+        });
+        if (!createRes.ok) {
+          const ce = await createRes.json().catch(() => ({}));
+          return new Response(JSON.stringify({ error: 'Could not create subfolder: ' + (ce.error?.message || createRes.status) }), { status: 500, headers });
+        }
+        const createData = await createRes.json();
+        subFolderId = createData.id;
+      }
+      if (!subFolderId)
+        return new Response(JSON.stringify({ error: 'Could not create/find budget subfolder' }), { status: 500, headers });
+
+      // 2. Decode base64 → binary, build multipart body, upload to Drive
+      const uploadMime = mimeType || 'application/octet-stream';
+      const uploadName = `${expId}_${fileName}`;
+      const boundary   = 'PDP_VOUCHER_' + Date.now();
+
+      // CRLF as raw bytes [13,10] — avoids any JS string escape ambiguity
+      const CRLF = new Uint8Array([13, 10]);
+
+      // Decode base64 → binary Uint8Array
+      const binaryStr = atob(fileBase64);
+      const fileBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) fileBytes[i] = binaryStr.charCodeAt(i);
+
+      // Build text segments
+      const enc = new TextEncoder();
+      const metaJson = JSON.stringify({ name: uploadName, parents: [subFolderId] });
+      const p1a  = enc.encode('--' + boundary);
+      const p1b  = enc.encode('Content-Type: application/json; charset=UTF-8');
+      const p1c  = enc.encode(metaJson);
+      const p2a  = enc.encode('--' + boundary);
+      const p2b  = enc.encode('Content-Type: ' + uploadMime);
+      const pEnd = enc.encode('--' + boundary + '--');
+
+      // Assemble per RFC 2046: boundary CRLF header CRLF CRLF body CRLF
+      const parts = [
+        p1a, CRLF, p1b, CRLF, CRLF, p1c, CRLF,
+        p2a, CRLF, p2b, CRLF, CRLF, fileBytes, CRLF,
+        pEnd,
+      ];
+      const totalLen = parts.reduce((s, p) => s + p.length, 0);
+      const multipartBody = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const part of parts) { multipartBody.set(part, offset); offset += part.length; }
+
+      const uploadRes = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary="${boundary}"`,
+          },
+          body: multipartBody,
+        }
+      );
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ error: 'Drive upload failed: ' + (err.error?.message || uploadRes.status) }), { status: 500, headers });
+      }
+      const uploadData = await uploadRes.json();
+      const fileId  = uploadData.id;
+      const fileUrl = uploadData.webViewLink || `https://drive.google.com/file/d/${fileId}/view`;
+
+      // 3. Append fileId to Expenditures row Voucher IDs column (index 14 = col O)
+      const rows = await fetchSheet(env.GOOGLE_API_KEY, env.FINANCE_SPREADSHEET_ID, 'Expenditures');
+      const hIdx = rows.findIndex(r => r && r[0] === 'Exp ID');
+      const rowIdx = rows.findIndex((r, i) => i > hIdx && r[0] === expId);
+      if (rowIdx >= 0) {
+        const sheetRow = rowIdx + 1;
+        const existing = (rows[rowIdx][14] || '').toString().trim();
+        const newVal   = existing ? existing + ',' + fileId : fileId;
+        await updateFinRange(token, `Expenditures!O${sheetRow}`, [[newVal]]);
+      }
+
+      return new Response(JSON.stringify({ ok: true, fileId, fileUrl, fileName: uploadName }), { headers });
+    }
+
+    // ════════════════════════════════════════════════════════════════
     //  approve_expenditure_v2 / reject_expenditure_v2
     //  Finance Manager or Admin approves/rejects an expenditure record
     // ════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════
+    //  get_vouchers
+    //  Returns Drive metadata for all voucher files on an expenditure row.
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'get_vouchers') {
+      const u = validateUser(body.username, body.password);
+      if (!u || !FIN_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
+
+      const { expId } = body;
+      if (!expId)
+        return new Response(JSON.stringify({ error: 'expId required' }), { status: 400, headers });
+
+      const rows = await fetchSheet(env.GOOGLE_API_KEY, env.FINANCE_SPREADSHEET_ID, 'Expenditures');
+      const hIdx = rows.findIndex(r => r && r[0] === 'Exp ID');
+      const row  = rows.find((r, i) => i > hIdx && r[0] === expId);
+      if (!row)
+        return new Response(JSON.stringify({ error: 'Expenditure not found' }), { status: 404, headers });
+
+      const voucherIds = (row[14] || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (!voucherIds.length)
+        return new Response(JSON.stringify({ ok: true, vouchers: [] }), { headers });
+
+      const token = await getDriveToken(env);
+      const vouchers = await Promise.all(voucherIds.map(async fileId => {
+        const r = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType,webViewLink,size`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!r.ok) return { fileId, name: fileId, error: true };
+        return r.json();
+      }));
+      return new Response(JSON.stringify({ ok: true, vouchers }), { headers });
+    }
+
     if (action === 'approve_expenditure_v2' || action === 'reject_expenditure_v2') {
       const u = validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
@@ -2820,7 +2981,7 @@ export default {
       const now = new Date().toISOString();
 
       // Update columns K (Approved By), L (Approved At), M (Status)
-      await updateFinRange(token, `Expenditures!K${sheetRow}:M${sheetRow}`, [[u.name, now, newStatus]]);
+      await updateFinRange(token, `Expenditures!L${sheetRow}:N${sheetRow}`, [[u.name, "'" + now, newStatus]]);
 
       // Notify submitter — non-blocking
       const expRow = rows[rowIdx];
@@ -2830,7 +2991,7 @@ export default {
         amount: expRow[6] || '0',
         status: newStatus,
         reviewedBy: u.name,
-        submittedBy: expRow[8] || '',
+        submittedBy: expRow[9] || '',
       }).catch(() => {});
 
       return new Response(JSON.stringify({ ok: true, expId, status: newStatus }), { status: 200, headers });
@@ -3691,7 +3852,7 @@ export default {
         let liCells3   = [
           ['Budget','Section','Line Item','Budgeted MMK','Q1','Q2','Q3','Q4','Total Spent','Balance','%']
             .map(h => cell(h, FMT.BOLD, FMT.FILL_HEADER)),
-          ...liRows.slice(1).map((r,ri) => r.map((v,ci) => { 
+          ...liRows.slice(1).map((r,ri) => r.map((v,ci) => {
             let alt = ri%2===1 ? { backgroundColor:{red:0.969,green:0.973,blue:0.984} } : {};
             return typeof v==='number' ? numCell(v, alt) : cell(String(v||''), alt);
           })),
@@ -3707,6 +3868,232 @@ export default {
       }
 
       return new Response(JSON.stringify({ error: 'Unknown reportType. Use: budget | donor | consolidated | diocese' }), { status: 400, headers });
+    }
+
+
+    // ════════════════════════════════════════════════════════════════
+    //  ANNOUNCEMENT SYSTEM
+    //  get_staff_list       — returns all users with email/role/diocese
+    //  get_announcement_perms  — returns which roles can send
+    //  save_announcement_perms — admin saves role permissions
+    //  send_announcement    — send email + log to Drive
+    // ════════════════════════════════════════════════════════════════
+
+    // ── get_staff_list ───────────────────────────────────────────────
+    if (action === 'get_staff_list') {
+      const u = validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      // Any authenticated user can fetch the staff list for recipient selection
+      // Sending permission is checked separately in send_announcement
+      const users = getUsers();
+      const staff = Object.entries(users).map(([username, usr]) => ({
+        username,
+        name:     usr.name     || username,
+        role:     usr.role     || 'staff',
+        diocese:  usr.diocese  || null,
+        email:    usr.email    || null,
+        hasEmail: !!(usr.email && usr.email.trim()),
+      })).sort((a, b) => (a.name||'').localeCompare(b.name||''));
+
+      return new Response(JSON.stringify({ ok: true, staff }), { status: 200, headers });
+    }
+
+    // ── get_announcement_perms ───────────────────────────────────────
+    if (action === 'get_announcement_perms') {
+      const u = validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const perms = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
+      return new Response(JSON.stringify({ ok: true, permissions: perms }), { status: 200, headers });
+    }
+
+    // ── save_announcement_perms ──────────────────────────────────────
+    if (action === 'save_announcement_perms') {
+      const u = validateUser(body.username, body.password);
+      if (!u || u.role !== 'admin')
+        return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
+
+      const { permissions } = body;
+      if (!permissions)
+        return new Response(JSON.stringify({ error: 'Missing permissions object' }), { status: 400, headers });
+
+      // Accept per-user structure: { users: { username: bool } }
+      // Validate: only known usernames allowed
+      const users = getUsers();
+      const clean = { users: {} };
+      if (permissions.users && typeof permissions.users === 'object') {
+        Object.entries(permissions.users).forEach(([username, val]) => {
+          if (users[username] && typeof val === 'boolean') clean.users[username] = val;
+        });
+      }
+
+      // Save to Cloudflare secret via API
+      const cfToken = env.CF_API_TOKEN;
+      const cfAccount = env.CF_ACCOUNT_ID;
+      const cfScript  = env.CF_WORKER_SCRIPT_NAME;
+
+      if (!cfToken || !cfAccount || !cfScript) {
+        // Return the value for manual paste if CF API not configured
+        return new Response(JSON.stringify({
+          ok: false,
+          manualPaste: true,
+          value: JSON.stringify(clean),
+          note: 'CF API not configured. Add this as ANNOUNCEMENT_PERMS secret in Cloudflare manually.',
+        }), { status: 200, headers });
+      }
+
+      const cfRes = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${cfAccount}/workers/scripts/${cfScript}/secrets`,
+        {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${cfToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'ANNOUNCEMENT_PERMS', text: JSON.stringify(clean), type: 'secret_text' }),
+        }
+      );
+      if (!cfRes.ok) {
+        const e = await cfRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ ok: false, error: 'CF API error: ' + (e.errors?.[0]?.message || cfRes.status) }), { status: 200, headers });
+      }
+      return new Response(JSON.stringify({ ok: true, permissions: clean }), { status: 200, headers });
+    }
+
+    // ── send_announcement ────────────────────────────────────────────
+    if (action === 'send_announcement') {
+      const u = validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
+      const userPerms = annPerms.users || {};
+      const canSend   = u.role === 'admin' || userPerms[body.username] === true;
+      if (!canSend)
+        return new Response(JSON.stringify({ error: 'No announcement permission' }), { status: 403, headers });
+
+      const { subject, body: msgBody, recipients, senderName } = body;
+      if (!subject || !msgBody)
+        return new Response(JSON.stringify({ error: 'Subject and body are required' }), { status: 400, headers });
+      if (!recipients || !recipients.length)
+        return new Response(JSON.stringify({ error: 'No recipients specified' }), { status: 400, headers });
+
+      const users = getUsers();
+      const now   = new Date();
+      const dateStr = now.toISOString();
+
+      // Resolve email addresses
+      const resolved = recipients.map(username => {
+        const usr = users[username];
+        return usr?.email ? { username, name: usr.name||username, email: usr.email } : null;
+      }).filter(Boolean);
+
+      if (!resolved.length)
+        return new Response(JSON.stringify({ error: 'None of the selected recipients have emails set' }), { status: 400, headers });
+
+      // Build HTML email
+      const gmailToken = env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN;
+      if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !gmailToken)
+        return new Response(JSON.stringify({ error: 'Gmail OAuth secrets not configured' }), { status: 500, headers });
+
+      const token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, gmailToken);
+
+      const htmlBody = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1e293b;">
+        <div style="background:#0f1e38;padding:20px 28px;border-radius:10px 10px 0 0;">
+          <span style="color:#fff;font-size:16px;font-weight:700;">PDD Dashboard</span>
+          <span style="color:#94a3b8;font-size:12px;margin-left:10px;">Provincial Development Department</span>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;padding:28px;border-radius:0 0 10px 10px;">
+          <h2 style="margin:0 0 8px;font-size:18px;color:#0f1e38;">${subject}</h2>
+          <p style="color:#64748b;font-size:12px;margin:0 0 20px;">From: ${senderName||u.name||'PDD Dashboard'} · ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p>
+          <div style="font-size:14px;color:#374151;line-height:1.8;white-space:pre-wrap;">${msgBody.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+          <p style="font-size:11px;color:#94a3b8;margin:0;">This is an official announcement from the PDD Dashboard. Do not reply to this email.</p>
+          <a href="${env.DASHBOARD_URL||'https://www.gamalieltun.com/PDP-Dashboard/'}" style="font-size:11px;color:#2563eb;">Open Dashboard</a>
+        </div>
+      </body></html>`;
+
+      // Send to each recipient individually — collect results
+      const results = await Promise.allSettled(
+        resolved.map(r => sendEmail(token, r.email, subject, htmlBody))
+      );
+
+      let sent = 0, failed = 0;
+      results.forEach((r, i) => {
+        if (r.status === 'fulfilled') { sent++; console.log(`[Announce] sent to ${resolved[i].email}`); }
+        else { failed++; console.error(`[Announce] failed ${resolved[i].email}:`, r.reason?.message); }
+      });
+
+      // Log to Google Drive
+      try {
+        const driveToken = await getDriveToken(env);
+        const logFolderId = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_FOLDER_ID;
+        if (logFolderId) {
+          const logData = {
+            subject,
+            body: msgBody,
+            sentBy:         u.name || u._key || body.username,
+            sentAt:         dateStr,
+            recipientCount: resolved.length,
+            sentCount:      sent,
+            failedCount:    failed,
+            recipients:     resolved.map(r => r.name),
+            recipientEmails:resolved.map(r => r.email),
+          };
+          const filename = `Announcement_${now.toISOString().slice(0,10)}_${Date.now().toString(36).toUpperCase()}.json`;
+          await driveWriteFile(driveToken, logFolderId, filename, logData);
+        }
+      } catch(logErr) {
+        console.error('[Announce] Drive log failed:', logErr.message);
+      }
+
+      return new Response(JSON.stringify({
+        ok: true, sent, failed,
+        total: resolved.length,
+        skipped: recipients.length - resolved.length,
+      }), { status: 200, headers });
+    }
+
+    // ── get_announcements ────────────────────────────────────────────
+    if (action === 'get_announcements') {
+      const u = validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
+      const userPerms = annPerms.users || {};
+      const canSend   = u.role === 'admin' || userPerms[body.username] === true;
+      if (!canSend)
+        return new Response(JSON.stringify({ error: 'No announcement permission' }), { status: 403, headers });
+
+      try {
+        const driveToken = await getDriveToken(env);
+        const folderId   = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_FOLDER_ID;
+        if (!folderId) return new Response(JSON.stringify({ ok: true, announcements: [] }), { status: 200, headers });
+
+        // List JSON files in Drive folder that match announcement naming
+        const q   = encodeURIComponent(`'${folderId}' in parents and name contains 'Announcement_' and mimeType='application/json' and trashed=false`);
+        const res = await fetch(
+          `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=50`,
+          { headers: { Authorization: `Bearer ${driveToken}` } }
+        );
+        const data = await res.json();
+        const files = data.files || [];
+
+        // Fetch content of each file
+        const announcements = await Promise.all(files.map(async f => {
+          try {
+            const r = await fetch(
+              `https://www.googleapis.com/drive/v3/files/${f.id}?alt=media`,
+              { headers: { Authorization: `Bearer ${driveToken}` } }
+            );
+            return await r.json();
+          } catch(_) { return null; }
+        }));
+
+        return new Response(JSON.stringify({
+          ok: true,
+          announcements: announcements.filter(Boolean),
+        }), { status: 200, headers });
+      } catch(e) {
+        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
+      }
     }
 
     return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers });

@@ -2510,6 +2510,10 @@ export default {
           name: 'Expenditures',
           headers: ['Exp ID', 'Line Item ID', 'BD ID', 'Budget ID', 'Donor ID', 'Quarter', 'Amount MMK', 'Description', 'Expense Date', 'Submitted By', 'Submitted At', 'Approved By', 'Approved At', 'Status', 'Voucher IDs'],
         },
+        {
+          name: 'Donations',
+          headers: ['Don ID', 'Donor ID', 'Donor Name', 'Budget ID', 'Amount', 'Currency', 'Exchange Rate MMK', 'Amount MMK', 'Received Date', 'Reference No', 'Bank Ref', 'Receipt No', 'Notes', 'Recorded By', 'Recorded At'],
+        },
       ];
 
       for (const sheet of SHEETS) {
@@ -2550,12 +2554,13 @@ export default {
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
       const token = await getDriveToken(env);
-      const [donors, budgets, budgetDonors, lineItems, expenditures] = await Promise.all([
+      const [donors, budgets, budgetDonors, lineItems, expenditures, donations] = await Promise.all([
         readFinSheet(token, 'Donors'),
         readFinSheet(token, 'Budgets'),
         readFinSheet(token, 'Budget_Donors'),
         readFinSheet(token, 'Line_Items'),
         readFinSheet(token, 'Expenditures'),
+        readFinSheet(token, 'Donations'),
       ]);
 
       // Diocese staff: filter budgets to their diocese only
@@ -2597,6 +2602,7 @@ export default {
         budgetDonors: filteredBDs,
         lineItems: filteredLIs,
         expenditures: filteredExps,
+        donations,
         programmes,
         userRole: u.role,
         userDiocese: u.diocese || null,
@@ -2799,11 +2805,89 @@ export default {
       return new Response(JSON.stringify({ ok: true, expId: id }), { status: 200, headers });
     }
 
+    
     // ════════════════════════════════════════════════════════════════
+    //  save_donation  — record an incoming donor payment
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'delete_donation') {
+      const u = validateUser(body.username, body.password);
+      if (!u || !FIN_MANAGER_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
+
+      const { donId } = body;
+      if (!donId) return new Response(JSON.stringify({ error: 'donId required' }), { status: 400, headers });
+
+      const token = await getDriveToken(env);
+      const rows  = await fetchSheet(env.GOOGLE_API_KEY, env.FINANCE_SPREADSHEET_ID, 'Donations');
+      const hIdx  = rows.findIndex(r => r && r[0] === 'Don ID');
+      const rowIdx = rows.findIndex((r, i) => i > hIdx && r[0] === donId);
+      if (rowIdx < 0) return new Response(JSON.stringify({ error: 'Donation not found' }), { status: 404, headers });
+
+      // Mark as deleted by blanking description field (col 10 = Notes) with [DELETED]
+      const sheetRow = rowIdx + 1;
+      await updateFinRange(token, `Donations!K${sheetRow}`, [['[DELETED] ' + (rows[rowIdx][10] || '')]]);
+      return new Response(JSON.stringify({ ok: true }), { headers });
+    }
+
+// ════════════════════════════════════════════════════════════════
     //  upload_voucher
     //  Uploads one file to Drive under Vouchers/{BudgetName}-{BudgetId}/
     //  then appends the file ID to the Expenditures row's Voucher IDs column.
     // ════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════
+    //  save_donation
+    //  Records a donor payment into the Donations sheet.
+    //  Finance Manager + Admin only.
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'save_donation') {
+      const u = validateUser(body.username, body.password);
+      if (!u || !FIN_MANAGER_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
+
+      const { donorId, donorName, budgetId, amount, currency, exchangeRate, receivedDate, referenceNo, bankRef, receiptNo, notes } = body;
+      if (!donorId || !amount || !receivedDate)
+        return new Response(JSON.stringify({ error: 'Donor, amount and received date are required' }), { status: 400, headers });
+
+      const token = await getDriveToken(env);
+      const now   = new Date().toISOString();
+      const id    = genId('DON');
+
+      const amtNum  = parseFloat(amount) || 0;
+      const rateNum = parseFloat(exchangeRate) || 1;
+      const amtMmk  = currency === 'MMK' || !currency ? amtNum : Math.round(amtNum * rateNum);
+
+      await appendFin(token, 'Donations', [
+        id, donorId, donorName || '', budgetId || '',
+        amtNum, currency || 'MMK', currency !== 'MMK' && exchangeRate ? rateNum : '',
+        amtMmk, "'" + receivedDate,
+        referenceNo || '', bankRef || '', receiptNo || '',
+        notes || '', u.name, "'" + now,
+      ]);
+
+      return new Response(JSON.stringify({ ok: true, donId: id }), { headers });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  get_donations
+    //  Returns all donation records, optionally filtered by donorId or budgetId.
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'get_donations') {
+      const u = validateUser(body.username, body.password);
+      if (!u || !FIN_MANAGER_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
+
+      const rows = await fetchSheet(env.GOOGLE_API_KEY, env.FINANCE_SPREADSHEET_ID, 'Donations').catch(() => []);
+      const hIdx = rows.findIndex(r => r && r[0] === 'Don ID');
+      if (hIdx < 0) return new Response(JSON.stringify({ ok: true, donations: [] }), { headers });
+
+      const headers = rows[hIdx];
+      const donations = rows.slice(hIdx + 1)
+        .filter(r => r && r[0])
+        .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ''])));
+
+      return new Response(JSON.stringify({ ok: true, donations }), { headers });
+    }
+
     if (action === 'upload_voucher') {
       const u = validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
