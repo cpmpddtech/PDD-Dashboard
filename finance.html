@@ -648,7 +648,10 @@ textarea { resize:vertical; min-height:80px; }
           <div class="form-group" style="margin-top:4px;">
             <label>Vouchers / evidence <span style="font-weight:400;color:var(--gray-400)">(optional — PDF, images, Word docs)</span></label>
             <div id="exp-voucher-drop" onclick="document.getElementById('exp-voucher-input').click()"
-              style="border:1.5px dashed var(--gray-200);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;gap:10px;">
+              ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='var(--blue-lt)'"
+              ondragleave="this.style.borderColor='';this.style.background=''"
+              ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';onVoucherFilesSelected(event.dataTransfer.files)"
+              style="border:1.5px dashed var(--gray-200);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;">
               <div style="width:32px;height:32px;border-radius:6px;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📎</div>
               <div>
                 <div style="font-size:13px;font-weight:500;color:var(--gray-600);">Click to attach files</div>
@@ -2510,13 +2513,21 @@ let PENDING_VOUCHERS = []; // [{ file, name, localId }]
 function onVoucherFilesSelected(files) {
   const list = document.getElementById('exp-voucher-list');
   if (!files || !files.length) return;
+  const MAX_MB = 10;
   Array.from(files).forEach(file => {
+    if (file.size > MAX_MB * 1024 * 1024) {
+      toast(`⚠ ${file.name} is too large (max ${MAX_MB}MB)`, 'red');
+      return;
+    }
     const localId = 'v-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
     PENDING_VOUCHERS.push({ file, name: file.name, localId });
     const chip = document.createElement('span');
     chip.className = 'voucher-chip';
     chip.id = 'chip-' + localId;
-    chip.innerHTML = `📄 ${file.name} <button class="vc-remove" onclick="removeVoucher('${localId}')">×</button>`;
+    // Show preview icon based on file type
+    const ext = file.name.split('.').pop().toLowerCase();
+    const icon = ext === 'pdf' ? '📕' : ['jpg','jpeg','png'].includes(ext) ? '🖼' : ext === 'docx' || ext === 'doc' ? '📝' : '📄';
+    chip.innerHTML = `${icon} ${file.name} <span style="color:var(--gray-400);font-size:10px;">(${(file.size/1024).toFixed(0)} KB)</span> <button class="vc-remove" onclick="removeVoucher('${localId}')">×</button>`;
     list.appendChild(chip);
   });
   // Reset input so same file can be re-added if removed
@@ -2543,16 +2554,26 @@ async function uploadPendingVouchers(expId, budgetId) {
       const res = await workerCall('upload_voucher', {
         expId, budgetId, budgetName,
         fileName: pv.name,
-        mimeType: pv.file.type || 'application/octet-stream',
+        mimeType: pv.file.type || (
+          pv.name.endsWith('.pdf')  ? 'application/pdf' :
+          pv.name.endsWith('.docx') ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+          pv.name.endsWith('.doc')  ? 'application/msword' :
+          pv.name.endsWith('.png')  ? 'image/png' :
+          pv.name.endsWith('.jpg') || pv.name.endsWith('.jpeg') ? 'image/jpeg' :
+          'application/octet-stream'
+        ),
         fileBase64: b64,
       });
       if (res.ok) {
         if (chip) {
           chip.className = 'voucher-chip vc-done';
-          chip.innerHTML = `<a class="voucher-link" href="${res.fileUrl}" target="_blank">✓ ${pv.name} ↗</a>`;
+          chip.innerHTML = `<a class="voucher-link" href="${res.fileUrl}" target="_blank" style="text-decoration:none;">📄 ${pv.name} ↗</a>`;
         }
       } else {
-        if (chip) { chip.className = 'voucher-chip vc-error'; chip.innerHTML = `⚠ ${pv.name}: ${res.error}`; }
+        if (chip) {
+          chip.className = 'voucher-chip vc-error';
+          chip.innerHTML = `⚠ ${pv.name}: ${res.error || 'Upload failed'}`;
+        }
       }
     } catch(e) {
       if (chip) { chip.className = 'voucher-chip vc-error'; chip.innerHTML = `⚠ ${pv.name}: network error`; }

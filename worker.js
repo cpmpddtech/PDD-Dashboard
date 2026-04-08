@@ -2508,7 +2508,7 @@ export default {
         },
         {
           name: 'Expenditures',
-          headers: ['Exp ID', 'Line Item ID', 'BD ID', 'Budget ID', 'Donor ID', 'Quarter', 'Amount MMK', 'Description', 'Expense Date', 'Submitted By', 'Submitted At', 'Approved By', 'Approved At', 'Status'],
+          headers: ['Exp ID', 'Line Item ID', 'BD ID', 'Budget ID', 'Donor ID', 'Quarter', 'Amount MMK', 'Description', 'Expense Date', 'Submitted By', 'Submitted At', 'Approved By', 'Approved At', 'Status', 'Voucher IDs'],
         },
       ];
 
@@ -2778,8 +2778,8 @@ export default {
       await appendFin(token, 'Expenditures', [
         id, lineItemId, bdId, budgetId || '', donorId || '',
         quarter, amountMmk, description || '',
-        expenseDate || now.slice(0,10),
-        u.name, now, '', '', 'pending'
+        "'" + (expenseDate || now.slice(0,10)),
+        u.name, "'" + now, '', '', 'pending', ''
       ]);
 
       // Notify submitter + managers — non-blocking
@@ -2800,9 +2800,165 @@ export default {
     }
 
     // ════════════════════════════════════════════════════════════════
+    //  upload_voucher
+    //  Uploads one file to Drive under Vouchers/{BudgetName}-{BudgetId}/
+    //  then appends the file ID to the Expenditures row's Voucher IDs column.
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'upload_voucher') {
+      const u = validateUser(body.username, body.password);
+      if (!u || !FIN_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
+
+      const { expId, budgetId, budgetName, fileName, mimeType, fileBase64 } = body;
+      if (!expId || !fileBase64 || !fileName)
+        return new Response(JSON.stringify({ error: 'expId, fileName and fileBase64 are required' }), { status: 400, headers });
+
+      const vouchersFolderId = env.VOUCHERS_FOLDER_ID;
+      if (!vouchersFolderId)
+        return new Response(JSON.stringify({ error: 'VOUCHERS_FOLDER_ID secret not set' }), { status: 500, headers });
+
+      const token = await getDriveToken(env);
+
+      // 1. Find or create the budget subfolder under Vouchers/
+      // Keep letters, digits, spaces, hyphens, dots, parentheses — safe for Drive folder names
+      const safeName = (budgetName || budgetId || 'Unknown')
+        .replace(/[\\/:*?"<>|]/g, '-')  // strip only chars illegal in Drive
+        .trim().slice(0, 80);
+      const subfolderName = `${safeName} (${budgetId || 'B'})`;
+
+      // Search for existing subfolder
+      const searchQ = `'${vouchersFolderId}' in parents and name='${subfolderName.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+      const searchRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(searchQ)}&fields=files(id,name)`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const searchData = await searchRes.json();
+      let subFolderId;
+      if (searchData.files && searchData.files.length > 0) {
+        subFolderId = searchData.files[0].id;
+      } else {
+        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: subfolderName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [vouchersFolderId],
+          }),
+        });
+        if (!createRes.ok) {
+          const ce = await createRes.json().catch(() => ({}));
+          return new Response(JSON.stringify({ error: 'Could not create subfolder: ' + (ce.error?.message || createRes.status) }), { status: 500, headers });
+        }
+        const createData = await createRes.json();
+        subFolderId = createData.id;
+      }
+      if (!subFolderId)
+        return new Response(JSON.stringify({ error: 'Could not create/find budget subfolder' }), { status: 500, headers });
+
+      // 2. Decode base64 → binary Uint8Array, then upload via multipart
+      // Drive API v3 multipart: part 1 = JSON metadata, part 2 = raw binary file bytes
+      const uploadMime = mimeType || 'application/octet-stream';
+      const uploadName = `${expId}_${fileName}`;
+
+      // base64 → Uint8Array
+      const binaryStr = atob(fileBase64);
+      const fileBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) fileBytes[i] = binaryStr.charCodeAt(i);
+
+      // Build multipart body as Uint8Array so binary content is preserved exactly
+      const boundary = 'PDP_VOUCHER_' + Date.now();
+      const enc = new TextEncoder();
+      const metaJson = JSON.stringify({ name: uploadName, parents: [subFolderId] });
+      const part1 = enc.encode(
+        `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metaJson}\r\n`
+      );
+      const part2head = enc.encode(
+        `--${boundary}\r\nContent-Type: ${uploadMime}\r\n\r\n`
+      );
+      const part2tail = enc.encode(`\r\n--${boundary}--`);
+
+      // Concatenate all parts into one Uint8Array
+      const totalLen = part1.length + part2head.length + fileBytes.length + part2tail.length;
+      const multipartBody = new Uint8Array(totalLen);
+      let offset = 0;
+      multipartBody.set(part1,     offset); offset += part1.length;
+      multipartBody.set(part2head, offset); offset += part2head.length;
+      multipartBody.set(fileBytes, offset); offset += fileBytes.length;
+      multipartBody.set(part2tail, offset);
+
+      const uploadRes = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary="${boundary}"`,
+          },
+          body: multipartBody,
+        }
+      );
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ error: 'Drive upload failed: ' + (err.error?.message || uploadRes.status) }), { status: 500, headers });
+      }
+      const uploadData = await uploadRes.json();
+      const fileId  = uploadData.id;
+      const fileUrl = uploadData.webViewLink || `https://drive.google.com/file/d/${fileId}/view`;
+
+      // 3. Append fileId to Expenditures row Voucher IDs column (index 14 = col O)
+      const rows = await fetchSheet(env.GOOGLE_API_KEY, env.FINANCE_SPREADSHEET_ID, 'Expenditures');
+      const hIdx = rows.findIndex(r => r && r[0] === 'Exp ID');
+      const rowIdx = rows.findIndex((r, i) => i > hIdx && r[0] === expId);
+      if (rowIdx >= 0) {
+        const sheetRow = rowIdx + 1;
+        const existing = (rows[rowIdx][14] || '').toString().trim();
+        const newVal   = existing ? existing + ',' + fileId : fileId;
+        await updateFinRange(token, `Expenditures!O${sheetRow}`, [[newVal]]);
+      }
+
+      return new Response(JSON.stringify({ ok: true, fileId, fileUrl, fileName: uploadName }), { headers });
+    }
+
+    // ════════════════════════════════════════════════════════════════
     //  approve_expenditure_v2 / reject_expenditure_v2
     //  Finance Manager or Admin approves/rejects an expenditure record
     // ════════════════════════════════════════════════════════════════
+    // ════════════════════════════════════════════════════════════════
+    //  get_vouchers
+    //  Returns Drive metadata for all voucher files on an expenditure row.
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'get_vouchers') {
+      const u = validateUser(body.username, body.password);
+      if (!u || !FIN_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
+
+      const { expId } = body;
+      if (!expId)
+        return new Response(JSON.stringify({ error: 'expId required' }), { status: 400, headers });
+
+      const rows = await fetchSheet(env.GOOGLE_API_KEY, env.FINANCE_SPREADSHEET_ID, 'Expenditures');
+      const hIdx = rows.findIndex(r => r && r[0] === 'Exp ID');
+      const row  = rows.find((r, i) => i > hIdx && r[0] === expId);
+      if (!row)
+        return new Response(JSON.stringify({ error: 'Expenditure not found' }), { status: 404, headers });
+
+      const voucherIds = (row[14] || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (!voucherIds.length)
+        return new Response(JSON.stringify({ ok: true, vouchers: [] }), { headers });
+
+      const token = await getDriveToken(env);
+      const vouchers = await Promise.all(voucherIds.map(async fileId => {
+        const r = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${fileId}?fields=id,name,mimeType,webViewLink,size`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!r.ok) return { fileId, name: fileId, error: true };
+        return r.json();
+      }));
+      return new Response(JSON.stringify({ ok: true, vouchers }), { headers });
+    }
+
     if (action === 'approve_expenditure_v2' || action === 'reject_expenditure_v2') {
       const u = validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
@@ -2822,7 +2978,7 @@ export default {
       const now = new Date().toISOString();
 
       // Update columns K (Approved By), L (Approved At), M (Status)
-      await updateFinRange(token, `Expenditures!K${sheetRow}:M${sheetRow}`, [[u.name, now, newStatus]]);
+      await updateFinRange(token, `Expenditures!L${sheetRow}:N${sheetRow}`, [[u.name, "'" + now, newStatus]]);
 
       // Notify submitter — non-blocking
       const expRow = rows[rowIdx];
@@ -2832,7 +2988,7 @@ export default {
         amount: expRow[6] || '0',
         status: newStatus,
         reviewedBy: u.name,
-        submittedBy: expRow[8] || '',
+        submittedBy: expRow[9] || '',
       }).catch(() => {});
 
       return new Response(JSON.stringify({ ok: true, expId, status: newStatus }), { status: 200, headers });
