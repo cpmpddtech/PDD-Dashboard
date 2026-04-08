@@ -2856,36 +2856,39 @@ export default {
       if (!subFolderId)
         return new Response(JSON.stringify({ error: 'Could not create/find budget subfolder' }), { status: 500, headers });
 
-      // 2. Decode base64 → binary Uint8Array, then upload via multipart
-      // Drive API v3 multipart: part 1 = JSON metadata, part 2 = raw binary file bytes
+      // 2. Decode base64 → binary, build multipart body, upload to Drive
       const uploadMime = mimeType || 'application/octet-stream';
       const uploadName = `${expId}_${fileName}`;
+      const boundary   = 'PDP_VOUCHER_' + Date.now();
 
-      // base64 → Uint8Array
+      // CRLF as raw bytes [13,10] — avoids any JS string escape ambiguity
+      const CRLF = new Uint8Array([13, 10]);
+
+      // Decode base64 → binary Uint8Array
       const binaryStr = atob(fileBase64);
       const fileBytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) fileBytes[i] = binaryStr.charCodeAt(i);
 
-      // Build multipart body as Uint8Array so binary content is preserved exactly
-      const boundary = 'PDP_VOUCHER_' + Date.now();
+      // Build text segments
       const enc = new TextEncoder();
       const metaJson = JSON.stringify({ name: uploadName, parents: [subFolderId] });
-      const part1 = enc.encode(
-        `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metaJson}\r\n`
-      );
-      const part2head = enc.encode(
-        `--${boundary}\r\nContent-Type: ${uploadMime}\r\n\r\n`
-      );
-      const part2tail = enc.encode(`\r\n--${boundary}--`);
+      const p1a  = enc.encode('--' + boundary);
+      const p1b  = enc.encode('Content-Type: application/json; charset=UTF-8');
+      const p1c  = enc.encode(metaJson);
+      const p2a  = enc.encode('--' + boundary);
+      const p2b  = enc.encode('Content-Type: ' + uploadMime);
+      const pEnd = enc.encode('--' + boundary + '--');
 
-      // Concatenate all parts into one Uint8Array
-      const totalLen = part1.length + part2head.length + fileBytes.length + part2tail.length;
+      // Assemble per RFC 2046: boundary CRLF header CRLF CRLF body CRLF
+      const parts = [
+        p1a, CRLF, p1b, CRLF, CRLF, p1c, CRLF,
+        p2a, CRLF, p2b, CRLF, CRLF, fileBytes, CRLF,
+        pEnd,
+      ];
+      const totalLen = parts.reduce((s, p) => s + p.length, 0);
       const multipartBody = new Uint8Array(totalLen);
       let offset = 0;
-      multipartBody.set(part1,     offset); offset += part1.length;
-      multipartBody.set(part2head, offset); offset += part2head.length;
-      multipartBody.set(fileBytes, offset); offset += fileBytes.length;
-      multipartBody.set(part2tail, offset);
+      for (const part of parts) { multipartBody.set(part, offset); offset += part.length; }
 
       const uploadRes = await fetch(
         `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink`,
