@@ -4030,7 +4030,8 @@ async function addNewUser() {
 }
 
 async function resetUserPassword(username, name) {
-  if (!confirm(`Reset password for "${name}"? They will be forced to set a new password on next login.`)) return;
+  const ok = await showConfirm({ title: `Reset password for "${name}"?`, message: 'They will be forced to set a new password on next login.', okLabel: 'Reset', type: 'warning' });
+  if (!ok) return;
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -4060,7 +4061,8 @@ async function resetUserPassword(username, name) {
 }
 
 async function deleteUser(username, name) {
-  if (!confirm(`Delete user "${name}" (${username})? This cannot be undone.`)) return;
+  const ok2 = await showConfirm({ title: `Delete user "${name}"?`, message: `Username: ${username}. This cannot be undone.`, okLabel: 'Delete', type: 'danger' });
+  if (!ok2) return;
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -5096,6 +5098,67 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 
+</script>
+
+<!-- ═══ CUSTOM CONFIRM MODAL ═══ -->
+<div id="confirm-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(15,30,56,0.45);z-index:99999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;font-family:inherit;">
+    <div style="padding:28px 28px 20px;display:flex;align-items:flex-start;gap:14px;">
+      <div id="confirm-icon" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;"></div>
+      <div>
+        <div id="confirm-title" style="font-size:15px;font-weight:700;color:#111827;margin-bottom:5px;"></div>
+        <div id="confirm-msg"   style="font-size:13px;color:#6b7280;line-height:1.6;"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:0 28px 24px;justify-content:flex-end;">
+      <button id="confirm-cancel-btn" onclick="confirmResolve(false)"
+        style="padding:9px 20px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:13px;font-weight:500;color:#4b5563;cursor:pointer;font-family:inherit;">
+        Cancel
+      </button>
+      <button id="confirm-ok-btn" onclick="confirmResolve(true)"
+        style="padding:9px 20px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
+        Confirm
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var _res = null;
+  window.showConfirm = function(opts) {
+    var title    = opts.title    || '';
+    var message  = opts.message  || '';
+    var okLabel  = opts.okLabel  || 'Confirm';
+    var type     = opts.type     || 'danger';
+    return new Promise(function(resolve) {
+      _res = resolve;
+      var C = {
+        danger:  { icon:'\uD83D\uDDD1', bg:'#fef2f2', fg:'#dc2626', btn:'#dc2626' },
+        warning: { icon:'\u26A0',         bg:'#fffbeb', fg:'#d97706', btn:'#d97706' },
+        success: { icon:'\u2713',         bg:'#f0fdf4', fg:'#16a34a', btn:'#16a34a' },
+        info:    { icon:'\u2139',         bg:'#eff6ff', fg:'#2563eb', btn:'#2563eb' },
+      }[type] || { icon:'\uD83D\uDDD1', bg:'#fef2f2', fg:'#dc2626', btn:'#dc2626' };
+      var icon = document.getElementById('confirm-icon');
+      icon.textContent = C.icon;
+      icon.style.background = C.bg;
+      icon.style.color = C.fg;
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-msg').textContent   = message;
+      var ok = document.getElementById('confirm-ok-btn');
+      ok.textContent        = okLabel;
+      ok.style.background   = C.btn;
+      ok.style.color        = '#fff';
+      document.getElementById('confirm-modal-bg').style.display = 'flex';
+    });
+  };
+  window.confirmResolve = function(result) {
+    document.getElementById('confirm-modal-bg').style.display = 'none';
+    if (_res) { _res(result); _res = null; }
+  };
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'confirm-modal-bg') confirmResolve(false);
+  });
+})();
 </script>
 </body>
 </html>
