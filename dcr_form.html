@@ -34,7 +34,7 @@
 
   body {
     font-family: 'IBM Plex Sans', sans-serif;
-    background: #f0f2f5;
+    background: var(--surface);
     color: var(--gray9);
     font-size: 14px;
     line-height: 1.5;
@@ -90,8 +90,8 @@
   .sidebar {
     width: 240px;
     flex-shrink: 0;
-    background: var(--white);
-    border-right: 1px solid var(--gray2);
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
     padding: 20px 0;
     position: sticky;
     top: 52px;
@@ -164,8 +164,8 @@
 
   /* ── Section card ── */
   .section-card {
-    background: var(--white);
-    border: 1px solid var(--gray2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
     border-radius: 8px;
     margin-bottom: 20px;
     box-shadow: var(--shadow);
@@ -409,8 +409,8 @@
   /* ── Reports list (admin view) ── */
   .reports-list { display: flex; flex-direction: column; gap: 10px; }
   .report-row {
-    background: var(--white);
-    border: 1px solid var(--gray2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 14px 18px;
     display: flex;
@@ -601,8 +601,8 @@
   #admin-panel.visible { display: block; }
 
   .admin-header {
-    background: var(--white);
-    border: 1px solid var(--gray2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px 24px;
     margin-bottom: 20px;
@@ -623,6 +623,178 @@
   .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
   .empty-state h3 { font-size: 15px; font-weight: 600; color: var(--gray7); margin-bottom: 4px; }
   .empty-state p { font-size: 13px; }
+
+  /* ══════════════════════════════════════════════
+     DARK THEME — matches PDD Dashboard index.html
+     ══════════════════════════════════════════════ */
+  :root {
+    --surface:  #070d1a;
+    --surface2: #0f1825;
+    --surface3: #131e30;
+    --surface4: #1a2640;
+    --border:   rgba(255,255,255,0.07);
+    --border2:  rgba(255,255,255,0.12);
+    --text:     #e8f0f8;
+    --text-muted: #5a7a9a;
+    --text-dim:   #3a5a7a;
+  }
+
+  body { background: var(--surface) !important; color: var(--text) !important; }
+
+  /* Header / topbar stays navy but adjusted */
+  .header, .topbar {
+    background: #0a1628 !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--surface2) !important;
+    border-right: 1px solid var(--border) !important;
+  }
+  .sidebar-section { color: var(--text-muted) !important; }
+  .nav-item { color: var(--text-muted) !important; }
+  .nav-item:hover {
+    background: var(--surface3) !important;
+    color: var(--text) !important;
+  }
+  .nav-item.active {
+    background: rgba(59,130,246,0.12) !important;
+    color: #3b82f6 !important;
+    border-left-color: #3b82f6 !important;
+  }
+
+  /* Cards */
+  .card, .form-card, .section-card, .report-card {
+    background: var(--surface2) !important;
+    border-color: var(--border) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+  }
+  .card-header {
+    background: var(--surface2) !important;
+    border-bottom-color: var(--border) !important;
+    color: var(--text) !important;
+  }
+  .card-body { color: var(--text) !important; }
+
+  /* Pane titles */
+  .pane-title { color: var(--text) !important; }
+  .pane-sub   { color: var(--text-muted) !important; }
+
+  /* Form elements */
+  label { color: var(--text-muted) !important; }
+  input, select, textarea {
+    background: var(--surface3) !important;
+    border-color: var(--border2) !important;
+    color: var(--text) !important;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-dim) !important; }
+  select option { background: var(--surface2); color: var(--text); }
+  .field-hint, .form-hint { color: var(--text-muted) !important; }
+
+  /* Buttons */
+  .btn-secondary {
+    background: var(--surface3) !important;
+    color: var(--text) !important;
+    border-color: var(--border2) !important;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--surface4) !important;
+  }
+
+  /* Tables */
+  table th {
+    background: var(--surface3) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border) !important;
+  }
+  table td {
+    border-color: var(--border) !important;
+    color: var(--gray-700, #b8cfe0) !important;
+  }
+  table tr:hover td { background: var(--surface3) !important; }
+  table tr:nth-child(even) td { background: rgba(255,255,255,0.02) !important; }
+
+  /* Chips and tags */
+  .group-chip, .staff-chip {
+    background: var(--surface3) !important;
+    border-color: var(--border2) !important;
+    color: var(--text-muted) !important;
+  }
+  .group-chip:hover, .staff-chip:hover {
+    border-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+    background: rgba(59,130,246,0.08) !important;
+  }
+  .group-chip.selected, .staff-chip.selected {
+    background: rgba(59,130,246,0.12) !important;
+    border-color: rgba(59,130,246,0.35) !important;
+    color: #3b82f6 !important;
+  }
+
+  /* Badges & status pills */
+  .badge-pending   { background: rgba(245,158,11,0.15) !important; color: #f59e0b !important; }
+  .badge-approved  { background: rgba(34,197,94,0.15)  !important; color: #22c55e !important; }
+  .badge-rejected  { background: rgba(239,68,68,0.15)  !important; color: #ef4444 !important; }
+  .badge-draft     { background: rgba(90,122,154,0.15) !important; color: #5a7a9a !important; }
+
+  /* Modals / overlays */
+  .modal, .modal-overlay, [id*="modal"] > div, .overlay-panel {
+    background: var(--surface2) !important;
+    border-color: var(--border2) !important;
+    color: var(--text) !important;
+  }
+
+  /* Dividers */
+  hr, .divider { border-color: var(--border) !important; }
+  [class*="border-b"], [class*="border-t"] { border-color: var(--border) !important; }
+
+  /* Inline background utils */
+  .bg-white, .bg-gray-50, .bg-gray-100 { background: var(--surface2) !important; }
+  .text-gray-400, .text-gray-500, .text-muted { color: var(--text-muted) !important; }
+  .text-gray-700, .text-gray-800, .text-gray-900 { color: var(--text) !important; }
+  .border-gray-200, .border-gray-100 { border-color: var(--border) !important; }
+
+  /* Progress bars background track */
+  .progress-track, [class*="progress-bg"] { background: var(--surface4) !important; }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--surface4); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2a3d55; }
+
+  /* Inline hardcoded whites in dynamic JS-rendered content */
+  [style*="background:#fff"], [style*="background: #fff"],
+  [style*="background-color:#fff"], [style*="background-color: #fff"] {
+    background: var(--surface2) !important;
+  }
+  [style*="background:#f9fafb"], [style*="background:#f3f4f6"],
+  [style*="background:var(--surface)"], [style*="background:var(--surface)"] {
+    background: var(--surface3) !important;
+  }
+  [style*="color:#111827"], [style*="color:#1f2937"],
+  [style*="color:#374151"] { color: var(--text) !important; }
+  [style*="border:1px solid #e5e7eb"], [style*="border: 1px solid #e5e7eb"],
+  [style*="border-color:#e5e7eb"] { border-color: var(--border) !important; }
+
+  /* DCR form-specific dark overrides */
+  .section-block, .form-section { background: var(--surface2) !important; border-color: var(--border) !important; }
+  .section-title { color: var(--text) !important; border-color: var(--border) !important; }
+  .field-group { border-color: var(--border) !important; }
+  .progress-bar-bg { background: var(--surface4) !important; }
+  .step-indicator { background: var(--surface3) !important; border-color: var(--border) !important; }
+  .step-indicator.active { background: rgba(59,130,246,0.15) !important; border-color: #3b82f6 !important; }
+  .step-indicator.done { background: rgba(34,197,94,0.12) !important; border-color: #22c55e !important; }
+  .report-list-item { background: var(--surface2) !important; border-color: var(--border) !important; }
+  .report-list-item:hover { background: var(--surface3) !important; }
+  .auto-save-bar { background: var(--surface3) !important; border-color: var(--border) !important; color: var(--text-muted) !important; }
+  .topbar { background: #0a1628 !important; }
+
 </style>
 </head>
 <body>
@@ -1649,8 +1821,7 @@ function loadDriveReport(data) {
 
 async function deleteDriveReport(fileId) {
   if (!fileId) return;
-  const ok = await showConfirm({ title: 'Delete report?', message: 'It will be moved to Drive trash. This cannot be undone.', okLabel: 'Delete', type: 'danger' });
-  if (!ok) return;
+  if (!confirm('Delete this report? It will be moved to Drive trash.')) return;
   try {
     const res = await workerCall('delete_dcr', { fileId });
     if (res.ok) {
@@ -1944,66 +2115,5 @@ document.addEventListener('click', () => {
 });
 </script>
 
-
-<!-- ═══ CUSTOM CONFIRM MODAL ═══ -->
-<div id="confirm-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(15,30,56,0.45);z-index:99999;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border-radius:16px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;font-family:inherit;">
-    <div style="padding:28px 28px 20px;display:flex;align-items:flex-start;gap:14px;">
-      <div id="confirm-icon" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;"></div>
-      <div>
-        <div id="confirm-title" style="font-size:15px;font-weight:700;color:#111827;margin-bottom:5px;"></div>
-        <div id="confirm-msg"   style="font-size:13px;color:#6b7280;line-height:1.6;"></div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;padding:0 28px 24px;justify-content:flex-end;">
-      <button id="confirm-cancel-btn" onclick="confirmResolve(false)"
-        style="padding:9px 20px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:13px;font-weight:500;color:#4b5563;cursor:pointer;font-family:inherit;">
-        Cancel
-      </button>
-      <button id="confirm-ok-btn" onclick="confirmResolve(true)"
-        style="padding:9px 20px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
-        Confirm
-      </button>
-    </div>
-  </div>
-</div>
-<script>
-(function(){
-  var _res = null;
-  window.showConfirm = function(opts) {
-    var title    = opts.title    || '';
-    var message  = opts.message  || '';
-    var okLabel  = opts.okLabel  || 'Confirm';
-    var type     = opts.type     || 'danger';
-    return new Promise(function(resolve) {
-      _res = resolve;
-      var C = {
-        danger:  { icon:'\uD83D\uDDD1', bg:'#fef2f2', fg:'#dc2626', btn:'#dc2626' },
-        warning: { icon:'\u26A0',         bg:'#fffbeb', fg:'#d97706', btn:'#d97706' },
-        success: { icon:'\u2713',         bg:'#f0fdf4', fg:'#16a34a', btn:'#16a34a' },
-        info:    { icon:'\u2139',         bg:'#eff6ff', fg:'#2563eb', btn:'#2563eb' },
-      }[type] || { icon:'\uD83D\uDDD1', bg:'#fef2f2', fg:'#dc2626', btn:'#dc2626' };
-      var icon = document.getElementById('confirm-icon');
-      icon.textContent = C.icon;
-      icon.style.background = C.bg;
-      icon.style.color = C.fg;
-      document.getElementById('confirm-title').textContent = title;
-      document.getElementById('confirm-msg').textContent   = message;
-      var ok = document.getElementById('confirm-ok-btn');
-      ok.textContent        = okLabel;
-      ok.style.background   = C.btn;
-      ok.style.color        = '#fff';
-      document.getElementById('confirm-modal-bg').style.display = 'flex';
-    });
-  };
-  window.confirmResolve = function(result) {
-    document.getElementById('confirm-modal-bg').style.display = 'none';
-    if (_res) { _res(result); _res = null; }
-  };
-  document.addEventListener('click', function(e) {
-    if (e.target && e.target.id === 'confirm-modal-bg') confirmResolve(false);
-  });
-})();
-</script>
 </body>
 </html>
