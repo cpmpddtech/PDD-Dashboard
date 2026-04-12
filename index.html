@@ -1472,6 +1472,7 @@ if (typeof Chart !== 'undefined') {
 
   <!-- TABS -->
   <div class="tabs">
+    <button class="tab" id="tab-btn-profile" onclick="switchTab('profile',this)">👤 My Profile</button>
     <button class="tab" id="tab-btn-mytasks" onclick="switchTab('mytasks',this)">🏠 My Tasks</button>
     <button class="tab active" id="tab-btn-progress" onclick="switchTab('progress',this)">Program Progress</button>
     <button class="tab" id="tab-btn-kpi" onclick="switchTab('kpi',this)">Weekly KPI</button>
@@ -1487,6 +1488,12 @@ if (typeof Chart !== 'undefined') {
   </div>
 
   <div class="main">
+
+
+    <!-- TAB: MY PROFILE -->
+    <div class="tab-pane" id="tab-profile">
+      <div id="profile-content"></div>
+    </div>
 
     <!-- TAB: MY TASKS -->
     <div class="tab-pane" id="tab-mytasks">
@@ -2456,6 +2463,7 @@ function applyRBAC() {
 
   // Show My Tasks for all, hide role management for non-admin
   const ext = isExternal();
+  setTabVisible('profile',  true);
   setTabVisible('mytasks',  true);
   setTabVisible('progress', isAdmin() || isManager() || userCan('all_programs') || ext);
   setTabVisible('staff',    isAdmin() || isManager() || userCan('staff_perf'));   // external: NO
@@ -3006,6 +3014,259 @@ function mainBadge(pct) {
   return                 `<span class="badge badge-red">${pct}% low</span>`;
 }
 
+
+// ═══════════════════════════════════════════════════
+//  MY PROFILE TAB
+// ═══════════════════════════════════════════════════
+function renderMyProfile() {
+  if (!CURRENT_USER) return;
+  const el = document.getElementById('profile-content');
+  if (!el) return;
+
+  const u      = CURRENT_USER;
+  const color  = getStaffColor(u.name);
+  const initials = u.name.split(/\s+/).slice(0,2).map(w => w[0]||'').join('').toUpperCase() || '?';
+  const cw     = CURRENT_CW;
+  const today  = new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // Role display
+  const roleLabels = {
+    admin:'Admin · Director', manager:'Manager', staff:'Staff Officer / DDO',
+    external:'External · Contractor', finance_manager:'Finance Manager', finance_staff:'Finance Staff'
+  };
+  const roleColors = {
+    admin:['rgba(37,99,235,0.15)','#60a5fa'],
+    manager:['rgba(34,197,94,0.15)','#4ade80'],
+    finance_manager:['rgba(167,139,250,0.15)','#a78bfa'],
+    finance_staff:['rgba(167,139,250,0.12)','#c4b5fd'],
+    staff:['var(--surface3)','var(--text-muted)'],
+    external:['rgba(245,158,11,0.12)','#fbbf24'],
+  };
+  const [roleBg, roleFg] = roleColors[u.role] || ['var(--surface3)', 'var(--text-muted)'];
+
+  // Assigned programs
+  const myProgs = DATA.programs.filter(p =>
+    u.role === 'admin' || u.role === 'manager' ? true : (u.programs || []).includes(p.id)
+  );
+
+  // My task stats
+  const myTasks = DATA.programs.flatMap(p => (p.taskList || []).filter(t => (t['Owner']||'').trim() === u.name));
+  const totalTasks  = myTasks.length;
+  const delivered   = myTasks.filter(t => String(t['Status']||'').startsWith('Delivered')).length;
+  const overdue     = myTasks.filter(t => {
+    const tCW = parseFloat(t['CW']||0);
+    return tCW < cw && !String(t['Status']||'').startsWith('Delivered');
+  }).length;
+  const inProgress  = totalTasks - delivered;
+  const deliveryRate = totalTasks > 0 ? Math.round(delivered/totalTasks*100) : 0;
+
+  // My check-ins
+  const myCheckins = (DATA.checkins || []).filter(c => c.name === u.name);
+  const lastCheckin = myCheckins.sort((a,b) => b.cw - a.cw)[0];
+  const checkedInThisWeek = myCheckins.some(c => c.cw === cw);
+
+  // Notification prefs
+  const NOTIF_LABELS = {
+    task_assigned:'New task assigned', task_updated:'Task status changed',
+    program_created:'New program created', project_created:'New project created',
+    checkin_reminder:'Weekly check-in reminder', checkin_submitted:'Check-in submitted',
+    expense_reviewed:'Expense reviewed', proposal_submitted:'Proposal submitted',
+    proposal_reviewed:'Proposal reviewed', dcr_submitted:'DCR submitted',
+  };
+  const optOut = u.notifOptOut || [];
+  const roleEvents = {
+    admin:['task_assigned','task_updated','program_created','project_created','checkin_submitted','dcr_submitted','expense_reviewed','proposal_submitted','checkin_reminder'],
+    manager:['task_updated','program_created','project_created','checkin_submitted','dcr_submitted','expense_reviewed','proposal_submitted'],
+    staff:['task_assigned','task_updated','checkin_reminder'],
+    external:['task_assigned','task_updated','checkin_reminder'],
+    finance_manager:['proposal_submitted','proposal_reviewed','expense_reviewed'],
+    finance_staff:['proposal_reviewed','expense_reviewed'],
+  }[u.role] || ['task_assigned','task_updated','checkin_reminder'];
+
+  // Rate bar color
+  const rateColor = deliveryRate >= 75 ? 'var(--green)' : deliveryRate >= 40 ? 'var(--amber)' : 'var(--red)';
+
+  el.innerHTML = `
+    <div style="max-width:860px;">
+
+      <!-- ── HEADER CARD ── -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 24px;margin-bottom:16px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+        <!-- Avatar -->
+        <div style="width:80px;height:80px;border-radius:20px;background:${color};display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.02em;box-shadow:0 4px 20px ${color}55;">
+          ${initials}
+        </div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;">${u.name}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:${roleBg};color:${roleFg};">${roleLabels[u.role] || u.role}</span>
+            ${u.diocese ? `<span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.12);color:#60a5fa;">${u.diocese}</span>` : ''}
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);">
+            <span>🏷 <code style="background:var(--surface3);padding:2px 7px;border-radius:5px;font-size:11px;color:var(--gray-600);">${u.username}</code></span>
+            ${u.email ? `<span>✉ <a href="mailto:${u.email}" style="color:var(--blue);text-decoration:none;">${u.email}</a></span>` : '<span style="color:var(--text-dim);">✉ No email set — ask your admin</span>'}
+            <span>📅 ${today}</span>
+          </div>
+        </div>
+        <!-- Quick action -->
+        <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+          <button onclick="showChangePasswordModal()" style="padding:8px 16px;border:1px solid var(--border2);border-radius:8px;background:var(--surface3);color:var(--text);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+            🔑 Change Password
+          </button>
+          <button onclick="showNotifPrefsModal()" style="padding:8px 16px;border:1px solid var(--border2);border-radius:8px;background:var(--surface3);color:var(--text);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+            🔔 Notifications
+          </button>
+        </div>
+      </div>
+
+      <!-- ── STAT CARDS ── -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Total Tasks</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text);line-height:1;">${totalTasks}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">assigned to me</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Delivered</div>
+          <div style="font-size:28px;font-weight:800;color:var(--green);line-height:1;">${delivered}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">${deliveryRate}% rate</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">In Progress</div>
+          <div style="font-size:28px;font-weight:800;color:var(--blue);line-height:1;">${inProgress}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">${overdue > 0 ? `<span style="color:var(--red);font-weight:600;">⚠ ${overdue} overdue</span>` : 'all on track'}</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Check-ins</div>
+          <div style="font-size:28px;font-weight:800;color:var(--text);line-height:1;">${myCheckins.length}</div>
+          <div style="font-size:11px;margin-top:5px;">${checkedInThisWeek ? '<span style="color:var(--green);font-weight:600;">✓ Done CW ' + cw + '</span>' : '<span style="color:var(--amber);">Pending CW ' + cw + '</span>'}</div>
+        </div>
+      </div>
+
+      <!-- ── GRID: Performance + Programs ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+        <!-- Delivery rate -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">📈 Delivery Rate</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+            <div style="font-size:48px;font-weight:800;color:${rateColor};line-height:1;">${deliveryRate}%</div>
+            <div>
+              <div style="font-size:12px;color:var(--text-muted);">${delivered} of ${totalTasks} tasks</div>
+              <div style="font-size:11px;color:${rateColor};font-weight:600;margin-top:3px;">${deliveryRate >= 75 ? '✓ On track' : deliveryRate >= 40 ? '⚡ Moderate' : '⚠ Needs attention'}</div>
+            </div>
+          </div>
+          <div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${deliveryRate}%;background:${rateColor};border-radius:4px;transition:width .6s;"></div>
+          </div>
+          ${overdue > 0 ? `<div style="margin-top:12px;padding:8px 12px;background:rgba(239,68,68,0.1);border-radius:8px;font-size:12px;color:var(--red);">⚠ ${overdue} overdue task${overdue !== 1 ? 's' : ''} — check My Tasks tab</div>` : ''}
+        </div>
+
+        <!-- Assigned programs -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">📁 Assigned Programs
+            <span style="font-size:11px;font-weight:500;color:var(--text-muted);background:var(--surface3);padding:2px 8px;border-radius:6px;margin-left:6px;">${myProgs.length}</span>
+          </div>
+          ${myProgs.length === 0 ? `<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;">No programs assigned yet.</div>` :
+            myProgs.map(p => {
+              const pct = p.total > 0 ? Math.round(p.delivered/p.total*100) : 0;
+              const pc  = p.color || 'var(--blue)';
+              return `<div style="margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                  <div style="display:flex;align-items:center;gap:7px;">
+                    <div style="width:8px;height:8px;border-radius:2px;background:${pc};flex-shrink:0;"></div>
+                    <span style="font-size:12px;font-weight:600;color:var(--text);">${p.name}</span>
+                  </div>
+                  <span style="font-size:11px;font-weight:700;color:${pc};">${pct}%</span>
+                </div>
+                <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;">
+                  <div style="height:100%;width:${pct}%;background:${pc};border-radius:2px;"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${p.delivered}/${p.total} tasks · ${p.id}</div>
+              </div>`;
+            }).join('')
+          }
+        </div>
+      </div>
+
+      <!-- ── GRID: Recent check-ins + Notifications ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+        <!-- Recent check-in history -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">📝 Check-in History</div>
+          ${myCheckins.length === 0
+            ? `<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;">No check-ins submitted yet.</div>`
+            : myCheckins.slice(0,5).map(c => `
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+                <div style="width:36px;height:36px;border-radius:8px;background:var(--surface3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <span style="font-size:10px;font-weight:800;color:var(--blue);">CW${c.cw}</span>
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:600;color:var(--text);">${c.program || '—'}</div>
+                  <div style="font-size:11px;color:var(--text-muted);">${c.done} delivered · ${c.missed} remaining · ${c.date || ''}</div>
+                  ${c.blockers ? `<div style="font-size:11px;color:var(--red);margin-top:2px;">⚠ ${c.blockers.slice(0,50)}${c.blockers.length>50?'…':''}</div>` : ''}
+                </div>
+                <div style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:${c.done > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(90,122,154,0.12)'};color:${c.done > 0 ? 'var(--green)' : 'var(--text-muted)'};">${c.done > 0 ? Math.round(c.done/(c.done+c.missed)*100)+'%' : '—'}</div>
+              </div>`
+            ).join('') +
+            (myCheckins.length > 5 ? `<div style="font-size:11px;color:var(--text-muted);text-align:center;padding-top:10px;">+ ${myCheckins.length-5} more weeks</div>` : '')
+          }
+        </div>
+
+        <!-- Notification preferences (read-only summary + open modal) -->
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text);">🔔 Notifications</div>
+            <button onclick="showNotifPrefsModal()" style="font-size:11px;padding:4px 10px;border:1px solid var(--border2);border-radius:6px;background:var(--surface3);color:var(--text-muted);cursor:pointer;font-family:var(--font);">Edit</button>
+          </div>
+          ${u.email
+            ? `<div style="padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:8px;font-size:12px;color:#60a5fa;margin-bottom:12px;">✉ Sending to ${u.email}</div>`
+            : `<div style="padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:12px;color:var(--amber);margin-bottom:12px;">⚠ No email — ask admin to set one</div>`
+          }
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            ${roleEvents.map(key => {
+              const on = !optOut.includes(key);
+              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:12px;color:${on ? 'var(--text)' : 'var(--text-dim)'};">${NOTIF_LABELS[key] || key}</span>
+                <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:${on ? 'rgba(34,197,94,0.12)' : 'rgba(90,122,154,0.1)'};color:${on ? 'var(--green)' : 'var(--text-muted)'};">${on ? 'On' : 'Off'}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ACCOUNT DETAILS ── -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">🔐 Account Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+          ${[
+            ['Full Name',   u.name],
+            ['Username',    `<code style="background:var(--surface3);padding:2px 8px;border-radius:5px;font-size:12px;color:var(--gray-600);">${u.username}</code>`],
+            ['Role',        roleLabels[u.role] || u.role],
+            ['Diocese',     u.diocese || '<span style="color:var(--text-dim);">Province-wide</span>'],
+            ['Email',       u.email ? `<a href="mailto:${u.email}" style="color:var(--blue);">${u.email}</a>` : '<span style="color:var(--text-dim);">Not set</span>'],
+            ['Access',      (u.role === 'admin' || u.role === 'manager') ? 'All programs' : `${(u.programs||[]).length} program(s)`],
+          ].map(([label, value]) => `
+            <div style="padding:10px 0;border-bottom:1px solid var(--border);padding-right:20px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:3px;">${label}</div>
+              <div style="font-size:13px;color:var(--text);">${value}</div>
+            </div>`
+          ).join('')}
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="showChangePasswordModal()" style="padding:9px 18px;border:1px solid var(--border2);border-radius:8px;background:var(--surface3);color:var(--text);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;">
+            🔑 Change Password
+          </button>
+          <button onclick="doLogout()" style="padding:9px 18px;border:1px solid rgba(239,68,68,0.3);border-radius:8px;background:rgba(239,68,68,0.08);color:var(--red);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;">
+            ↩ Log Out
+          </button>
+        </div>
+      </div>
+
+    </div>`;
+}
+
 // ═══════════════════════════════════════════════════
 //  RENDER PROGRESS  (no filter — program data isn't weekly)
 // ═══════════════════════════════════════════════════
@@ -3332,9 +3593,11 @@ function switchTab(name, btn) {
   document.getElementById('tab-'+name).classList.add('active');
   btn.classList.add('active');
   if (name === 'projmgmt') setTimeout(initTaskRows, 80);
+  if (name === 'profile') renderMyProfile();
 }
 
 function renderAll() {
+  renderMyProfile();
   renderProgress();
   if (PROGRESS_VIEW === 'projects') renderProjectsGantt();
   renderKpi();
