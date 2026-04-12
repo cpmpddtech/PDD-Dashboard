@@ -63,8 +63,8 @@
 
   body {
     font-family: 'IBM Plex Sans', sans-serif;
-    background: #f0f2f5;
-    color: var(--gray9);
+    background: var(--surface);
+    color: var(--text);
     font-size: 14px;
     line-height: 1.5;
     min-height: 100vh;
@@ -1930,6 +1930,53 @@ function buildReportHTML(data) {
   [style*="color:var(--gray7)"], [style*="color:var(--gray9)"]  { color: var(--text) !important; }
   [style*="color:var(--gray5)"] { color: #7a9ab8 !important; }
   [style*="border:1px solid #e5e7eb"], [style*="border-color:#e5e7eb"] { border-color: var(--border) !important; }
+
+
+  /* ── DCR FORM SPECIFIC FIXES ─────────────────────────────────────────── */
+  body { background: var(--surface) !important; color: var(--text) !important; }
+
+  /* Layout areas */
+  .layout, #main-form, #admin-panel { background: var(--surface) !important; }
+  .main { background: var(--surface) !important; }
+
+  /* Sidebar explicit */
+  .sidebar { background: var(--surface2) !important; border-right-color: var(--border) !important; }
+
+  /* Nav items */
+  .nav-item:hover { background: var(--surface3) !important; color: var(--text) !important; }
+
+  /* Admin panel header */
+  .admin-header {
+    background: var(--surface2) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+  }
+  .admin-header div[style*="font-size:16px"], .admin-header div[style*="font-size: 16px"] {
+    color: var(--text) !important;
+  }
+  .admin-header div[style*="font-size:12px"], .admin-header div[style*="font-size: 12px"] {
+    color: var(--text-muted) !important;
+  }
+
+  /* Filters */
+  .admin-filters select, .admin-filters input {
+    background: var(--surface3) !important;
+    border-color: var(--border2) !important;
+    color: var(--text) !important;
+  }
+
+  /* Report rows */
+  .report-row {
+    background: var(--surface2) !important;
+    border-color: var(--border) !important;
+  }
+  .report-row:hover { background: var(--surface3) !important; }
+  .report-row-title { color: var(--text) !important; }
+  .report-row-meta  { color: var(--text-muted) !important; }
+
+  /* Empty state */
+  .empty-state, .empty-state h3 { color: var(--text-muted) !important; }
+  .empty-state p { color: var(--text-dim) !important; }
 
 </style>
 </head>
