@@ -659,7 +659,9 @@ function renderStaffGrid() {
       data-username="${s.username}"
       onclick="${noEmail ? '' : `toggleStaff('${s.username}')`}"
       title="${noEmail ? 'No email set — cannot receive emails' : s.email||''}">
-      <div class="staff-avatar" style="background:${roleColor(s.role)}">${initials(s.name)}</div>
+      ${s.avatarUrl
+        ? `<img src="${s.avatarUrl}" alt="${s.name}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=\"staff-avatar\" style=\"background:${roleColor(s.role)}\">${initials(s.name)}</div>'">`
+        : `<div class="staff-avatar" style="background:${roleColor(s.role)}">${initials(s.name)}</div>`}
       <div class="staff-info">
         <div class="staff-name">${s.name||s.username}</div>
         <div class="staff-role">${s.role}${s.diocese?' · '+s.diocese:''}</div>
@@ -870,7 +872,9 @@ function renderPermStaff() {
       const isAdmin = s.role === 'admin';
       html += `<div class="perm-row" id="perm-user-${s.username}">
         <div style="display:flex;align-items:center;gap:10px;">
-          <div class="staff-avatar" style="background:${roleColor(s.role)};width:32px;height:32px;font-size:11px;flex-shrink:0;">${initials(s.name)}</div>
+          ${s.avatarUrl
+        ? `<img src="${s.avatarUrl}" alt="${s.name}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=\"staff-avatar\" style=\"background:${roleColor(s.role)};width:32px;height:32px;font-size:11px;flex-shrink:0;\">${initials(s.name)}</div>'">`
+        : `<div class="staff-avatar" style="background:${roleColor(s.role)};width:32px;height:32px;font-size:11px;flex-shrink:0;">${initials(s.name)}</div>`}
           <div>
             <div class="perm-info">${s.name||s.username}</div>
             <div class="perm-sub">${s.role}${s.diocese?' · '+s.diocese:''}${!s.hasEmail?' · <span style="color:var(--amber)">no email set</span>':''}</div>

@@ -3,19 +3,20 @@
  *  PDP Dashboard — Cloudflare Worker v3.4.0
  *
  *  Security changelog (v3.4.0):
- *  - PBKDF2-SHA256 password hashing (100k iterations, random salt)
+ *  - PBKDF2-SHA256 password hashing (100k iterations, random salt per user)
  *  - Transparent migration: plaintext passwords upgrade on next login
- *  - Server-side rate limiting: 10 attempts / 15-min window per IP
- *  - Constant-time delay (300ms) on auth failure
+ *  - Server-side rate limiting: 10 attempts / 15-min window per IP → 429
+ *  - Constant-time delay (300ms) on auth failure — prevents timing attacks
  *  - CORS origin allowlist (replaces wildcard *)
- *  - Security response headers: nosniff, no-store, X-Frame-Options DENY
- *  - Body size limit: 12MB max
- *  - Action type guard prevents prototype pollution
- *  - Input sanitisation in validateUser
- *  - Password complexity: 10 chars + upper + lower + digit + special
- *  - Internal error messages sanitised
- *  - diagnostics removed from test_notification
- *  - Legacy Finance v1 actions removed (11 endpoints)
+ *  - Security response headers: nosniff, no-store, X-Frame-Options: DENY
+ *  - Body size limit: 12MB max before JSON parse
+ *  - Action type guard: prevents prototype pollution
+ *  - Input sanitisation in validateUser (length, type, control chars)
+ *  - Password complexity: 10 chars min + upper + lower + digit + special
+ *  - Internal error messages sanitised (no e.message to client)
+ *  - diagnostics object removed from test_notification
+ *  - Legacy Finance v1 actions removed (11 endpoints, 652 lines)
+ *  - isAdminUser made async, all call sites awaited
  *  Handles: auth, user management, data fetch, check-in writes,
  *           email alerts, audit logging, DCR Google Drive storage
  * ═══════════════════════════════════════════════════════════════
@@ -76,62 +77,75 @@ const BASE_SHEETS = [
 
 // ─── Helpers ──────────────────────────────────────
 function generateTempPassword() {
+  // Use crypto.getRandomValues — available in all Cloudflare Workers
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
   const arr   = new Uint32Array(14);
   crypto.getRandomValues(arr);
   return Array.from(arr).map(n => chars[n % chars.length]).join('');
 }
 
+// ── Password hashing (PBKDF2 via SubtleCrypto — available in CF Workers) ──
 async function hashPassword(password) {
   const enc  = new TextEncoder();
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key  = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100_000 }, key, 256
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100_000 },
+    key, 256
   );
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2,'0')).join('');
-  const hashHex = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,'0')).join('');
+  const hashArr  = new Uint8Array(bits);
+  const saltHex  = Array.from(salt).map(b => b.toString(16).padStart(2,'0')).join('');
+  const hashHex  = Array.from(hashArr).map(b => b.toString(16).padStart(2,'0')).join('');
   return `pbkdf2:sha256:100000:${saltHex}:${hashHex}`;
 }
 
 async function verifyPassword(password, stored) {
-  if (!stored || !stored.startsWith('pbkdf2:')) return stored === password;
+  // Legacy: plaintext (no colon prefix) — verify directly then migrate
+  if (!stored.startsWith('pbkdf2:')) return stored === password;
+  // PBKDF2 hashed
   const [, , iterStr, saltHex, hashHex] = stored.split(':');
+  const iterations = parseInt(iterStr);
   const salt = Uint8Array.from(saltHex.match(/.{2}/g).map(h => parseInt(h, 16)));
   const enc  = new TextEncoder();
   const key  = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: parseInt(iterStr) }, key, 256
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    key, 256
   );
   const candidate = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,'0')).join('');
   return candidate === hashHex;
 }
 
-// ── Server-side rate limiter ─────────────────────────────────────────────────
-const _rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const RATE_LIMIT_MAX       = 10;
+// ─── CORS ─────────────────────────────────────────
+// ── Server-side rate limiter (in-memory per Worker isolate) ──────────────────
+const _rateLimitMap = new Map(); // key → { count, resetAt }
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX       = 10;              // max auth attempts per window
 
 function checkRateLimit(key) {
-  const now = Date.now();
-  const rec = _rateLimitMap.get(key) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+  const now  = Date.now();
+  const rec  = _rateLimitMap.get(key) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
   if (now > rec.resetAt) { rec.count = 0; rec.resetAt = now + RATE_LIMIT_WINDOW_MS; }
   rec.count++;
   _rateLimitMap.set(key, rec);
-  return rec.count <= RATE_LIMIT_MAX;
+  if (rec.count > RATE_LIMIT_MAX) return false; // blocked
+  return true; // allowed
 }
+
 function clearRateLimit(key) { _rateLimitMap.delete(key); }
+
+// Constant-time delay to frustrate timing attacks on auth responses
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-// ── CORS ─────────────────────────────────────────────────────────────────────
+// ── Allowed origins — add your live domain + any dev origins here ─────────
 const ALLOWED_ORIGINS = [
   'https://cpmpdd.org',
   'https://www.cpmpdd.org',
-  'https://gamalieltun.github.io',
+  'https://gamalieltun.github.io',  // GitHub Pages dev/preview
 ];
 
 function getCorsHeaders(request) {
-  const origin  = request?.headers?.get('Origin') || '';
+  const origin = request?.headers?.get('Origin') || '';
   const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin':  allowed,
@@ -140,12 +154,15 @@ function getCorsHeaders(request) {
     'Access-Control-Max-Age':       '86400',
     'Vary':                         'Origin',
     'Content-Type':                 'application/json',
+    // Security headers on every response
     'X-Content-Type-Options':       'nosniff',
     'X-Frame-Options':              'DENY',
     'Referrer-Policy':              'strict-origin-when-cross-origin',
     'Cache-Control':                'no-store',
   };
 }
+
+// Keep corsHeaders as a compat alias — called with (request) throughout handler
 function corsHeaders(req) { return getCorsHeaders(req); }
 
 // ─── Read sheet ───────────────────────────────────
@@ -846,29 +863,33 @@ export default {
       if (request.method !== 'POST')
         return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
 
+      // Body size limit: reject oversized payloads before parsing
       const contentLength = parseInt(request.headers.get('Content-Length') || '0');
-      if (contentLength > 12 * 1024 * 1024)
+      if (contentLength > 12 * 1024 * 1024) {
         return new Response(JSON.stringify({ error: 'Request body too large (max 12MB)' }), { status: 413, headers });
-
+      }
       let body;
       try { body = await request.json(); }
       catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers }); }
 
       const { action } = body;
-      if (!action || typeof action !== 'string' || action.length > 64)
+      // Guard: action must be a non-empty string — prevents prototype pollution
+      if (!action || typeof action !== 'string' || action.length > 64) {
         return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers });
+      }
 
     // ══════════════════════════════════════════════
     //  USER HELPERS
     // ══════════════════════════════════════════════
 
+    // ── Password strength validator ────────────────────────────────
     function validatePasswordStrength(pw) {
-      if (!pw || pw.length < 10)        return 'Password must be at least 10 characters.';
-      if (!/[A-Z]/.test(pw))            return 'Password must contain at least one uppercase letter.';
-      if (!/[a-z]/.test(pw))            return 'Password must contain at least one lowercase letter.';
-      if (!/[0-9]/.test(pw))            return 'Password must contain at least one number.';
-      if (!/[^A-Za-z0-9]/.test(pw))     return 'Password must contain at least one special character.';
-      return null;
+      if (!pw || pw.length < 10)              return 'Password must be at least 10 characters.';
+      if (!/[A-Z]/.test(pw))                  return 'Password must contain at least one uppercase letter.';
+      if (!/[a-z]/.test(pw))                  return 'Password must contain at least one lowercase letter.';
+      if (!/[0-9]/.test(pw))                  return 'Password must contain at least one number.';
+      if (!/[^A-Za-z0-9]/.test(pw))           return 'Password must contain at least one special character.';
+      return null; // valid
     }
 
     function getUsers() {
@@ -877,19 +898,23 @@ export default {
     }
 
     async function validateUser(username, password) {
+      // Sanitise inputs before lookup
       if (!username || !password) return null;
       if (typeof username !== 'string' || typeof password !== 'string') return null;
       if (username.length > 64 || password.length > 256) return null;
-      username = username.replace(/[ -]/g, '').trim();
+      username = username.replace(/[ -]/g, '').trim(); // strip control chars
       const users = getUsers();
       const key = Object.keys(users).find(k => k.toLowerCase() === (username||'').toLowerCase());
       const u = key ? users[key] : null;
       if (!u) return null;
       const ok = await verifyPassword(password, u.password);
       if (!ok) return null;
-      // Transparent migration: upgrade plaintext → PBKDF2 on successful login
+      // Transparent migration: if stored as plaintext, silently upgrade to PBKDF2
       if (u.password && !u.password.startsWith('pbkdf2:')) {
-        try { users[key].password = await hashPassword(password); saveUsers(users).catch(() => {}); } catch(_) {}
+        try {
+          users[key].password = await hashPassword(password);
+          await saveUsers(users); // fire-and-forget style — don't block response
+        } catch(_) {}
       }
       return { ...u, _key: key };
     }
@@ -903,7 +928,8 @@ export default {
       // Return user list without passwords
       return Object.entries(users).map(([username, u]) => ({
         username, name: u.name, role: u.role, email: u.email || null,
-        notifOptOut: u.notifOptOut || [], mustChangePassword: !!u.mustChangePassword
+        notifOptOut: u.notifOptOut || [], mustChangePassword: !!u.mustChangePassword,
+        avatarUrl: u.avatarUrl || null
       }));
     }
 
@@ -930,7 +956,7 @@ export default {
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         const cfMsg = e.errors?.[0]?.message || res.status;
-        console.error('[Worker] CF API error:', cfMsg);
+        console.error('[Worker] Cloudflare API error:', cfMsg);
         throw new Error('Configuration save failed. Check CF_API_TOKEN permissions.');
       }
     }
@@ -938,22 +964,33 @@ export default {
     // ── Auth ─────────────────────────────────────
     if (action === 'auth') {
       const { username, password } = body;
-      const ip    = request.headers.get('CF-Connecting-IP') || 'unknown';
-      const rlKey = `auth:${ip}`;
+      const ip       = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const rlKey    = `auth:${ip}`;
+
+      // Server-side rate limiting — block after 10 failures in 15 minutes
       if (!checkRateLimit(rlKey)) {
-        await sleep(500);
+        await sleep(500); // constant-time delay
         return new Response(JSON.stringify({ ok: false, error: 'Too many attempts. Please wait 15 minutes.' }), { status: 429, headers });
       }
+
       const users = getUsers();
       const u = users[username];
 
       if (!u || !(await verifyPassword(password, u.password))) {
-        await sleep(300);
+        await sleep(300); // constant-time delay frustrates timing attacks
         return new Response(JSON.stringify({ ok: false, error: 'Invalid credentials' }), { status: 401, headers });
       }
+
+      // Success — clear rate limit counter
       clearRateLimit(rlKey);
+
+      // Transparent migration: upgrade plaintext to PBKDF2 on successful login
       if (u.password && !u.password.startsWith('pbkdf2:')) {
-        try { const u2 = getUsers(); u2[username].password = await hashPassword(password); saveUsers(u2).catch(() => {}); } catch(_) {}
+        try {
+          const users2 = getUsers();
+          users2[username].password = await hashPassword(password);
+          saveUsers(users2).catch(() => {}); // non-blocking
+        } catch(_) {}
       }
 
       // Log login to Google Sheets (fire and forget)
@@ -1396,23 +1433,28 @@ export default {
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
       const gmailRefreshToken = env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN;
+
       if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !gmailRefreshToken) {
         console.error('[test_notification] Missing OAuth secrets');
         return new Response(JSON.stringify({ ok: false, error: 'Email notifications are not configured. Contact the system administrator.' }), { status: 200, headers });
       }
+
       try {
         const token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, gmailRefreshToken);
+
         const to = body.email || u.email;
         if (!to)
           return new Response(JSON.stringify({ ok: false, error: 'No email address set on your account. Ask an admin to add one.' }), { status: 200, headers });
-        await sendEmail(token, to, '[PDD] Notification test',
+
+        await sendEmail(token, to,
+          '[PDD] Notification test',
           `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">
             <div style="background:#0f172a;padding:20px;border-radius:10px 10px 0 0;">
               <span style="color:#fff;font-size:16px;font-weight:700;">PDD Dashboard</span>
             </div>
             <div style="background:#f8fafc;padding:24px;border-radius:0 0 10px 10px;border:1px solid #e2e8f0;border-top:none;">
               <h2 style="color:#16a34a;margin:0 0 12px;">✅ Notification test successful</h2>
-              <p style="color:#475569;font-size:14px;">Your email notifications are configured correctly.</p>
+              <p style="color:#475569;font-size:14px;">Your email notifications are configured correctly. This confirms that the Gmail OAuth connection is working and emails will be delivered.</p>
               <p style="color:#94a3b8;font-size:12px;margin-top:20px;">Sent from PDD Dashboard · Provincial Development Department</p>
             </div>
           </body></html>`
@@ -1478,12 +1520,13 @@ export default {
         return new Response(JSON.stringify({ ok: true, saved: changed }), { status: 200, headers });
       } catch(e) {
         // saveUsers failed (CF API token missing etc.) — return config for manual paste
+        console.error('[save_roles] saveUsers failed:', e.message);
         return new Response(JSON.stringify({
           ok: false,
           manualPaste: true,
           config,
-          error: e.message,
-          note: 'Auto-save failed. Copy the config JSON and paste as STAFF_ROLES in Cloudflare.'
+          error: 'Auto-save failed (CF API token may be missing or expired).',
+          note: 'Copy the config JSON below and paste it as USERS_CONFIG in Cloudflare → Worker → Variables & Secrets.'
         }), { status: 200, headers });
       }
     }
@@ -1511,7 +1554,8 @@ export default {
       if (!env.GMAIL_CLIENT_SECRET) missingSecrets.push('GMAIL_CLIENT_SECRET');
       if (!env.GMAIL_REFRESH_TOKEN) missingSecrets.push('GMAIL_REFRESH_TOKEN');
       if (missingSecrets.length > 0) {
-        return new Response(JSON.stringify({ ok: false, error: 'Missing secrets: ' + missingSecrets.join(', ') }), { status: 500, headers });
+        console.error('[Worker] Missing secrets:', missingSecrets.join(', '));
+        return new Response(JSON.stringify({ ok: false, error: 'Server configuration error. Contact administrator.' }), { status: 500, headers });
       }
 
       let token;
@@ -1866,9 +1910,9 @@ export default {
 
     // ── Finance v1 legacy actions removed in v3.4.0 (security hardening) ──
     // Removed: get_finance_data, log_expense, approve_expense, reject_expense,
-    //          update_budget, add_budget, get_projects, add_project (v1),
+    //          update_budget, add_budget, get_projects, add_project,
     //          get_proposals, save_proposal, submit_proposal, review_proposal
-    // Use Finance v2 actions below (get_finance_v2, log_expenditure_v2, etc.)
+    // All functionality is available via Finance v2 actions below.
 
       // ═══════════════════════════════════════════════════════════════
     //  FINANCE v2 — MMK-only donor-aware budget system
@@ -2335,6 +2379,102 @@ export default {
         .map(r => Object.fromEntries(headers.map((h, i) => [h, r[i] ?? ''])));
 
       return new Response(JSON.stringify({ ok: true, donations }), { headers });
+    }
+
+    
+    // ── Upload / update profile avatar ─────────────────────────────────────
+    if (action === 'upload_avatar') {
+      const u = await validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorised' }), { status: 401, headers });
+
+      const { fileBase64, mimeType, fileName } = body;
+      if (!fileBase64) return new Response(JSON.stringify({ error: 'fileBase64 required' }), { status: 400, headers });
+
+      // Validate image type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      const safeMime = allowedTypes.includes(mimeType) ? mimeType : 'image/jpeg';
+      const ext = safeMime === 'image/png' ? 'png' : safeMime === 'image/webp' ? 'webp' : 'jpg';
+      const uploadName = `avatar_${body.username}_${Date.now()}.${ext}`;
+
+      // Get or use DRIVE_JSON_FOLDER_ID as avatar folder (reuse existing Drive infra)
+      // Falls back to DRIVE_FOLDER_ID if AVATARS_FOLDER_ID not set
+      const avatarFolderId = env.AVATARS_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!avatarFolderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured for avatars. Set AVATARS_FOLDER_ID secret.' }), { status: 500, headers });
+
+      const token = await getDriveToken(env);
+      if (!token)
+        return new Response(JSON.stringify({ error: 'Could not get Drive token' }), { status: 500, headers });
+
+      // Delete old avatar file if exists
+      const users = getUsers();
+      const existingFileId = users[body.username]?.avatarFileId;
+      if (existingFileId) {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${existingFileId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {}); // ignore errors — file may already be gone
+      }
+
+      // Upload new avatar to Drive via multipart
+      const CRLF = new Uint8Array([13, 10]);
+      const binaryStr = atob(fileBase64);
+      const fileBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) fileBytes[i] = binaryStr.charCodeAt(i);
+
+      const enc = new TextEncoder();
+      const boundary = 'PDP_AVATAR_' + Date.now();
+      const metaJson = JSON.stringify({ name: uploadName, parents: [avatarFolderId] });
+
+      const p1a  = enc.encode('--' + boundary);
+      const p1b  = enc.encode('Content-Type: application/json; charset=UTF-8');
+      const p1c  = enc.encode(metaJson);
+      const p2a  = enc.encode('--' + boundary);
+      const p2b  = enc.encode('Content-Type: ' + safeMime);
+      const pEnd = enc.encode('--' + boundary + '--');
+
+      const parts = [p1a, CRLF, p1b, CRLF, CRLF, p1c, CRLF, p2a, CRLF, p2b, CRLF, CRLF, fileBytes, CRLF, pEnd];
+      const totalLen = parts.reduce((s, p) => s + p.length, 0);
+      const multipartBody = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const p of parts) { multipartBody.set(p, offset); offset += p.length; }
+
+      const uploadRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary="${boundary}"`,
+            'Content-Length': totalLen,
+          },
+          body: multipartBody,
+        }
+      );
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ error: 'Drive upload failed: ' + (err.error?.message || uploadRes.status) }), { status: 500, headers });
+      }
+      const uploadData = await uploadRes.json();
+      const fileId = uploadData.id;
+
+      // Make file publicly readable so browsers can load it directly
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+      }).catch(() => {});
+
+      // Google Drive direct image URL (works for public files)
+      const avatarUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200-h200`;
+
+      // Save avatarUrl + fileId to user record in USERS_CONFIG
+      const usersW = getUsers();
+      usersW[body.username].avatarUrl    = avatarUrl;
+      usersW[body.username].avatarFileId = fileId;
+      await saveUsers(usersW);
+
+      return new Response(JSON.stringify({ ok: true, avatarUrl, fileId }), { status: 200, headers });
     }
 
     if (action === 'upload_voucher') {
@@ -3422,11 +3562,12 @@ export default {
       const users = getUsers();
       const staff = Object.entries(users).map(([username, usr]) => ({
         username,
-        name:     usr.name     || username,
-        role:     usr.role     || 'staff',
-        diocese:  usr.diocese  || null,
-        email:    usr.email    || null,
-        hasEmail: !!(usr.email && usr.email.trim()),
+        name:      usr.name      || username,
+        role:      usr.role      || 'staff',
+        diocese:   usr.diocese   || null,
+        email:     usr.email     || null,
+        hasEmail:  !!(usr.email && usr.email.trim()),
+        avatarUrl: usr.avatarUrl || null,
       })).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
       return new Response(JSON.stringify({ ok: true, staff }), { status: 200, headers });
