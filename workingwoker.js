@@ -2466,7 +2466,7 @@ export default {
       }).catch(() => {});
 
       // Google Drive direct image URL (works for public files)
-      const avatarUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200-h200`;
+      const avatarUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
 
       // Save avatarUrl + fileId to user record in USERS_CONFIG
       const usersW = getUsers();

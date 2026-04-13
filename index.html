@@ -2540,12 +2540,19 @@ async function handleAvatarUpload(input) {
       if (me) me.avatarUrl = avatarUrl;
     }
 
+    // Immediately update the profile avatar img in the DOM (before full re-render)
+    // so the user sees the change right away without waiting for a full render
+    const existingAvatar = document.querySelector('#tab-profile img[alt="' + CURRENT_USER.name + '"]');
+    if (existingAvatar) {
+      existingAvatar.src = avatarUrl + '&t=' + Date.now();
+    }
+
     showStatus('✓ Photo updated!', 'green');
     setTimeout(() => {
       if (statusEl) statusEl.style.display = 'none';
     }, 3000);
 
-    // Re-render profile tab + any other tabs showing avatars
+    // Full re-render profile tab + any other tabs showing avatars
     renderMyProfile();
     renderCheckinTab();
     renderTeamFeed();

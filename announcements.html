@@ -7,56 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-    --blue:    #3b82f6;
-    --blue-lt: rgba(59,130,246,0.12);
-    --blue-bd: rgba(59,130,246,0.3);
-    --green:   #22c55e;
-    --green-lt:rgba(34,197,94,0.12);
-    --amber:   #f59e0b;
-    --amber-lt:rgba(245,158,11,0.12);
-    --red:     #ef4444;
-    --red-lt:  rgba(239,68,68,0.12);
-    --gray-50: #0d1525;
-    --gray-100:#131e30;
-    --gray-200:#1e2d45;
-    --gray-300:#2a3d55;
-    --gray-400:#5a7a9a;
-    --gray-500:#7a9ab8;
-    --gray-600:#94b4cc;
-    --gray-700:#b8cfe0;
-    --gray-900:#e8f0f8;
-    --surface:  #0f1825;
-    --surface2: #131e30;
-    --surface3: #1a2640;
-    --surface4: #1e3050;
-    --border:   rgba(255,255,255,0.07);
-    --border2:  rgba(255,255,255,0.12);
-    --text:     #e8f0f8;
-    --text-muted: #5a7a9a;
-    --text-dim:   #3a5a7a;
-    --navy:     #e8f0f8;
-    --navy2:    #b8cfe0;
-    --gray9:    #e8f0f8;
-    --gray8:    #d0dce8;
-    --gray7:    #b8cfe0;
-    --gray5:    #7a9ab8;
-    --gray3:    rgba(255,255,255,0.12);
-    --gray2:    rgba(255,255,255,0.07);
-    --gray1:    #1a2640;
-    --white:    #131e30;
-    --lblue:    rgba(59,130,246,0.12);
-    --lgreen:   rgba(34,197,94,0.12);
-    --lamber:   rgba(245,158,11,0.12);
-    --lred:     rgba(239,68,68,0.12);
-    --dblue:    #2563eb;
-    --teal:     #14b8a6;
-    --teal-lt:  rgba(20,184,166,0.12);
-    --purple:   #a78bfa;
-    --purple-lt:rgba(167,139,250,0.12);
-    --radius:   8px;
-    --shadow:   0 1px 3px rgba(0,0,0,0.4);
-    --shadow-md:0 4px 12px rgba(0,0,0,0.4);
-  }
+  --navy:#0f1e38; --navy2:#1a2e52; --blue:#2563eb; --blue-lt:#eff6ff; --blue-bd:#bfdbfe;
+  --teal:#0f766e; --green:#15803d; --green-lt:#f0fdf4;
+  --amber:#b45309; --amber-lt:#fffbeb;
+  --red:#dc2626; --red-lt:#fef2f2;
+  --purple:#7c3aed; --purple-lt:#f5f3ff;
+  --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+  --gray-300:#d1d5db; --gray-400:#9ca3af; --gray-500:#6b7280;
+  --gray-600:#4b5563; --gray-700:#374151; --gray-800:#1f2937; --gray-900:#111827;
+  --font:'IBM Plex Sans',sans-serif; --radius:8px; --shadow:0 1px 3px rgba(0,0,0,.08);
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);font-size:14px;background:#f1f4f9;color:var(--gray-800);min-height:100vh}
 
@@ -367,6 +327,8 @@ textarea{resize:vertical;min-height:140px}
   [style*="color:var(--gray5)"] { color: #7a9ab8 !important; }
   [style*="border:1px solid #e5e7eb"], [style*="border-color:#e5e7eb"] { border-color: var(--border) !important; }
 
+
+
 </style>
 </head>
 <body>
@@ -626,6 +588,32 @@ function switchPane(name) {
 }
 
 // ── LOAD STAFF ────────────────────────────────────────────────────────
+
+// ── Avatar chip helper ────────────────────────────────────────────────────────
+function avatarChip(name, url, bgColor, size) {
+  size = size || 28;
+  var initStr = initials(name);
+  var sz = size + 'px';
+  if (url) {
+    var el = document.createElement('img');
+    el.src = url;
+    el.alt = initStr;
+    el.style.cssText = 'width:' + sz + ';height:' + sz + ';border-radius:50%;object-fit:cover;flex-shrink:0;';
+    el.setAttribute('data-fb-bg',   bgColor);
+    el.setAttribute('data-fb-text', initStr);
+    el.setAttribute('data-fb-size', size);
+    el.onerror = function() {
+      var d = document.createElement('div');
+      d.className = 'staff-avatar';
+      d.style.cssText = 'background:' + this.getAttribute('data-fb-bg') + ';width:' + this.getAttribute('data-fb-size') + 'px;height:' + this.getAttribute('data-fb-size') + 'px;font-size:11px;flex-shrink:0;';
+      d.textContent = this.getAttribute('data-fb-text');
+      this.replaceWith(d);
+    };
+    return el.outerHTML;
+  }
+  return '<div class="staff-avatar" style="background:' + bgColor + ';width:' + sz + ';height:' + sz + ';font-size:' + Math.round(size * 0.38) + 'px;flex-shrink:0;">' + initStr + '</div>';
+}
+
 async function loadStaff() {
   try {
     const res = await workerCall('get_staff_list');
@@ -659,9 +647,7 @@ function renderStaffGrid() {
       data-username="${s.username}"
       onclick="${noEmail ? '' : `toggleStaff('${s.username}')`}"
       title="${noEmail ? 'No email set — cannot receive emails' : s.email||''}">
-      ${s.avatarUrl
-        ? `<img src="${s.avatarUrl}" alt="${s.name}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=\"staff-avatar\" style=\"background:${roleColor(s.role)}\">${initials(s.name)}</div>'">`
-        : `<div class="staff-avatar" style="background:${roleColor(s.role)}">${initials(s.name)}</div>`}
+      ${avatarChip(s.name, s.avatarUrl || null, roleColor(s.role), 28)}
       <div class="staff-info">
         <div class="staff-name">${s.name||s.username}</div>
         <div class="staff-role">${s.role}${s.diocese?' · '+s.diocese:''}</div>
@@ -872,9 +858,7 @@ function renderPermStaff() {
       const isAdmin = s.role === 'admin';
       html += `<div class="perm-row" id="perm-user-${s.username}">
         <div style="display:flex;align-items:center;gap:10px;">
-          ${s.avatarUrl
-        ? `<img src="${s.avatarUrl}" alt="${s.name}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=\"staff-avatar\" style=\"background:${roleColor(s.role)};width:32px;height:32px;font-size:11px;flex-shrink:0;\">${initials(s.name)}</div>'">`
-        : `<div class="staff-avatar" style="background:${roleColor(s.role)};width:32px;height:32px;font-size:11px;flex-shrink:0;">${initials(s.name)}</div>`}
+          ${avatarChip(s.name, s.avatarUrl || null, roleColor(s.role), 32)}
           <div>
             <div class="perm-info">${s.name||s.username}</div>
             <div class="perm-sub">${s.role}${s.diocese?' · '+s.diocese:''}${!s.hasEmail?' · <span style="color:var(--amber)">no email set</span>':''}</div>
