@@ -256,6 +256,124 @@ textarea{resize:vertical;min-height:140px}
     color: #fff; text-align: center; padding: 3px 0;
   }
 
+
+  /* ── Send Confirmation Modal ── */
+  .ann-modal-overlay {
+    position: fixed; inset: 0; z-index: 900;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .ann-modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .ann-modal {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 28px 28px 22px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    transform: translateY(12px) scale(0.98);
+    transition: transform .2s cubic-bezier(0.16,1,0.3,1);
+  }
+  .ann-modal-overlay.open .ann-modal { transform: translateY(0) scale(1); }
+
+  .ann-modal-icon { font-size: 36px; margin-bottom: 12px; text-align: center; }
+  .ann-modal-title {
+    font-size: 17px; font-weight: 800; color: var(--text);
+    margin-bottom: 6px; text-align: center;
+  }
+  .ann-modal-sub {
+    font-size: 13px; color: var(--text-muted);
+    text-align: center; margin-bottom: 20px; line-height: 1.5;
+  }
+  .ann-modal-meta {
+    background: var(--surface3); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 20px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .ann-modal-meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px;
+  }
+  .ann-modal-meta-label { color: var(--text-muted); font-weight: 600; }
+  .ann-modal-meta-value { color: var(--text); font-weight: 500; text-align: right; max-width: 60%; }
+  .ann-modal-actions { display: flex; gap: 10px; }
+  .ann-modal-cancel {
+    flex: 1; padding: 11px;
+    border: 1px solid var(--border2); border-radius: 9px;
+    background: var(--surface3); color: var(--text-muted);
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .13s;
+  }
+  .ann-modal-cancel:hover { background: var(--surface4, #1e3050); color: var(--text); }
+  .ann-modal-confirm {
+    flex: 2; padding: 11px;
+    border: none; border-radius: 9px;
+    background: var(--blue); color: #fff;
+    font-family: var(--font); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .13s;
+    box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+  }
+  .ann-modal-confirm:hover { background: #1d4ed8; box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+  .ann-modal-confirm:disabled { background: rgba(59,130,246,0.35); cursor: not-allowed; box-shadow: none; }
+
+  /* ── Send Progress Overlay ── */
+  .send-progress-overlay {
+    position: fixed; inset: 0; z-index: 950;
+    background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .send-progress-overlay.open { opacity: 1; pointer-events: all; }
+
+  .send-progress-box {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 32px 28px; width: 100%; max-width: 400px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  .send-progress-icon { font-size: 40px; margin-bottom: 14px; }
+  .send-progress-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .send-progress-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+
+  .send-steps { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+  .send-step {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 9px;
+    background: var(--surface3); border: 1px solid var(--border);
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    transition: all .2s;
+  }
+  .send-step.active { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); color: var(--text); }
+  .send-step.done   { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.3);  color: var(--green); }
+  .send-step.error  { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3);  color: var(--red); }
+
+  .send-step-icon { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+  .send-step.active .send-step-icon { background: var(--blue); color: #fff; }
+  .send-step.done   .send-step-icon { background: var(--green); color: #fff; }
+  .send-step.error  .send-step-icon { background: var(--red);   color: #fff; }
+  .send-step-pending .send-step-icon { background: var(--surface3); color: var(--text-muted); border: 1px solid var(--border2); }
+
+  .step-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+  .send-progress-done-btn {
+    margin-top: 20px; padding: 11px 28px;
+    border: none; border-radius: 9px;
+    background: var(--green); color: #fff;
+    font-family: var(--font); font-size: 13px; font-weight: 700;
+    cursor: pointer; display: none;
+    box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+  }
+
 </style>
 </head>
 <body>
@@ -694,50 +812,166 @@ function togglePreview() {
 }
 
 // ── SEND ──────────────────────────────────────────────────────────────
+// ── Step 1: Validate → show confirmation modal ───────────────────────
 async function sendAnnouncement() {
-  const subject  = document.getElementById('ann-subject').value.trim();
-  const body     = document.getElementById('ann-body').value.trim();
-  const btn      = document.getElementById('send-btn');
-  const msgEl    = document.getElementById('send-msg');
+  const subject = document.getElementById('ann-subject').value.trim();
+  const body    = document.getElementById('ann-body').value.trim();
 
   if (!subject) { showMsg('send-msg', 'Subject is required.', false); return; }
   if (!body)    { showMsg('send-msg', 'Message body is required.', false); return; }
   if (!SELECTED.size) { showMsg('send-msg', 'Please select at least one recipient.', false); return; }
 
-  // Upload images first if any
-  if (ANN_IMAGES.length > 0) {
-    const ok = await uploadAllImages();
-    if (!ok) return; // stop if any image failed
+  // Build confirmation meta summary
+  const names = [...SELECTED].map(u => {
+    const s = STAFF_LIST.find(x => x.username === u);
+    return s ? s.name : u;
+  });
+  const namePreview = names.slice(0,3).join(', ') + (names.length > 3 ? ` +${names.length - 3} more` : '');
+  const imgLine = ANN_IMAGES.length > 0
+    ? `<div class="ann-modal-meta-row"><span class="ann-modal-meta-label">Images</span><span class="ann-modal-meta-value">${ANN_IMAGES.length} attached</span></div>`
+    : '';
+
+  document.getElementById('confirm-modal-meta').innerHTML = `
+    <div class="ann-modal-meta-row">
+      <span class="ann-modal-meta-label">Subject</span>
+      <span class="ann-modal-meta-value" style="font-style:italic;">"${subject.slice(0,50)}${subject.length>50?'…':''}"</span>
+    </div>
+    <div class="ann-modal-meta-row">
+      <span class="ann-modal-meta-label">Recipients</span>
+      <span class="ann-modal-meta-value"><strong>${SELECTED.size}</strong> staff · ${namePreview}</span>
+    </div>
+    ${imgLine}
+    <div class="ann-modal-meta-row">
+      <span class="ann-modal-meta-label">From</span>
+      <span class="ann-modal-meta-value">${LIVE_NAME || PDP_NAME}</span>
+    </div>`;
+
+  openConfirmModal();
+}
+
+function openConfirmModal() {
+  const overlay = document.getElementById('confirm-modal');
+  overlay.classList.add('open');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+}
+
+// ── Step 2: Confirmed → run full send flow with progress overlay ──────
+async function confirmAndSend() {
+  closeConfirmModal();
+
+  const subject  = document.getElementById('ann-subject').value.trim();
+  const body     = document.getElementById('ann-body').value.trim();
+  const hasImages = ANN_IMAGES.length > 0;
+
+  // Build steps list dynamically
+  const steps = [];
+  if (hasImages) steps.push({ id:'step-upload', label:`Upload ${ANN_IMAGES.length} image${ANN_IMAGES.length>1?'s':''}` });
+  steps.push({ id:'step-send',   label:`Send to ${SELECTED.size} recipient${SELECTED.size!==1?'s':''}` });
+  steps.push({ id:'step-save',   label:'Save to Drive log' });
+
+  // Render steps
+  document.getElementById('send-steps').innerHTML = steps.map((s, i) => `
+    <div class="send-step" id="${s.id}">
+      <div class="send-step-icon">${i+1}</div>
+      <span>${s.label}</span>
+    </div>`).join('');
+
+  document.getElementById('progress-icon').textContent = '📤';
+  document.getElementById('progress-title').textContent = 'Sending Announcement…';
+  document.getElementById('progress-sub').textContent = 'Please wait — do not close this tab.';
+  document.getElementById('progress-done-btn').style.display = 'none';
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('send-btn').textContent = 'Sending…';
+  openSendProgress();
+
+  function setStep(id, state, labelOverride) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'send-step ' + state;
+    const icons = { active:'<div class="step-spinner"></div>', done:'✓', error:'✗' };
+    el.querySelector('.send-step-icon').innerHTML = icons[state] || el.querySelector('.send-step-icon').textContent;
+    if (labelOverride) el.querySelector('span').textContent = labelOverride;
   }
 
-  if (!confirm(`Send this announcement to ${SELECTED.size} recipient${SELECTED.size!==1?'s':''}?`)) return;
-
-  btn.disabled = true; btn.textContent = 'Sending…';
-  msgEl.style.display = 'none';
-
   try {
-    // Build image HTML (only uploaded images have driveUrl)
-    const imageHtml = buildImageHtml();
+    // ── STEP: Upload images ──────────────────────────────
+    if (hasImages) {
+      setStep('step-upload', 'active');
+      document.getElementById('progress-sub').textContent = `Uploading ${ANN_IMAGES.length} image${ANN_IMAGES.length>1?'s':''}…`;
+      const ok = await uploadAllImages();
+      if (!ok) {
+        setStep('step-upload', 'error', 'Image upload failed');
+        setProgressFailed('Some images failed to upload. Remove them and try again.');
+        return;
+      }
+      setStep('step-upload', 'done', `${ANN_IMAGES.length} image${ANN_IMAGES.length>1?'s':''} uploaded ✓`);
+    }
 
+    // ── STEP: Send emails ────────────────────────────────
+    setStep('step-send', 'active');
+    document.getElementById('progress-sub').textContent = `Sending to ${SELECTED.size} recipient${SELECTED.size!==1?'s':''}…`;
+
+    const imageHtml = buildImageHtml();
     const res = await workerCall('send_announcement', {
-      subject,
-      body,
-      imageHtml,
+      subject, body, imageHtml,
       recipients: [...SELECTED],
       senderName: PDP_NAME,
     });
 
-    if (res.ok) {
-      showMsg('send-msg', `✓ Sent to ${res.sent} recipient${res.sent!==1?'s':''}${res.failed>0?' ('+res.failed+' failed — no email set)':''}. Saved to Drive.`, true);
-      toast('Announcement sent ✓', 'green');
-      clearForm();
-    } else {
-      showMsg('send-msg', res.error || 'Send failed.', false);
+    if (!res.ok) {
+      setStep('step-send', 'error', res.error || 'Send failed');
+      setProgressFailed(res.error || 'Failed to send. Please try again.');
+      return;
     }
+
+    const sentLabel = `Sent to ${res.sent} recipient${res.sent!==1?'s':''}${res.failed>0?' ('+res.failed+' failed)':''}`;
+    setStep('step-send', 'done', sentLabel);
+
+    // ── STEP: Save to Drive (already done by worker, just show it) ──
+    setStep('step-save', 'active');
+    document.getElementById('progress-sub').textContent = 'Saving to Drive…';
+    await new Promise(r => setTimeout(r, 600)); // brief pause for UX
+    setStep('step-save', 'done', 'Saved to Drive ✓');
+
+    // ── Done ─────────────────────────────────────────────
+    document.getElementById('progress-icon').textContent = '✅';
+    document.getElementById('progress-title').textContent = 'Announcement Sent!';
+    document.getElementById('progress-sub').textContent = sentLabel + '. Saved to Drive.';
+    document.getElementById('progress-done-btn').style.display = 'inline-block';
+    toast('Announcement sent ✓', 'green');
+    clearForm();
+
   } catch(e) {
-    showMsg('send-msg', 'Network error: ' + e.message, false);
+    setProgressFailed('Network error: ' + e.message);
   }
-  btn.disabled = false; btn.textContent = 'Send announcement →';
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('send-btn').textContent = 'Send announcement →';
+}
+
+function setProgressFailed(msg) {
+  document.getElementById('progress-icon').textContent = '❌';
+  document.getElementById('progress-title').textContent = 'Send Failed';
+  document.getElementById('progress-sub').textContent = msg;
+  document.getElementById('progress-done-btn').style.display = 'inline-block';
+  document.getElementById('progress-done-btn').style.background = 'var(--red)';
+  document.getElementById('progress-done-btn').textContent = 'Close ×';
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('send-btn').textContent = 'Send announcement →';
+}
+
+function openSendProgress() {
+  document.getElementById('send-progress-overlay').classList.add('open');
+}
+
+function closeSendProgress() {
+  document.getElementById('send-progress-overlay').classList.remove('open');
+  // Reset done button
+  document.getElementById('progress-done-btn').style.background = 'var(--green)';
+  document.getElementById('progress-done-btn').textContent = 'Done ✓';
 }
 
 function clearForm() {
@@ -1071,5 +1305,31 @@ function toast(msg, type='blue') {
   _toastTimer = setTimeout(() => { el.className = ''; }, 2800);
 }
 </script>
+
+<!-- ═══ SEND CONFIRMATION MODAL ═══ -->
+<div class="ann-modal-overlay" id="confirm-modal">
+  <div class="ann-modal">
+    <div class="ann-modal-icon">📢</div>
+    <div class="ann-modal-title">Send Announcement?</div>
+    <div class="ann-modal-sub">Review the details below before sending. This will email all selected recipients.</div>
+    <div class="ann-modal-meta" id="confirm-modal-meta"></div>
+    <div class="ann-modal-actions">
+      <button class="ann-modal-cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="ann-modal-confirm" id="confirm-send-btn" onclick="confirmAndSend()">Send now →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SEND PROGRESS OVERLAY ═══ -->
+<div class="send-progress-overlay" id="send-progress-overlay">
+  <div class="send-progress-box">
+    <div class="send-progress-icon" id="progress-icon">📤</div>
+    <div class="send-progress-title" id="progress-title">Sending Announcement</div>
+    <div class="send-progress-sub"  id="progress-sub">Please wait…</div>
+    <div class="send-steps" id="send-steps"></div>
+    <button class="send-progress-done-btn" id="progress-done-btn" onclick="closeSendProgress()">Done ✓</button>
+  </div>
+</div>
+
 </body>
 </html>
