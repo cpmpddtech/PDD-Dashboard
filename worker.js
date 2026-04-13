@@ -1790,6 +1790,161 @@ export default {
     }
 
     // ─── save_dcr ────────────────────────────────────────────
+    
+    // ═══════════════════════════════════════════════════════════════════
+    //  MEETING MINUTES
+    // ═══════════════════════════════════════════════════════════════════
+
+    // ── Save / update meeting minutes ──────────────────────────────────
+    if (action === 'save_minutes') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const mins = body.minutes;
+      if (!mins || !mins.id)
+        return new Response(JSON.stringify({ error: 'Missing minutes data' }), { status: 400, headers });
+
+      // Stamp server-side fields
+      mins.createdBy         = user.name || body.username;
+      mins.createdByUsername = user._key || body.username;
+      mins.savedAt           = new Date().toISOString();
+      mins.diocese           = user.diocese || mins.diocese || null;
+
+      const token = await getDriveToken(env);
+      const folderId = env.MINUTES_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured for minutes (set MINUTES_FOLDER_ID)' }), { status: 500, headers });
+
+      const safeName = (user.name || body.username).replace(/[^a-zA-Z0-9]/g, '_');
+      const dateStr  = (mins.date || new Date().toISOString().slice(0, 10));
+      const idSuffix = mins.id ? '_' + String(mins.id).slice(-8) : '';
+      const filename = `MIN_${dateStr}_${safeName}${idSuffix}.json`;
+
+      const existing = await driveFindFile(token, folderId, filename);
+      await driveWriteFile(token, folderId, filename, mins, existing?.id || null);
+
+      // Append index row to Minutes Google Sheet (separate spreadsheet)
+      const minutesSheetId = env.MINUTES_SPREADSHEET_ID;
+      if (minutesSheetId) {
+        try {
+          const driveToken = token;
+          const oauthToken = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN);
+          const row = [
+            mins.id,
+            mins.title || '',
+            mins.date || '',
+            mins.createdBy,
+            mins.visibility || 'public',
+            (mins.attendees || []).join(', '),
+            (mins.actions || []).length,
+            mins.savedAt,
+            mins.diocese || '',
+            filename,
+          ];
+          await appendToSheet(oauthToken, minutesSheetId, 'Meeting Minutes', row);
+        } catch(e) {
+          console.warn('[Worker] Minutes sheet append failed:', e.message);
+          // Non-fatal — Drive file is the source of truth
+        }
+      }
+
+      return new Response(JSON.stringify({ ok: true, filename }), { status: 200, headers });
+    }
+
+    // ── Get all accessible meeting minutes ─────────────────────────────
+    if (action === 'get_minutes') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const token = await getDriveToken(env);
+      const folderId = env.MINUTES_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ ok: true, minutes: [] }), { status: 200, headers });
+
+      // List all MIN_*.json files
+      const q = encodeURIComponent(`'${folderId}' in parents and name contains 'MIN_' and mimeType='application/json' and trashed=false`);
+      const listRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!listRes.ok) return new Response(JSON.stringify({ ok: true, minutes: [] }), { status: 200, headers });
+      const listData = await listRes.json();
+      const files = listData.files || [];
+
+      // Read each file in parallel (cap at 80)
+      const toFetch = files.slice(0, 80);
+      const minutes = await Promise.all(
+        toFetch.map(async f => {
+          try {
+            const content = await driveReadFile(token, f.id);
+            return { ...content, _fileId: f.id };
+          } catch { return null; }
+        })
+      );
+
+      const filtered = minutes
+        .filter(Boolean)
+        .filter(m => {
+          // Server-side visibility enforcement
+          if (!m.visibility || m.visibility === 'public') return true;
+          if (user.role === 'admin' || user.role === 'manager') return true;
+          const username = user._key || body.username;
+          if (m.visibility === 'private') return (m.attendeeUsernames || []).includes(username) || m.createdByUsername === username;
+          if (m.visibility === 'diocese') return m.diocese === user.diocese || m.createdByUsername === username;
+          return false;
+        });
+
+      return new Response(JSON.stringify({ ok: true, minutes: filtered }), { status: 200, headers });
+    }
+
+    // ── Delete meeting minutes ─────────────────────────────────────────
+    if (action === 'delete_minutes') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const { fileId } = body;
+      if (!fileId) return new Response(JSON.stringify({ error: 'fileId required' }), { status: 400, headers });
+
+      // Only creator or admin can delete
+      const token = await getDriveToken(env);
+      let content;
+      try { content = await driveReadFile(token, fileId); } catch(e) {}
+      const username = user._key || body.username;
+      if (content && content.createdByUsername !== username && user.role !== 'admin')
+        return new Response(JSON.stringify({ error: 'Permission denied — only the creator or admin can delete' }), { status: 403, headers });
+
+      const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/trash`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!delRes.ok) return new Response(JSON.stringify({ error: 'Delete failed' }), { status: 500, headers });
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
+    }
+
+    // ── Export minutes to Google Doc ───────────────────────────────────
+    if (action === 'export_minutes_doc') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const { minutes, htmlContent } = body;
+      if (!minutes || !htmlContent)
+        return new Response(JSON.stringify({ error: 'minutes and htmlContent required' }), { status: 400, headers });
+
+      const token = await getDriveToken(env);
+      const folderId = env.MINUTES_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured' }), { status: 500, headers });
+
+      const safeName  = (minutes.title || 'Meeting Minutes').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 60);
+      const dateStr   = minutes.date || new Date().toISOString().slice(0, 10);
+      const docName   = `MIN_${dateStr}_${safeName}`;
+
+      const existing = await driveFindFile(token, folderId, docName);
+      const gdoc = await driveWriteGoogleDoc(token, folderId, docName, htmlContent, existing?.id || null);
+      const docUrl = `https://docs.google.com/document/d/${gdoc.id}/edit`;
+
+      return new Response(JSON.stringify({ ok: true, docId: gdoc.id, docUrl }), { status: 200, headers });
+    }
+
     if (action === 'save_dcr') {
       const user = await validateUser(body.username, body.password);
       if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });

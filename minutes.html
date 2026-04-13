@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDP — Meeting Minutes</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:    #3b82f6; --blue-lt: rgba(59,130,246,0.12); --blue-bd: rgba(59,130,246,0.3);
+  --green:   #22c55e; --green-lt:rgba(34,197,94,0.12);
+  --amber:   #f59e0b; --amber-lt:rgba(245,158,11,0.12);
+  --red:     #ef4444; --red-lt:  rgba(239,68,68,0.12);
+  --surface:  #0f1825; --surface2: #131e30; --surface3: #1a2640; --surface4: #1e3050;
+  --border:   rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --text:     #e8f0f8; --text-muted: #5a7a9a; --text-dim: #3a5a7a;
+  --font: 'IBM Plex Sans', sans-serif; --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4); --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--font); font-size:14px; background:var(--surface); color:var(--text); min-height:100vh; }
+
+/* ── Topbar ── */
+.topbar { background:#0a1628; color:#fff; display:flex; align-items:center; gap:12px; padding:0 24px; height:52px; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+.topbar-logo { width:32px; height:32px; background:var(--blue); border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0; }
+.topbar-title { font-weight:600; font-size:15px; }
+.topbar-sub { font-size:11px; color:rgba(255,255,255,.45); }
+.topbar-gap { flex:1; }
+.topbar-btn { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#fff; padding:6px 14px; border-radius:5px; font-size:12px; font-family:inherit; cursor:pointer; font-weight:500; transition:background .15s; }
+.topbar-btn:hover { background:rgba(255,255,255,.18); }
+.topbar-btn.primary { background:var(--blue); border-color:var(--blue); }
+
+/* ── Layout ── */
+.layout { display:flex; min-height:calc(100vh - 52px); }
+
+/* ── Sidebar ── */
+.sidebar { width:220px; flex-shrink:0; background:var(--surface2); border-right:1px solid var(--border); padding:16px 0; position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto; }
+.sidebar-section { font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-muted); padding:12px 16px 6px; margin-top:6px; }
+.nav-item { display:flex; align-items:center; gap:9px; padding:8px 16px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; border-left:2px solid transparent; transition:all .12s; }
+.nav-item:hover { background:var(--surface3); color:var(--text); }
+.nav-item.active { background:var(--blue-lt); color:var(--blue); border-left-color:var(--blue); }
+.nav-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+/* ── Main ── */
+.main { flex:1; padding:24px 28px 80px; max-width:900px; }
+
+/* ── Page header ── */
+.page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.page-title { font-size:20px; font-weight:800; color:var(--text); }
+.page-sub { font-size:13px; color:var(--text-muted); margin-top:2px; }
+
+/* ── Cards ── */
+.card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; margin-bottom:16px; overflow:hidden; }
+.card-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; font-size:14px; font-weight:700; color:var(--text); }
+.card-body { padding:20px; }
+
+/* ── Form elements ── */
+.form-group { margin-bottom:14px; }
+.form-row { display:grid; gap:12px; }
+.form-row.cols2 { grid-template-columns:1fr 1fr; }
+.form-row.cols3 { grid-template-columns:1fr 1fr 1fr; }
+label { font-size:11px; font-weight:700; color:var(--text-muted); display:block; margin-bottom:5px; text-transform:uppercase; letter-spacing:.05em; }
+input[type=text], input[type=date], input[type=time], input[type=number], select, textarea {
+  width:100%; padding:9px 11px; border:1.5px solid var(--border2); border-radius:8px;
+  font-family:var(--font); font-size:13px; color:var(--text); background:var(--surface3);
+  outline:none; transition:border-color .13s;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
+input::placeholder, textarea::placeholder { color:var(--text-dim); }
+select option { background:var(--surface2); color:var(--text); }
+textarea { resize:vertical; min-height:80px; line-height:1.6; }
+
+/* ── Buttons ── */
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; font-family:var(--font); font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .13s; }
+.btn:disabled { opacity:.45; cursor:not-allowed; }
+.btn-primary { background:var(--blue); color:#fff; box-shadow:0 2px 10px rgba(59,130,246,0.3); }
+.btn-primary:hover:not(:disabled) { background:#1d4ed8; }
+.btn-secondary { background:var(--surface3); color:var(--text); border:1px solid var(--border2); }
+.btn-secondary:hover:not(:disabled) { background:var(--surface4); }
+.btn-danger { background:rgba(239,68,68,0.12); color:var(--red); border:1px solid rgba(239,68,68,0.3); }
+.btn-danger:hover:not(:disabled) { background:rgba(239,68,68,0.2); }
+.btn-sm { padding:5px 11px; font-size:12px; }
+
+/* ── Agenda items ── */
+.agenda-item { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; position:relative; }
+.agenda-item-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.agenda-num { width:24px; height:24px; border-radius:50%; background:var(--blue); color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.agenda-remove { position:absolute; top:12px; right:12px; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px; line-height:1; padding:2px; border-radius:4px; }
+.agenda-remove:hover { color:var(--red); background:rgba(239,68,68,0.1); }
+
+/* ── Action items table ── */
+.action-table { width:100%; border-collapse:collapse; }
+.action-table th { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; padding:0 8px 8px 0; border-bottom:1px solid var(--border); }
+.action-table td { padding:6px 8px 6px 0; border-bottom:1px solid var(--border); vertical-align:middle; }
+.action-table tr:last-child td { border:none; }
+.action-table input, .action-table select { font-size:12px; padding:6px 8px; }
+.action-del { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px; padding:2px 6px; border-radius:4px; }
+.action-del:hover { color:var(--red); }
+
+/* ── Attendee chips ── */
+.attendee-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; margin-top:8px; }
+.attendee-chip { display:flex; align-items:center; gap:7px; padding:6px 10px; border-radius:8px; border:1.5px solid var(--border2); background:var(--surface3); cursor:pointer; transition:all .13s; user-select:none; font-size:12px; font-weight:500; color:var(--text-muted); }
+.attendee-chip:hover { border-color:var(--blue); color:var(--blue); }
+.attendee-chip.selected { background:var(--blue-lt); border-color:var(--blue-bd); color:var(--blue); }
+.attendee-chip .chip-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+/* ── Minutes list ── */
+.minutes-row { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 18px; display:flex; align-items:center; gap:14px; margin-bottom:10px; transition:background .12s; }
+.minutes-row:hover { background:var(--surface3); }
+.minutes-icon { width:38px; height:38px; border-radius:9px; background:var(--blue-lt); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.minutes-info { flex:1; min-width:0; }
+.minutes-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; }
+.minutes-meta { font-size:11px; color:var(--text-muted); }
+.minutes-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+
+/* ── Visibility badge ── */
+.vis-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; }
+.vis-public   { background:rgba(34,197,94,0.12);  color:var(--green); }
+.vis-private  { background:rgba(239,68,68,0.12);  color:var(--red); }
+.vis-diocese  { background:rgba(245,158,11,0.12); color:var(--amber); }
+
+/* ── Status pill ── */
+.pill { display:inline-block; padding:2px 9px; border-radius:10px; font-size:11px; font-weight:700; }
+.pill-blue   { background:var(--blue-lt); color:var(--blue); }
+.pill-green  { background:var(--green-lt); color:var(--green); }
+.pill-amber  { background:var(--amber-lt); color:var(--amber); }
+
+/* ── Toast ── */
+#toast { position:fixed; bottom:24px; right:24px; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600; color:#fff; opacity:0; transform:translateY(6px); transition:opacity .2s,transform .2s; z-index:999; pointer-events:none; }
+#toast.show { opacity:1; transform:none; }
+#toast.green { background:var(--green); }
+#toast.red   { background:var(--red); }
+#toast.blue  { background:var(--blue); }
+
+/* ── Spinner ── */
+.spinner { width:22px; height:22px; border:2px solid var(--surface3); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; margin:0 auto 10px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading { padding:32px; text-align:center; color:var(--text-muted); font-size:13px; }
+.empty { padding:48px; text-align:center; color:var(--text-muted); font-size:13px; }
+
+/* ── Save bar ── */
+.save-bar { position:fixed; bottom:0; left:0; right:0; background:var(--surface2); border-top:1px solid var(--border); padding:12px 28px; display:flex; align-items:center; gap:12px; z-index:50; }
+.save-bar-status { font-size:12px; color:var(--text-muted); flex:1; }
+
+/* ── Msg box ── */
+.msg-box { font-size:12px; padding:9px 13px; border-radius:8px; margin-top:10px; display:none; }
+.msg-ok  { background:var(--green-lt); color:var(--green); }
+.msg-err { background:var(--red-lt);   color:var(--red); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--surface); }
+::-webkit-scrollbar-thumb { background:var(--surface3); border-radius:3px; }
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+  .sidebar { display:none; }
+  .main { padding:14px 14px 80px; max-width:100%; }
+  .form-row.cols2, .form-row.cols3 { grid-template-columns:1fr; }
+  .attendee-grid { grid-template-columns:1fr 1fr; }
+  .minutes-row { flex-wrap:wrap; }
+  .minutes-actions { width:100%; justify-content:flex-end; }
+}
+
+/* ── Print styles ── */
+@media print {
+  .topbar,.sidebar,.save-bar,.no-print,button { display:none !important; }
+  body { background:#fff; color:#000; font-size:11pt; }
+  .main { padding:0; max-width:100%; }
+  .card { background:#fff; border:1px solid #ccc; box-shadow:none; }
+  .card-header { background:#1a3a5c; color:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .agenda-item { background:#f9f9f9; border:1px solid #ddd; }
+  .layout { display:block; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<div class="topbar">
+  <button class="topbar-btn" onclick="goBack()" style="display:flex;align-items:center;gap:5px;flex-shrink:0;">← Dashboard</button>
+  <div class="topbar-logo" style="flex-shrink:0;">PDP</div>
+  <div style="min-width:0;overflow:hidden;">
+    <div class="topbar-title">Meeting Minutes</div>
+    <div class="topbar-sub">Record &amp; archive meeting minutes</div>
+  </div>
+  <div class="topbar-gap"></div>
+  <div id="user-badge" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:6px;">
+    <span id="hdr-name">—</span>
+    <span style="opacity:.5;font-size:10px;" id="hdr-role">—</span>
+  </div>
+</div>
+
+<!-- ── Layout ── -->
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-section">Actions</div>
+    <div class="nav-item active" id="nav-list" onclick="showPane('list')">
+      <div class="nav-dot" style="background:var(--blue)"></div> All Minutes
+    </div>
+    <div class="nav-item" id="nav-new" onclick="showPane('form');startNew()">
+      <div class="nav-dot" style="background:var(--green)"></div> + New Minutes
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- ═══ LIST PANE ═══ -->
+    <div id="pane-list">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📋 Meeting Minutes</div>
+          <div class="page-sub">All recorded meetings — filtered by your visibility access</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPane('form');startNew()">+ New Minutes</button>
+      </div>
+
+      <!-- Filters -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <select id="filter-vis" onchange="loadMinutes()" style="width:auto;font-size:12px;padding:6px 10px;">
+          <option value="">All Visibility</option>
+          <option value="public">Public</option>
+          <option value="private">Private</option>
+          <option value="diocese">Diocese-restricted</option>
+        </select>
+        <select id="filter-mine" onchange="loadMinutes()" style="width:auto;font-size:12px;padding:6px 10px;">
+          <option value="">All Authors</option>
+          <option value="mine">My Minutes</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadMinutes()">↻ Refresh</button>
+      </div>
+
+      <div id="minutes-list"><div class="loading"><div class="spinner"></div>Loading…</div></div>
+    </div>
+
+    <!-- ═══ FORM PANE ═══ -->
+    <div id="pane-form" style="display:none;">
+      <div class="page-header">
+        <div>
+          <div class="page-title" id="form-title">📝 New Meeting Minutes</div>
+          <div class="page-sub">Fill in all sections, then save or export</div>
+        </div>
+        <button class="btn btn-secondary" onclick="showPane('list')">← Back to list</button>
+      </div>
+
+      <!-- Basic Info -->
+      <div class="card">
+        <div class="card-header">📌 Meeting Details</div>
+        <div class="card-body">
+          <div class="form-row cols2" style="margin-bottom:12px;">
+            <div class="form-group">
+              <label>Meeting Title *</label>
+              <input type="text" id="m-title" placeholder="e.g. Monthly Programme Review — April 2026">
+            </div>
+            <div class="form-group">
+              <label>Visibility *</label>
+              <select id="m-visibility">
+                <option value="public">🌐 Public — all staff can view</option>
+                <option value="private">🔒 Private — attendees + admin only</option>
+                <option value="diocese">🏛 Diocese-restricted — same diocese + admin</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row cols3">
+            <div class="form-group">
+              <label>Date *</label>
+              <input type="date" id="m-date">
+            </div>
+            <div class="form-group">
+              <label>Time</label>
+              <input type="time" id="m-time">
+            </div>
+            <div class="form-group">
+              <label>Location / Platform</label>
+              <input type="text" id="m-location" placeholder="e.g. Zoom / Mandalay Office">
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label>Facilitated / Chaired By</label>
+            <input type="text" id="m-chair" placeholder="Name of chairperson or facilitator">
+          </div>
+          <div class="form-group">
+            <label>Minutes Recorded By</label>
+            <input type="text" id="m-recorder" placeholder="Auto-filled from your account">
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendees -->
+      <div class="card">
+        <div class="card-header">👥 Attendees
+          <span id="attendee-count" style="font-size:12px;font-weight:500;color:var(--text-muted);background:var(--surface3);padding:2px 8px;border-radius:6px;">0 selected</span>
+        </div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Select all staff who attended. External guests can be added below.</div>
+          <div id="attendee-grid" class="attendee-grid">
+            <div style="color:var(--text-muted);font-size:12px;">Loading staff…</div>
+          </div>
+          <div class="form-group" style="margin-top:14px;">
+            <label>External / Guest Attendees <span style="font-weight:400;text-transform:none;">(optional)</span></label>
+            <input type="text" id="m-guests" placeholder="e.g. Rev. John, Bishop's Representative (comma-separated)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Agenda + Discussion -->
+      <div class="card">
+        <div class="card-header">📄 Agenda &amp; Discussion Notes</div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Add each agenda item. Include notes on what was discussed under each point.</div>
+          <div id="agenda-container"></div>
+          <button class="btn btn-secondary btn-sm no-print" onclick="addAgendaItem()" style="margin-top:4px;">+ Add Agenda Item</button>
+        </div>
+      </div>
+
+      <!-- Decisions -->
+      <div class="card">
+        <div class="card-header">✅ Decisions Made</div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">List key decisions and resolutions reached in this meeting.</div>
+          <div id="decisions-container"></div>
+          <button class="btn btn-secondary btn-sm no-print" onclick="addDecision()" style="margin-top:4px;">+ Add Decision</button>
+        </div>
+      </div>
+
+      <!-- Action Items -->
+      <div class="card">
+        <div class="card-header">🎯 Action Items
+          <span style="font-size:12px;font-weight:400;color:var(--text-muted);">Track follow-up tasks</span>
+        </div>
+        <div class="card-body">
+          <div style="overflow-x:auto;">
+            <table class="action-table">
+              <thead>
+                <tr>
+                  <th style="min-width:200px;">Action / Task</th>
+                  <th style="min-width:140px;">Assigned To</th>
+                  <th style="width:90px;">Due CW</th>
+                  <th style="width:110px;">Priority</th>
+                  <th style="width:30px;" class="no-print"></th>
+                </tr>
+              </thead>
+              <tbody id="actions-tbody"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-secondary btn-sm no-print" onclick="addActionRow()" style="margin-top:10px;">+ Add Action Item</button>
+        </div>
+      </div>
+
+      <!-- Next meeting -->
+      <div class="card">
+        <div class="card-header">📅 Next Meeting</div>
+        <div class="card-body">
+          <div class="form-row cols3">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="m-next-date">
+            </div>
+            <div class="form-group">
+              <label>Time</label>
+              <input type="time" id="m-next-time">
+            </div>
+            <div class="form-group">
+              <label>Location / Platform</label>
+              <input type="text" id="m-next-location" placeholder="TBD">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes / Agenda Preview</label>
+            <textarea id="m-next-notes" placeholder="Any notes on what will be covered in the next meeting…" style="min-height:60px;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form actions -->
+      <div id="form-msg" class="msg-box"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Save bar -->
+<div class="save-bar" id="save-bar" style="display:none;">
+  <div class="save-bar-status" id="save-status">Unsaved</div>
+  <button class="btn btn-secondary" onclick="printMinutes()">🖨 Print / PDF</button>
+  <button class="btn btn-secondary" id="export-doc-btn" onclick="exportToGoogleDoc()">📄 Export to Google Doc</button>
+  <button class="btn btn-primary" id="save-btn" onclick="saveMinutes()">💾 Save Minutes</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const WORKER_URL = 'https://pdd-dashboard.cpmpdd-tech.workers.dev/';
+const PDP_USER   = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
+const PDP_PW     = sessionStorage.getItem('pdp_pw') || '';
+const PDP_ROLE   = PDP_USER?.role || 'staff';
+const PDP_NAME   = PDP_USER?.name || '';
+const PDP_UN     = PDP_USER?.username || '';
+const PDP_DIOCESE = PDP_USER?.diocese || null;
+
+let STAFF_LIST  = [];
+let SELECTED_ATTENDEES = new Set();
+let AGENDA_COUNT = 0;
+let DECISION_COUNT = 0;
+let ACTION_COUNT = 0;
+let CURRENT_ID  = null; // null = new
+let IS_EDITING  = false;
+
+async function workerCall(action, extra = {}) {
+  const res = await fetch(WORKER_URL, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, username: PDP_UN, password: PDP_PW, ...extra }),
+  });
+  return res.json();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('hdr-name').textContent = PDP_NAME || PDP_UN || 'User';
+  document.getElementById('hdr-role').textContent = PDP_ROLE || '—';
+  await loadStaffList();
+  showPane('list');
+  loadMinutes();
+});
+
+function goBack() {
+  if (window.opener && !window.opener.closed) { window.close(); return; }
+  if (document.referrer) { history.back(); return; }
+  window.location.href = 'index.html';
+}
+
+// ── Pane switching ────────────────────────────────────────────────────
+function showPane(name) {
+  document.getElementById('pane-list').style.display = name === 'list' ? '' : 'none';
+  document.getElementById('pane-form').style.display = name === 'form' ? '' : 'none';
+  document.getElementById('save-bar').style.display  = name === 'form' ? 'flex' : 'none';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-' + (name === 'form' ? 'new' : 'list')).classList.add('active');
+}
+
+// ── Staff list ────────────────────────────────────────────────────────
+async function loadStaffList() {
+  try {
+    const res = await workerCall('get_staff_list');
+    STAFF_LIST = res.staff || [];
+    renderAttendeeGrid();
+  } catch(e) {
+    document.getElementById('attendee-grid').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Could not load staff list.</div>';
+  }
+}
+
+const ROLE_COLORS = { admin:'#2563eb', manager:'#16a34a', finance_manager:'#7c3aed', finance_staff:'#9333ea', staff:'#0891b2', external:'#d97706' };
+
+function renderAttendeeGrid() {
+  const grid = document.getElementById('attendee-grid');
+  if (!STAFF_LIST.length) { grid.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No staff found.</div>'; return; }
+  grid.innerHTML = STAFF_LIST.map(s => {
+    const sel = SELECTED_ATTENDEES.has(s.username);
+    const color = ROLE_COLORS[s.role] || '#6b7280';
+    return `<div class="attendee-chip ${sel ? 'selected' : ''}" onclick="toggleAttendee('${s.username}')" id="chip-${s.username}">
+      <div class="chip-dot" style="background:${color}"></div>
+      <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name || s.username}</span>
+    </div>`;
+  }).join('');
+  updateAttendeeCount();
+}
+
+function toggleAttendee(username) {
+  if (SELECTED_ATTENDEES.has(username)) SELECTED_ATTENDEES.delete(username);
+  else SELECTED_ATTENDEES.add(username);
+  const chip = document.getElementById('chip-' + username);
+  if (chip) chip.classList.toggle('selected', SELECTED_ATTENDEES.has(username));
+  updateAttendeeCount();
+}
+
+function updateAttendeeCount() {
+  const el = document.getElementById('attendee-count');
+  if (el) el.textContent = SELECTED_ATTENDEES.size + ' selected';
+}
+
+// ── Agenda items ──────────────────────────────────────────────────────
+function addAgendaItem(title = '', notes = '') {
+  AGENDA_COUNT++;
+  const n = AGENDA_COUNT;
+  const div = document.createElement('div');
+  div.className = 'agenda-item';
+  div.id = 'agenda-' + n;
+  div.innerHTML = `
+    <div class="agenda-item-header">
+      <div class="agenda-num">${n}</div>
+      <input type="text" placeholder="Agenda item title…" value="${title}" style="flex:1;font-weight:600;">
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label>Discussion Notes</label>
+      <textarea placeholder="What was discussed under this agenda item…" style="min-height:80px;">${notes}</textarea>
+    </div>
+    <button class="agenda-remove no-print" onclick="document.getElementById('agenda-${n}').remove()">×</button>`;
+  document.getElementById('agenda-container').appendChild(div);
+}
+
+// ── Decisions ─────────────────────────────────────────────────────────
+function addDecision(text = '') {
+  DECISION_COUNT++;
+  const n = DECISION_COUNT;
+  const div = document.createElement('div');
+  div.id = 'decision-' + n;
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+  div.innerHTML = `
+    <div style="width:22px;height:22px;border-radius:50%;background:var(--green-lt);color:var(--green);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${n}</div>
+    <input type="text" placeholder="Decision or resolution reached…" value="${text}" style="flex:1;">
+    <button class="action-del no-print" onclick="document.getElementById('decision-${n}').remove()">×</button>`;
+  document.getElementById('decisions-container').appendChild(div);
+}
+
+// ── Action items ──────────────────────────────────────────────────────
+function addActionRow(task = '', assignee = '', dueCW = '', priority = 'Medium') {
+  ACTION_COUNT++;
+  const n = ACTION_COUNT;
+  const staffOpts = STAFF_LIST.map(s => `<option value="${s.name}" ${s.name === assignee ? 'selected' : ''}>${s.name}</option>`).join('');
+  const tr = document.createElement('tr');
+  tr.id = 'action-' + n;
+  tr.innerHTML = `
+    <td><input type="text" placeholder="Action item description…" value="${task}"></td>
+    <td><select><option value="">— Select —</option>${staffOpts}</select></td>
+    <td><input type="number" min="1" max="53" placeholder="e.g. 18" value="${dueCW}" style="text-align:center;"></td>
+    <td><select>
+      <option value="Low"    ${priority === 'Low'    ? 'selected' : ''}>🟡 Low</option>
+      <option value="Medium" ${priority === 'Medium' ? 'selected' : ''}>🟠 Medium</option>
+      <option value="High"   ${priority === 'High'   ? 'selected' : ''}>🔴 High</option>
+    </select></td>
+    <td class="no-print"><button class="action-del" onclick="document.getElementById('action-${n}').remove()">×</button></td>`;
+  document.getElementById('actions-tbody').appendChild(tr);
+}
+
+// ── New minutes ───────────────────────────────────────────────────────
+function startNew() {
+  CURRENT_ID = null;
+  IS_EDITING = false;
+  SELECTED_ATTENDEES.clear();
+  AGENDA_COUNT = 0;
+  DECISION_COUNT = 0;
+  ACTION_COUNT = 0;
+
+  document.getElementById('form-title').textContent = '📝 New Meeting Minutes';
+  document.getElementById('m-title').value = '';
+  document.getElementById('m-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('m-time').value = '';
+  document.getElementById('m-location').value = '';
+  document.getElementById('m-chair').value = '';
+  document.getElementById('m-recorder').value = PDP_NAME;
+  document.getElementById('m-guests').value = '';
+  document.getElementById('m-visibility').value = 'public';
+  document.getElementById('m-next-date').value = '';
+  document.getElementById('m-next-time').value = '';
+  document.getElementById('m-next-location').value = '';
+  document.getElementById('m-next-notes').value = '';
+  document.getElementById('agenda-container').innerHTML = '';
+  document.getElementById('decisions-container').innerHTML = '';
+  document.getElementById('actions-tbody').innerHTML = '';
+  document.getElementById('form-msg').style.display = 'none';
+  document.getElementById('save-status').textContent = 'Unsaved';
+
+  renderAttendeeGrid();
+  // Start with 1 agenda item, 1 decision, 1 action row
+  addAgendaItem();
+  addDecision();
+  addActionRow();
+}
+
+// ── Collect form data ─────────────────────────────────────────────────
+function collectForm() {
+  // Agenda
+  const agenda = [];
+  document.querySelectorAll('#agenda-container .agenda-item').forEach(el => {
+    const inputs = el.querySelectorAll('input[type=text]');
+    const ta = el.querySelector('textarea');
+    if (inputs[0]?.value.trim() || ta?.value.trim()) {
+      agenda.push({ title: inputs[0]?.value.trim() || '', notes: ta?.value.trim() || '' });
+    }
+  });
+
+  // Decisions
+  const decisions = [];
+  document.querySelectorAll('#decisions-container > div').forEach(el => {
+    const v = el.querySelector('input')?.value.trim();
+    if (v) decisions.push(v);
+  });
+
+  // Actions
+  const actions = [];
+  document.querySelectorAll('#actions-tbody tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    const selects = tr.querySelectorAll('select');
+    const task = inputs[0]?.value.trim();
+    if (task) {
+      actions.push({
+        task,
+        assignee: selects[0]?.value || '',
+        dueCW:    inputs[1]?.value || '',
+        priority: selects[1]?.value || 'Medium',
+        status:   'Pending',
+      });
+    }
+  });
+
+  // Attendees
+  const attendeeNames = [...SELECTED_ATTENDEES].map(un => {
+    const s = STAFF_LIST.find(x => x.username === un);
+    return s ? s.name : un;
+  });
+
+  return {
+    id:         CURRENT_ID || ('MIN_' + Date.now()),
+    title:      document.getElementById('m-title').value.trim(),
+    date:       document.getElementById('m-date').value,
+    time:       document.getElementById('m-time').value,
+    location:   document.getElementById('m-location').value.trim(),
+    chair:      document.getElementById('m-chair').value.trim(),
+    recorder:   document.getElementById('m-recorder').value.trim() || PDP_NAME,
+    guests:     document.getElementById('m-guests').value.trim(),
+    visibility: document.getElementById('m-visibility').value,
+    attendees:  attendeeNames,
+    attendeeUsernames: [...SELECTED_ATTENDEES],
+    diocese:    PDP_DIOCESE,
+    agenda,
+    decisions,
+    actions,
+    nextMeeting: {
+      date:     document.getElementById('m-next-date').value,
+      time:     document.getElementById('m-next-time').value,
+      location: document.getElementById('m-next-location').value.trim(),
+      notes:    document.getElementById('m-next-notes').value.trim(),
+    },
+    createdBy:       PDP_NAME,
+    createdByUsername: PDP_UN,
+    savedAt:    new Date().toISOString(),
+  };
+}
+
+// ── Save minutes ──────────────────────────────────────────────────────
+async function saveMinutes() {
+  const data = collectForm();
+  if (!data.title) { showFormMsg('Meeting title is required.', false); return; }
+  if (!data.date)  { showFormMsg('Meeting date is required.', false); return; }
+
+  CURRENT_ID = data.id;
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '💾 Saving…';
+  document.getElementById('save-status').textContent = 'Saving…';
+
+  try {
+    const res = await workerCall('save_minutes', { minutes: data });
+    if (res.ok) {
+      document.getElementById('save-status').textContent = 'Saved at ' + new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      document.getElementById('form-title').textContent = '📝 ' + data.title;
+      IS_EDITING = true;
+      showFormMsg('✓ Minutes saved successfully.', true);
+      toast('Minutes saved ✓', 'green');
+    } else {
+      showFormMsg(res.error || 'Save failed.', false);
+      toast('Save failed', 'red');
+    }
+  } catch(e) {
+    showFormMsg('Network error: ' + e.message, false);
+  }
+  btn.disabled = false; btn.textContent = '💾 Save Minutes';
+}
+
+// ── Export to Google Doc ──────────────────────────────────────────────
+async function exportToGoogleDoc() {
+  const data = collectForm();
+  if (!data.title) { showFormMsg('Please fill in the title before exporting.', false); return; }
+
+  const btn = document.getElementById('export-doc-btn');
+  btn.disabled = true; btn.textContent = '📄 Exporting…';
+
+  try {
+    const htmlContent = buildPrintHTML(data);
+    const res = await workerCall('export_minutes_doc', { minutes: data, htmlContent });
+    if (res.ok && res.docUrl) {
+      toast('Google Doc created ✓', 'green');
+      showFormMsg('✓ Google Doc created. <a href="' + res.docUrl + '" target="_blank" style="color:var(--blue);">Open Doc →</a>', true);
+      window.open(res.docUrl, '_blank');
+    } else {
+      showFormMsg(res.error || 'Export failed.', false);
+    }
+  } catch(e) {
+    showFormMsg('Network error: ' + e.message, false);
+  }
+  btn.disabled = false; btn.textContent = '📄 Export to Google Doc';
+}
+
+// ── Print ─────────────────────────────────────────────────────────────
+function printMinutes() { window.print(); }
+
+// ── Load minutes list ─────────────────────────────────────────────────
+async function loadMinutes() {
+  const listEl = document.getElementById('minutes-list');
+  listEl.innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+
+  try {
+    const visFilter  = document.getElementById('filter-vis')?.value || '';
+    const mineFilter = document.getElementById('filter-mine')?.value || '';
+    const res = await workerCall('get_minutes');
+    if (!res.ok) { listEl.innerHTML = `<div class="empty">Failed to load: ${res.error || 'Unknown error'}</div>`; return; }
+
+    let minutes = res.minutes || [];
+
+    // Client-side visibility filter
+    minutes = minutes.filter(m => {
+      if (m.visibility === 'public') return true;
+      if (m.visibility === 'private') return (m.attendeeUsernames || []).includes(PDP_UN) || PDP_ROLE === 'admin' || PDP_ROLE === 'manager';
+      if (m.visibility === 'diocese') return m.diocese === PDP_DIOCESE || PDP_ROLE === 'admin' || PDP_ROLE === 'manager';
+      return true;
+    });
+
+    if (visFilter) minutes = minutes.filter(m => m.visibility === visFilter);
+    if (mineFilter === 'mine') minutes = minutes.filter(m => m.createdByUsername === PDP_UN);
+
+    minutes.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+    if (!minutes.length) { listEl.innerHTML = '<div class="empty">📭 No meeting minutes found.</div>'; return; }
+
+    const VIS_LABELS = { public: '🌐 Public', private: '🔒 Private', diocese: '🏛 Diocese' };
+    const VIS_CLASS  = { public: 'vis-public', private: 'vis-private', diocese: 'vis-diocese' };
+    const canEdit = m => m.createdByUsername === PDP_UN || PDP_ROLE === 'admin';
+
+    listEl.innerHTML = minutes.map(m => `
+      <div class="minutes-row">
+        <div class="minutes-icon">📋</div>
+        <div class="minutes-info">
+          <div class="minutes-title">${m.title || 'Untitled Meeting'}</div>
+          <div class="minutes-meta">
+            ${m.date || '—'} ${m.time ? '· ' + m.time : ''} ${m.location ? '· ' + m.location : ''}
+            · By <strong>${m.createdBy || '—'}</strong>
+            · ${m.attendees?.length || 0} attendee${m.attendees?.length !== 1 ? 's' : ''}
+            · ${m.actions?.length || 0} action item${m.actions?.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+          <span class="vis-badge ${VIS_CLASS[m.visibility] || 'vis-public'}">${VIS_LABELS[m.visibility] || m.visibility}</span>
+          ${m.actions?.some(a => a.status === 'Pending') ? '<span class="pill pill-amber" style="font-size:10px;">⚠ Open actions</span>' : ''}
+        </div>
+        <div class="minutes-actions">
+          <button class="btn btn-secondary btn-sm" onclick='viewMinutes(${JSON.stringify(m)})'>👁 View</button>
+          ${canEdit(m) ? `<button class="btn btn-secondary btn-sm" onclick='editMinutes(${JSON.stringify(m)})'>✏ Edit</button>` : ''}
+          ${canEdit(m) ? `<button class="btn btn-danger btn-sm" onclick="deleteMinutes('${m._fileId}','${m.id}')">🗑</button>` : ''}
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    listEl.innerHTML = `<div class="empty">Network error: ${e.message}</div>`;
+  }
+}
+
+// ── View minutes (read-only load) ──────────────────────────────────────
+function viewMinutes(data) {
+  editMinutes(data, true);
+}
+
+// ── Edit minutes ──────────────────────────────────────────────────────
+function editMinutes(data, readOnly = false) {
+  CURRENT_ID = data.id;
+  IS_EDITING = true;
+  SELECTED_ATTENDEES = new Set(data.attendeeUsernames || []);
+  AGENDA_COUNT = 0; DECISION_COUNT = 0; ACTION_COUNT = 0;
+
+  document.getElementById('form-title').textContent = (readOnly ? '👁 ' : '✏ ') + (data.title || 'Meeting Minutes');
+  document.getElementById('m-title').value      = data.title || '';
+  document.getElementById('m-date').value       = data.date || '';
+  document.getElementById('m-time').value       = data.time || '';
+  document.getElementById('m-location').value   = data.location || '';
+  document.getElementById('m-chair').value      = data.chair || '';
+  document.getElementById('m-recorder').value   = data.recorder || PDP_NAME;
+  document.getElementById('m-guests').value     = data.guests || '';
+  document.getElementById('m-visibility').value = data.visibility || 'public';
+  document.getElementById('m-next-date').value     = data.nextMeeting?.date || '';
+  document.getElementById('m-next-time').value     = data.nextMeeting?.time || '';
+  document.getElementById('m-next-location').value = data.nextMeeting?.location || '';
+  document.getElementById('m-next-notes').value    = data.nextMeeting?.notes || '';
+  document.getElementById('save-status').textContent = 'Last saved: ' + (data.savedAt ? new Date(data.savedAt).toLocaleString() : '—');
+  document.getElementById('agenda-container').innerHTML = '';
+  document.getElementById('decisions-container').innerHTML = '';
+  document.getElementById('actions-tbody').innerHTML = '';
+  document.getElementById('form-msg').style.display = 'none';
+
+  renderAttendeeGrid();
+  (data.agenda || []).forEach(a => addAgendaItem(a.title, a.notes));
+  if (!data.agenda?.length) addAgendaItem();
+  (data.decisions || []).forEach(d => addDecision(d));
+  if (!data.decisions?.length) addDecision();
+  (data.actions || []).forEach(a => addActionRow(a.task, a.assignee, a.dueCW, a.priority));
+  if (!data.actions?.length) addActionRow();
+
+  if (readOnly) {
+    document.querySelectorAll('#pane-form input, #pane-form select, #pane-form textarea').forEach(el => el.disabled = true);
+    document.getElementById('save-btn').style.display = 'none';
+  } else {
+    document.querySelectorAll('#pane-form input, #pane-form select, #pane-form textarea').forEach(el => el.disabled = false);
+    document.getElementById('save-btn').style.display = '';
+  }
+
+  showPane('form');
+}
+
+// ── Delete minutes ────────────────────────────────────────────────────
+async function deleteMinutes(fileId, id) {
+  if (!confirm('Delete this meeting minutes? This cannot be undone.')) return;
+  try {
+    const res = await workerCall('delete_minutes', { fileId, minutesId: id });
+    if (res.ok) { toast('Deleted ✓', 'green'); loadMinutes(); }
+    else toast('Delete failed: ' + (res.error || 'Unknown'), 'red');
+  } catch(e) { toast('Network error', 'red'); }
+}
+
+// ── Build print HTML ──────────────────────────────────────────────────
+function buildPrintHTML(data) {
+  const agenda = (data.agenda || []).map((a, i) => `
+    <h3 style="color:#1a3a5c;margin:16px 0 6px;">${i+1}. ${a.title || 'Agenda Item'}</h3>
+    <p style="white-space:pre-wrap;color:#374151;font-size:13px;line-height:1.7;">${a.notes || '—'}</p>`).join('');
+  const decisions = (data.decisions || []).map((d, i) => `<li style="margin-bottom:6px;">${d}</li>`).join('');
+  const actions = (data.actions || []).map(a => `
+    <tr>
+      <td style="padding:6px 10px;border:1px solid #ddd;">${a.task}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;">${a.assignee}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">CW ${a.dueCW}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">${a.priority}</td>
+      <td style="padding:6px 10px;border:1px solid #ddd;text-align:center;">${a.status}</td>
+    </tr>`).join('');
+  const nm = data.nextMeeting;
+  const nextMtg = (nm?.date || nm?.notes)
+    ? `<p><b>Date:</b> ${nm.date || 'TBD'} ${nm.time || ''} ${nm.location ? '· ' + nm.location : ''}</p>${nm.notes ? `<p style="color:#555;">${nm.notes}</p>` : ''}`
+    : '<p style="color:#888;">Not scheduled yet.</p>';
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a1a; max-width: 860px; margin: 0 auto; padding: 28px; }
+  h1 { color: #1a3a5c; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 6px; }
+  h2 { color: #2563eb; margin: 20px 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: .05em; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  th { background: #1a3a5c; color: #fff; padding: 7px 10px; text-align: left; font-size: 12px; }
+  td { padding: 6px 10px; border: 1px solid #ddd; }
+  .meta-row { display: flex; gap: 32px; flex-wrap: wrap; font-size: 12px; color: #555; margin-bottom: 20px; }
+  .meta-item b { color: #1a1a1a; }
+  ul { padding-left: 20px; }
+</style></head><body>
+<h1>${data.title || 'Meeting Minutes'}</h1>
+<div class="meta-row">
+  <div><b>Date:</b> ${data.date || '—'} ${data.time || ''}</div>
+  <div><b>Location:</b> ${data.location || '—'}</div>
+  <div><b>Chaired by:</b> ${data.chair || '—'}</div>
+  <div><b>Recorded by:</b> ${data.recorder || '—'}</div>
+  <div><b>Visibility:</b> ${data.visibility || 'public'}</div>
+</div>
+
+<h2>Attendees</h2>
+<p>${(data.attendees || []).join(', ') || '—'}${data.guests ? ' · External: ' + data.guests : ''}</p>
+
+<h2>Agenda &amp; Discussion</h2>
+${agenda || '<p>No agenda recorded.</p>'}
+
+<h2>Decisions Made</h2>
+<ul>${decisions || '<li>No decisions recorded.</li>'}</ul>
+
+<h2>Action Items</h2>
+<table>
+  <thead><tr><th>Action</th><th>Assigned To</th><th>Due CW</th><th>Priority</th><th>Status</th></tr></thead>
+  <tbody>${actions || '<tr><td colspan="5" style="text-align:center;color:#888;">No action items</td></tr>'}</tbody>
+</table>
+
+<h2>Next Meeting</h2>
+${nextMtg}
+
+<p style="margin-top:32px;font-size:11px;color:#aaa;">Generated by PDD Dashboard · ${new Date().toLocaleString()}</p>
+</body></html>`;
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────
+function showFormMsg(msg, ok) {
+  const el = document.getElementById('form-msg');
+  el.style.display = 'block';
+  el.className = 'msg-box ' + (ok ? 'msg-ok' : 'msg-err');
+  el.innerHTML = msg;
+  if (ok) setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+let _toastTimer;
+function toast(msg, type = 'blue') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+</script>
+</body>
+</html>

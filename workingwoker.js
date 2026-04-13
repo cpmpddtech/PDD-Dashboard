@@ -2477,6 +2477,88 @@ export default {
       return new Response(JSON.stringify({ ok: true, avatarUrl, fileId }), { status: 200, headers });
     }
 
+    
+    // ── Upload image for announcement email ────────────────────────────────
+    if (action === 'upload_announcement_image') {
+      const u = await validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorised' }), { status: 401, headers });
+
+      // Permission check — same as send_announcement
+      const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
+      const userPerms = annPerms.users || {};
+      const canSend   = u.role === 'admin' || userPerms[body.username] === true;
+      if (!canSend)
+        return new Response(JSON.stringify({ error: 'No announcement permission' }), { status: 403, headers });
+
+      const { fileBase64, mimeType, fileName } = body;
+      if (!fileBase64)
+        return new Response(JSON.stringify({ error: 'fileBase64 required' }), { status: 400, headers });
+
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const safeMime = allowedTypes.includes(mimeType) ? mimeType : 'image/jpeg';
+      const ext = safeMime === 'image/png' ? 'png' : safeMime === 'image/gif' ? 'gif' : safeMime === 'image/webp' ? 'webp' : 'jpg';
+      const uploadName = `ann_img_${u.username}_${Date.now()}.${ext}`;
+
+      const folderId = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured' }), { status: 500, headers });
+
+      const token = await getDriveToken(env);
+      if (!token)
+        return new Response(JSON.stringify({ error: 'Could not get Drive token' }), { status: 500, headers });
+
+      // Upload to Drive via multipart
+      const CRLF = new Uint8Array([13, 10]);
+      const binaryStr = atob(fileBase64);
+      const fileBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) fileBytes[i] = binaryStr.charCodeAt(i);
+
+      const enc = new TextEncoder();
+      const boundary = 'PDP_ANNIMG_' + Date.now();
+      const metaJson = JSON.stringify({ name: uploadName, parents: [folderId] });
+
+      const p1a  = enc.encode('--' + boundary);
+      const p1b  = enc.encode('Content-Type: application/json; charset=UTF-8');
+      const p1c  = enc.encode(metaJson);
+      const p2a  = enc.encode('--' + boundary);
+      const p2b  = enc.encode('Content-Type: ' + safeMime);
+      const pEnd = enc.encode('--' + boundary + '--');
+
+      const parts = [p1a, CRLF, p1b, CRLF, CRLF, p1c, CRLF, p2a, CRLF, p2b, CRLF, CRLF, fileBytes, CRLF, pEnd];
+      const totalLen = parts.reduce((s, p) => s + p.length, 0);
+      const multipartBody = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const p of parts) { multipartBody.set(p, offset); offset += p.length; }
+
+      const uploadRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary="${boundary}"`,
+          },
+          body: multipartBody,
+        }
+      );
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ error: 'Drive upload failed: ' + (err.error?.message || uploadRes.status) }), { status: 500, headers });
+      }
+      const uploadData = await uploadRes.json();
+      const fileId = uploadData.id;
+
+      // Make publicly readable
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+      }).catch(() => {});
+
+      const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+      return new Response(JSON.stringify({ ok: true, imageUrl, fileId }), { status: 200, headers });
+    }
+
     if (action === 'upload_voucher') {
       const u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
@@ -3663,6 +3745,7 @@ export default {
         return new Response(JSON.stringify({ error: 'None of the selected recipients have emails set' }), { status: 400, headers });
 
       // Build HTML email
+      const { imageHtml } = body;   // optional image block from frontend
       const gmailToken = env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN;
       if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !gmailToken)
         return new Response(JSON.stringify({ error: 'Gmail OAuth secrets not configured' }), { status: 500, headers });
@@ -3678,6 +3761,7 @@ export default {
           <h2 style="margin:0 0 8px;font-size:18px;color:#0f1e38;">${subject}</h2>
           <p style="color:#64748b;font-size:12px;margin:0 0 20px;">From: ${senderName||u.name||'PDD Dashboard'} · ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p>
           <div style="font-size:14px;color:#374151;line-height:1.8;white-space:pre-wrap;">${msgBody.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          ${imageHtml || ''}
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
           <p style="font-size:11px;color:#94a3b8;margin:0;">This is an official announcement from the PDD Dashboard. Do not reply to this email.</p>
           <a href="${env.DASHBOARD_URL||'https://www.gamalieltun.com/PDP-Dashboard/'}" style="font-size:11px;color:#2563eb;">Open Dashboard</a>

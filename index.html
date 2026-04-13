@@ -1501,6 +1501,7 @@ if (typeof Chart !== 'undefined') {
     <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report">📄 DCR Reports</button>
     <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department">💰 Finance</button>
     <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff">📢 Announcements</button>
+    <button class="tab tab-hidden" id="tab-btn-minutes" onclick="openMinutes()" title="Meeting Minutes">📋 Minutes</button>
   </div>
 
   <div class="main">
@@ -2625,6 +2626,7 @@ function applyRBAC() {
   const isFinance = () => ['finance','finance_staff','finance_manager'].includes(CURRENT_USER?.role);
   setTabVisible('finance',  isAdmin() || isManager() || isFinance());             // external: NO
   setTabVisible('announcements', isAdmin() || isManager() || isFinance());
+  setTabVisible('minutes', true);
 
   // Update header badge
   const nameBadge = document.getElementById('user-name-badge');
@@ -5689,6 +5691,14 @@ function openFinance() {
 
 function openAnnouncements() {
   window.location.href = 'announcements.html';
+}
+
+function openMinutes() {
+  const win = window.open('minutes.html', '_blank');
+  setTimeout(() => {
+    const btn = document.getElementById('tab-btn-minutes');
+    if (btn) btn.classList.remove('active');
+  }, 150);
 }
 
 function renderRoleManagement() {
