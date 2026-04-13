@@ -383,7 +383,7 @@ textarea { resize:vertical; min-height:80px; line-height:1.6; }
 <div class="save-bar" id="save-bar" style="display:none;">
   <div class="save-bar-status" id="save-status">Unsaved</div>
   <button class="btn btn-secondary" onclick="printMinutes()">🖨 Print / PDF</button>
-  <button class="btn btn-secondary" id="export-doc-btn" onclick="exportToGoogleDoc()">📄 Export to Google Doc</button>
+  <button class="btn btn-secondary" id="export-doc-btn" onclick="exportToGoogleDoc()">📄 Export &amp; Email Attendees</button>
   <button class="btn btn-primary" id="save-btn" onclick="saveMinutes()">💾 Save Minutes</button>
 </div>
 
@@ -666,28 +666,62 @@ async function saveMinutes() {
   btn.disabled = false; btn.textContent = '💾 Save Minutes';
 }
 
-// ── Export to Google Doc ──────────────────────────────────────────────
+// ── Export to Google Doc + Email attendees ────────────────────────────
 async function exportToGoogleDoc() {
   const data = collectForm();
   if (!data.title) { showFormMsg('Please fill in the title before exporting.', false); return; }
+  if (!data.date)  { showFormMsg('Please fill in the meeting date before exporting.', false); return; }
 
+  const attendeeCount = SELECTED_ATTENDEES.size;
   const btn = document.getElementById('export-doc-btn');
-  btn.disabled = true; btn.textContent = '📄 Exporting…';
+
+  // ── Step 1: Creating doc ─────────────────────────────────────────
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;"></span> Creating Doc…</span>';
+  showFormMsg('⏳ Creating Google Doc…', true);
 
   try {
     const htmlContent = buildPrintHTML(data);
     const res = await workerCall('export_minutes_doc', { minutes: data, htmlContent });
-    if (res.ok && res.docUrl) {
-      toast('Google Doc created ✓', 'green');
-      showFormMsg('✓ Google Doc created. <a href="' + res.docUrl + '" target="_blank" style="color:var(--blue);">Open Doc →</a>', true);
-      window.open(res.docUrl, '_blank');
-    } else {
-      showFormMsg(res.error || 'Export failed.', false);
+
+    if (!res.ok) {
+      showFormMsg('⚠ ' + (res.error || 'Export failed.'), false);
+      btn.disabled = false;
+      btn.textContent = '📄 Export & Email Attendees';
+      return;
     }
+
+    // Build result message
+    let msg = '✅ Google Doc created.';
+    if (res.docUrl) msg += ' <a href="' + res.docUrl + '" target="_blank" style="color:var(--blue);font-weight:600;">Open Doc →</a>';
+
+    if (attendeeCount > 0) {
+      if (res.noEmailGmail) {
+        msg += '<br>⚠ Gmail not configured — emails not sent. Add GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN secrets in Cloudflare.';
+      } else {
+        if (res.sent > 0)    msg += '<br>📧 Emailed <strong>' + res.sent + '</strong> attendee' + (res.sent !== 1 ? 's' : '') + '.';
+        if (res.noEmail?.length) msg += '<br>⚠ <strong>' + res.noEmail.length + '</strong> attendee' + (res.noEmail.length !== 1 ? 's have' : ' has') + ' no email set: ' + res.noEmail.join(', ') + '.';
+        if (res.skipped > (res.noEmail?.length || 0)) msg += '<br>⚠ ' + (res.skipped - (res.noEmail?.length || 0)) + ' email(s) failed to send.';
+      }
+    } else {
+      msg += '<br><span style="color:var(--text-muted);">No internal attendees selected — no emails sent.</span>';
+    }
+
+    showFormMsg(msg, true);
+
+    const toastMsg = res.sent > 0
+      ? `Doc created · ${res.sent} email${res.sent !== 1 ? 's' : ''} sent ✓`
+      : 'Google Doc created ✓';
+    toast(toastMsg, 'green');
+
+    if (res.docUrl) window.open(res.docUrl, '_blank');
+
   } catch(e) {
-    showFormMsg('Network error: ' + e.message, false);
+    showFormMsg('⚠ Network error: ' + e.message, false);
   }
-  btn.disabled = false; btn.textContent = '📄 Export to Google Doc';
+
+  btn.disabled = false;
+  btn.textContent = '📄 Export & Email Attendees';
 }
 
 // ── Print ─────────────────────────────────────────────────────────────
