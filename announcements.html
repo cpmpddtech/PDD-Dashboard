@@ -234,6 +234,28 @@ textarea{resize:vertical;min-height:140px}
   ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #2a3d55; }
 
+
+  /* ── Image attachment thumbnails ── */
+  .img-thumb-wrap {
+    position: relative; flex-shrink: 0;
+    width: 90px; height: 90px; border-radius: 8px;
+    overflow: hidden; border: 1px solid var(--border2);
+    background: var(--surface3);
+  }
+  .img-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .img-thumb-wrap .img-remove {
+    position: absolute; top: 4px; right: 4px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(0,0,0,0.65); color: #fff;
+    border: none; cursor: pointer; font-size: 13px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .img-thumb-wrap .img-status {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.55); font-size: 10px; font-weight: 600;
+    color: #fff; text-align: center; padding: 3px 0;
+  }
+
 </style>
 </head>
 <body>
@@ -299,6 +321,24 @@ textarea{resize:vertical;min-height:140px}
             <textarea id="ann-body" placeholder="Type your announcement here…" oninput="updateCharCount()" maxlength="5000"></textarea>
             <div class="char-count"><span id="char-count">0</span> / 5000</div>
           </div>
+
+          <!-- Image attachments -->
+          <div class="form-group">
+            <label>Images <span style="font-weight:400;color:var(--text-muted);">(optional — embedded in email)</span></label>
+            <div id="img-drop-zone"
+              style="border:2px dashed var(--border2);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface3);"
+              onclick="document.getElementById('ann-img-input').click()"
+              ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='rgba(59,130,246,0.08)'"
+              ondragleave="this.style.borderColor='var(--border2)';this.style.background='var(--surface3)'"
+              ondrop="handleImgDrop(event)">
+              <div style="font-size:22px;margin-bottom:6px;">🖼</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">Click to add images</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">or drag & drop · JPG, PNG, GIF, WebP · max 8MB each · up to 5 images</div>
+            </div>
+            <input type="file" id="ann-img-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:none;" onchange="handleImgSelect(this)">
+            <div id="img-preview-row" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;"></div>
+            <div id="img-upload-status" style="display:none;font-size:12px;margin-top:8px;padding:8px 12px;border-radius:8px;"></div>
+          </div>
         </div>
       </div>
 
@@ -356,7 +396,7 @@ textarea{resize:vertical;min-height:140px}
         <div class="card-header">Preview &amp; Send</div>
         <div class="card-body">
           <button class="btn btn-secondary" onclick="togglePreview()" id="preview-btn">Preview email</button>
-          <div class="preview-box" id="preview-box"></div>
+          <div class="preview-box" id="preview-box" style="white-space:pre-wrap;"></div>
           <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
             <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
             <button class="btn btn-primary" id="send-btn" onclick="sendAnnouncement()">Send announcement →</button>
@@ -580,6 +620,12 @@ function selectAllStaff() {
 function clearAllStaff() {
   SELECTED.clear(); ACTIVE_GROUPS.clear(); ACTIVE_DIOCESES.clear();
   document.querySelectorAll('.group-chip').forEach(c => c.classList.remove('selected'));
+  // Clear images
+  ANN_IMAGES = [];
+  const previewRow = document.getElementById('img-preview-row');
+  if (previewRow) previewRow.innerHTML = '';
+  const imgStatus = document.getElementById('img-upload-status');
+  if (imgStatus) imgStatus.style.display = 'none';
   renderStaffGrid();
 }
 
@@ -642,7 +688,9 @@ function togglePreview() {
   if (!subject && !body) { toast('Fill in subject and message first.', 'red'); return; }
   box.style.display = 'block';
   btn.textContent = 'Hide preview';
-  box.textContent = `Subject: ${subject||'(no subject)'}\nFrom: PDD Dashboard <cpmpdd.tech@gmail.com>\nTo: ${SELECTED.size} recipient(s)\n\n${body||'(no message)'}`;
+  const imgCount = ANN_IMAGES.length;
+  const imgNote  = imgCount > 0 ? `\n\n[${imgCount} image${imgCount > 1 ? 's' : ''} attached${ANN_IMAGES.some(i => i.status === 'uploaded') ? ' ✓' : ' — will upload on send'}]` : '';
+  box.textContent = `Subject: ${subject||'(no subject)'}\nFrom: PDD Dashboard <cpmpdd.tech@gmail.com>\nTo: ${SELECTED.size} recipient(s)\n\n${body||'(no message)'}${imgNote}`;
 }
 
 // ── SEND ──────────────────────────────────────────────────────────────
@@ -656,15 +704,25 @@ async function sendAnnouncement() {
   if (!body)    { showMsg('send-msg', 'Message body is required.', false); return; }
   if (!SELECTED.size) { showMsg('send-msg', 'Please select at least one recipient.', false); return; }
 
+  // Upload images first if any
+  if (ANN_IMAGES.length > 0) {
+    const ok = await uploadAllImages();
+    if (!ok) return; // stop if any image failed
+  }
+
   if (!confirm(`Send this announcement to ${SELECTED.size} recipient${SELECTED.size!==1?'s':''}?`)) return;
 
   btn.disabled = true; btn.textContent = 'Sending…';
   msgEl.style.display = 'none';
 
   try {
+    // Build image HTML (only uploaded images have driveUrl)
+    const imageHtml = buildImageHtml();
+
     const res = await workerCall('send_announcement', {
       subject,
       body,
+      imageHtml,
       recipients: [...SELECTED],
       senderName: PDP_NAME,
     });
@@ -847,6 +905,162 @@ function showMsg(elId, text, ok) {
   el.className = 'msg-box ' + (ok ? 'ok' : 'err');
   el.textContent = text;
   if (ok) setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+
+// ═══════════════════════════════════════════════════
+//  IMAGE ATTACHMENTS
+// ═══════════════════════════════════════════════════
+// Each entry: { id, file, base64, mimeType, driveUrl, status }
+let ANN_IMAGES = [];
+
+function handleImgDrop(e) {
+  e.preventDefault();
+  const zone = document.getElementById('img-drop-zone');
+  zone.style.borderColor = 'var(--border2)';
+  zone.style.background  = 'var(--surface3)';
+  const files = [...(e.dataTransfer.files || [])].filter(f => f.type.startsWith('image/'));
+  addImages(files);
+}
+
+function handleImgSelect(input) {
+  const files = [...(input.files || [])];
+  addImages(files);
+  input.value = ''; // reset so same file can be re-added
+}
+
+function addImages(files) {
+  const MAX = 5;
+  const remaining = MAX - ANN_IMAGES.length;
+  if (remaining <= 0) { showImgStatus('⚠ Maximum 5 images already added.', 'amber'); return; }
+  files = files.slice(0, remaining);
+
+  const MAX_MB = 8;
+  files.forEach(file => {
+    if (file.size > MAX_MB * 1024 * 1024) {
+      showImgStatus(`⚠ "${file.name}" is too large (max ${MAX_MB}MB).`, 'red');
+      return;
+    }
+    const id = 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    ANN_IMAGES.push({ id, file, base64: null, mimeType: file.type, driveUrl: null, status: 'pending' });
+    renderImgPreview(id, file);
+  });
+}
+
+function renderImgPreview(id, file) {
+  const row = document.getElementById('img-preview-row');
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wrap = document.createElement('div');
+    wrap.className = 'img-thumb-wrap';
+    wrap.id = 'thumb-' + id;
+    wrap.innerHTML = `
+      <img src="${e.target.result}" alt="">
+      <button class="img-remove" onclick="removeImage('${id}')" title="Remove">×</button>
+      <div class="img-status" id="img-status-${id}">Ready</div>`;
+    row.appendChild(wrap);
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(id) {
+  ANN_IMAGES = ANN_IMAGES.filter(img => img.id !== id);
+  const thumb = document.getElementById('thumb-' + id);
+  if (thumb) thumb.remove();
+  if (ANN_IMAGES.length === 0) {
+    const status = document.getElementById('img-upload-status');
+    if (status) status.style.display = 'none';
+  }
+}
+
+function showImgStatus(msg, color) {
+  const el = document.getElementById('img-upload-status');
+  if (!el) return;
+  const colors = {
+    green: ['rgba(34,197,94,0.12)', 'var(--green)'],
+    red:   ['rgba(239,68,68,0.12)', 'var(--red)'],
+    amber: ['rgba(245,158,11,0.12)', 'var(--amber)'],
+    blue:  ['rgba(59,130,246,0.10)', '#60a5fa'],
+  };
+  const [bg, fg] = colors[color] || colors.blue;
+  el.style.display = 'block';
+  el.style.background = bg;
+  el.style.color = fg;
+  el.textContent = msg;
+}
+
+function setThumbStatus(id, text, color) {
+  const el = document.getElementById('img-status-' + id);
+  if (!el) return;
+  el.textContent = text;
+  el.style.background = color === 'green' ? 'rgba(34,197,94,0.8)'
+    : color === 'red' ? 'rgba(239,68,68,0.8)'
+    : 'rgba(0,0,0,0.55)';
+}
+
+// Upload all pending images to Drive → get public URLs
+async function uploadAllImages() {
+  const pending = ANN_IMAGES.filter(img => img.status === 'pending');
+  if (!pending.length) return true;
+
+  showImgStatus(`⏳ Uploading ${pending.length} image${pending.length > 1 ? 's' : ''}…`, 'blue');
+
+  const results = await Promise.allSettled(pending.map(async img => {
+    setThumbStatus(img.id, '⏳ Uploading…', 'blue');
+    try {
+      // Read file as base64
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = e => res(e.target.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(img.file);
+      });
+
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action:    'upload_announcement_image',
+          username:  PDP_USER?.username || '',
+          password:  PDP_PW,
+          fileBase64: base64,
+          mimeType:  img.mimeType,
+          fileName:  img.file.name,
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Upload failed');
+
+      img.driveUrl = data.imageUrl;
+      img.status   = 'uploaded';
+      setThumbStatus(img.id, '✓', 'green');
+      return true;
+    } catch(e) {
+      img.status = 'failed';
+      setThumbStatus(img.id, '✗ Failed', 'red');
+      throw e;
+    }
+  }));
+
+  const failed = results.filter(r => r.status === 'rejected');
+  if (failed.length) {
+    showImgStatus(`⚠ ${failed.length} image(s) failed to upload. Remove them or retry.`, 'red');
+    return false;
+  }
+  showImgStatus(`✓ ${pending.length} image${pending.length > 1 ? 's' : ''} uploaded.`, 'green');
+  return true;
+}
+
+// Build image HTML block to inject into email body
+function buildImageHtml() {
+  const uploaded = ANN_IMAGES.filter(img => img.driveUrl);
+  if (!uploaded.length) return '';
+  return uploaded.map(img =>
+    `<div style="margin:16px 0;text-align:center;">
+      <img src="${img.driveUrl}" alt="Announcement image"
+        style="max-width:100%;max-height:500px;border-radius:8px;border:1px solid #e5e7eb;display:block;margin:0 auto;">
+    </div>`
+  ).join('\n');
 }
 
 let _toastTimer;

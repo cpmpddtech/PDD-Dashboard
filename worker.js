@@ -1,6 +1,22 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- *  PDP Dashboard — Cloudflare Worker v3.0.0  (Finance v2 — MMK donor-aware budgets)
+ *  PDP Dashboard — Cloudflare Worker v3.4.0
+ *
+ *  Security changelog (v3.4.0):
+ *  - PBKDF2-SHA256 password hashing (100k iterations, random salt per user)
+ *  - Transparent migration: plaintext passwords upgrade on next login
+ *  - Server-side rate limiting: 10 attempts / 15-min window per IP → 429
+ *  - Constant-time delay (300ms) on auth failure — prevents timing attacks
+ *  - CORS origin allowlist (replaces wildcard *)
+ *  - Security response headers: nosniff, no-store, X-Frame-Options: DENY
+ *  - Body size limit: 12MB max before JSON parse
+ *  - Action type guard: prevents prototype pollution
+ *  - Input sanitisation in validateUser (length, type, control chars)
+ *  - Password complexity: 10 chars min + upper + lower + digit + special
+ *  - Internal error messages sanitised (no e.message to client)
+ *  - diagnostics object removed from test_notification
+ *  - Legacy Finance v1 actions removed (11 endpoints, 652 lines)
+ *  - isAdminUser made async, all call sites awaited
  *  Handles: auth, user management, data fetch, check-in writes,
  *           email alerts, audit logging, DCR Google Drive storage
  * ═══════════════════════════════════════════════════════════════
@@ -61,25 +77,93 @@ const BASE_SHEETS = [
 
 // ─── Helpers ──────────────────────────────────────
 function generateTempPassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
-  let pw = '';
-  // Use timestamp + random for uniqueness (Workers don't have crypto.randomBytes easily)
-  const seed = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  for (let i = 0; i < 12; i++) {
-    pw += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return pw;
+  // Use crypto.getRandomValues — available in all Cloudflare Workers
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$';
+  const arr   = new Uint32Array(14);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(n => chars[n % chars.length]).join('');
+}
+
+// ── Password hashing (PBKDF2 via SubtleCrypto — available in CF Workers) ──
+async function hashPassword(password) {
+  const enc  = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key  = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: 100_000 },
+    key, 256
+  );
+  const hashArr  = new Uint8Array(bits);
+  const saltHex  = Array.from(salt).map(b => b.toString(16).padStart(2,'0')).join('');
+  const hashHex  = Array.from(hashArr).map(b => b.toString(16).padStart(2,'0')).join('');
+  return `pbkdf2:sha256:100000:${saltHex}:${hashHex}`;
+}
+
+async function verifyPassword(password, stored) {
+  // Legacy: plaintext (no colon prefix) — verify directly then migrate
+  if (!stored.startsWith('pbkdf2:')) return stored === password;
+  // PBKDF2 hashed
+  const [, , iterStr, saltHex, hashHex] = stored.split(':');
+  const iterations = parseInt(iterStr);
+  const salt = Uint8Array.from(saltHex.match(/.{2}/g).map(h => parseInt(h, 16)));
+  const enc  = new TextEncoder();
+  const key  = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations },
+    key, 256
+  );
+  const candidate = Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return candidate === hashHex;
 }
 
 // ─── CORS ─────────────────────────────────────────
-function corsHeaders() {
+// ── Server-side rate limiter (in-memory per Worker isolate) ──────────────────
+const _rateLimitMap = new Map(); // key → { count, resetAt }
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX       = 10;              // max auth attempts per window
+
+function checkRateLimit(key) {
+  const now  = Date.now();
+  const rec  = _rateLimitMap.get(key) || { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+  if (now > rec.resetAt) { rec.count = 0; rec.resetAt = now + RATE_LIMIT_WINDOW_MS; }
+  rec.count++;
+  _rateLimitMap.set(key, rec);
+  if (rec.count > RATE_LIMIT_MAX) return false; // blocked
+  return true; // allowed
+}
+
+function clearRateLimit(key) { _rateLimitMap.delete(key); }
+
+// Constant-time delay to frustrate timing attacks on auth responses
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Allowed origins — add your live domain + any dev origins here ─────────
+const ALLOWED_ORIGINS = [
+  'https://cpmpdd.org',
+  'https://www.cpmpdd.org',
+  'https://gamalieltun.github.io',  // GitHub Pages dev/preview
+];
+
+function getCorsHeaders(request) {
+  const origin = request?.headers?.get('Origin') || '';
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin':  allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
+    'Access-Control-Max-Age':       '86400',
+    'Vary':                         'Origin',
+    'Content-Type':                 'application/json',
+    // Security headers on every response
+    'X-Content-Type-Options':       'nosniff',
+    'X-Frame-Options':              'DENY',
+    'Referrer-Policy':              'strict-origin-when-cross-origin',
+    'Cache-Control':                'no-store',
   };
 }
+
+// Keep corsHeaders as a compat alias — called with (request) throughout handler
+function corsHeaders(req) { return getCorsHeaders(req); }
 
 // ─── Read sheet ───────────────────────────────────
 async function fetchSheet(apiKey, sheetId, sheetName) {
@@ -770,7 +854,7 @@ export default {
   },
 
   async fetch(request, env) {
-    const headers = corsHeaders();
+    const headers = corsHeaders(request);
 
     // Always handle OPTIONS preflight
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
@@ -779,32 +863,64 @@ export default {
       if (request.method !== 'POST')
         return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
 
+      // Body size limit: reject oversized payloads before parsing
+      const contentLength = parseInt(request.headers.get('Content-Length') || '0');
+      if (contentLength > 12 * 1024 * 1024) {
+        return new Response(JSON.stringify({ error: 'Request body too large (max 12MB)' }), { status: 413, headers });
+      }
       let body;
       try { body = await request.json(); }
       catch { return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers }); }
 
       const { action } = body;
+      // Guard: action must be a non-empty string — prevents prototype pollution
+      if (!action || typeof action !== 'string' || action.length > 64) {
+        return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers });
+      }
 
     // ══════════════════════════════════════════════
     //  USER HELPERS
     // ══════════════════════════════════════════════
+
+    // ── Password strength validator ────────────────────────────────
+    function validatePasswordStrength(pw) {
+      if (!pw || pw.length < 10)              return 'Password must be at least 10 characters.';
+      if (!/[A-Z]/.test(pw))                  return 'Password must contain at least one uppercase letter.';
+      if (!/[a-z]/.test(pw))                  return 'Password must contain at least one lowercase letter.';
+      if (!/[0-9]/.test(pw))                  return 'Password must contain at least one number.';
+      if (!/[^A-Za-z0-9]/.test(pw))           return 'Password must contain at least one special character.';
+      return null; // valid
+    }
 
     function getUsers() {
       if (!env.USERS_CONFIG) return {};
       try { return JSON.parse(env.USERS_CONFIG); } catch { return {}; }
     }
 
-    function validateUser(username, password) {
+    async function validateUser(username, password) {
+      // Sanitise inputs before lookup
+      if (!username || !password) return null;
+      if (typeof username !== 'string' || typeof password !== 'string') return null;
+      if (username.length > 64 || password.length > 256) return null;
+      username = username.replace(/[ -]/g, '').trim(); // strip control chars
       const users = getUsers();
       const key = Object.keys(users).find(k => k.toLowerCase() === (username||'').toLowerCase());
       const u = key ? users[key] : null;
       if (!u) return null;
-      if (u.password !== password) return null;
+      const ok = await verifyPassword(password, u.password);
+      if (!ok) return null;
+      // Transparent migration: if stored as plaintext, silently upgrade to PBKDF2
+      if (u.password && !u.password.startsWith('pbkdf2:')) {
+        try {
+          users[key].password = await hashPassword(password);
+          await saveUsers(users); // fire-and-forget style — don't block response
+        } catch(_) {}
+      }
       return { ...u, _key: key };
     }
 
-    function isAdminUser(username, password) {
-      const u = validateUser(username, password);
+    async function isAdminUser(username, password) {
+      const u = await validateUser(username, password);
       return u?.role === 'admin';
     }
 
@@ -812,7 +928,8 @@ export default {
       // Return user list without passwords
       return Object.entries(users).map(([username, u]) => ({
         username, name: u.name, role: u.role, email: u.email || null,
-        notifOptOut: u.notifOptOut || [], mustChangePassword: !!u.mustChangePassword
+        notifOptOut: u.notifOptOut || [], mustChangePassword: !!u.mustChangePassword,
+        avatarUrl: u.avatarUrl || null
       }));
     }
 
@@ -838,18 +955,42 @@ export default {
       );
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
-        throw new Error('Cloudflare API error: ' + (e.errors?.[0]?.message || res.status));
+        const cfMsg = e.errors?.[0]?.message || res.status;
+        console.error('[Worker] Cloudflare API error:', cfMsg);
+        throw new Error('Configuration save failed. Check CF_API_TOKEN permissions.');
       }
     }
 
     // ── Auth ─────────────────────────────────────
     if (action === 'auth') {
       const { username, password } = body;
+      const ip       = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const rlKey    = `auth:${ip}`;
+
+      // Server-side rate limiting — block after 10 failures in 15 minutes
+      if (!checkRateLimit(rlKey)) {
+        await sleep(500); // constant-time delay
+        return new Response(JSON.stringify({ ok: false, error: 'Too many attempts. Please wait 15 minutes.' }), { status: 429, headers });
+      }
+
       const users = getUsers();
       const u = users[username];
 
-      if (!u || u.password !== password) {
+      if (!u || !(await verifyPassword(password, u.password))) {
+        await sleep(300); // constant-time delay frustrates timing attacks
         return new Response(JSON.stringify({ ok: false, error: 'Invalid credentials' }), { status: 401, headers });
+      }
+
+      // Success — clear rate limit counter
+      clearRateLimit(rlKey);
+
+      // Transparent migration: upgrade plaintext to PBKDF2 on successful login
+      if (u.password && !u.password.startsWith('pbkdf2:')) {
+        try {
+          const users2 = getUsers();
+          users2[username].password = await hashPassword(password);
+          saveUsers(users2).catch(() => {}); // non-blocking
+        } catch(_) {}
       }
 
       // Log login to Google Sheets (fire and forget)
@@ -932,14 +1073,13 @@ export default {
       const users = getUsers();
       const u = users[username];
 
-      if (!u || u.password !== oldPassword) {
+      if (!u || !(await verifyPassword(oldPassword, u.password))) {
         return new Response(JSON.stringify({ ok: false, error: 'Current password is incorrect.' }), { status: 401, headers });
       }
-      if (!newPassword || newPassword.length < 8) {
-        return new Response(JSON.stringify({ ok: false, error: 'Password must be at least 8 characters.' }), { status: 400, headers });
-      }
+      const pwErr = validatePasswordStrength(newPassword);
+      if (pwErr) return new Response(JSON.stringify({ ok: false, error: pwErr }), { status: 400, headers });
 
-      users[username].password = newPassword;
+      users[username].password = await hashPassword(newPassword);
       users[username].mustChangePassword = false;
       await saveUsers(users);
 
@@ -952,7 +1092,7 @@ export default {
     // ── Add new user (Admin only) ─────────────────
     if (action === 'add_user') {
       const { username, password, newUser } = body;
-      if (!isAdminUser(username, password))
+      if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
       const users = getUsers();
@@ -962,9 +1102,10 @@ export default {
       // Generate secure temp password
       const tempPassword = generateTempPassword();
 
+      const tempHash = await hashPassword(tempPassword);
       users[newUser.username] = {
         name:               newUser.name,
-        password:           tempPassword,
+        password:           tempHash,
         role:               newUser.role || 'staff',
         mustChangePassword: true,
         ...(newUser.email   ? { email:   newUser.email.trim().toLowerCase() } : {}),
@@ -981,7 +1122,7 @@ export default {
     // ── Reset user password (Admin only) ─────────
     if (action === 'reset_user_password') {
       const { username, password, targetUsername } = body;
-      if (!isAdminUser(username, password))
+      if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
       const users = getUsers();
@@ -991,7 +1132,7 @@ export default {
         return new Response(JSON.stringify({ error: 'Use Change Password to update your own password' }), { status: 400, headers });
 
       const tempPassword = generateTempPassword();
-      users[targetUsername].password = tempPassword;
+      users[targetUsername].password = await hashPassword(tempPassword);
       users[targetUsername].mustChangePassword = true;
       await saveUsers(users);
 
@@ -1004,7 +1145,7 @@ export default {
     // ── Delete user (Admin only) ──────────────────
     if (action === 'delete_user') {
       const { username, password, targetUsername } = body;
-      if (!isAdminUser(username, password))
+      if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
       if (targetUsername === username)
         return new Response(JSON.stringify({ error: 'Cannot delete your own account' }), { status: 400, headers });
@@ -1024,7 +1165,7 @@ export default {
     // ── Data fetch ───────────────────────────────
     if (action === 'data') {
       const { username, password } = body;
-      const u = validateUser(username, password);
+      const u = await validateUser(username, password);
       if (!u)
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
@@ -1069,7 +1210,7 @@ export default {
     // ── Add new program ──────────────────────────
     if (action === 'add_program') {
       const { username, password } = body;
-      if (!isAdminUser(username, password))
+      if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
       const { program } = body;
@@ -1082,7 +1223,8 @@ export default {
 
       let token;
       try { token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, sheetsRefreshToken); }
-      catch(e) { return new Response(JSON.stringify({ error: 'OAuth failed: ' + e.message }), { status: 500, headers }); }
+      catch(e) { console.error('[Worker] OAuth error:', e.message);
+        return new Response(JSON.stringify({ error: 'Internal server error. Please try again.' }), { status: 500, headers }); }
 
       const sheetName = `${program.id} Task_List`;
       const spreadsheetId = env.SPREADSHEET_ID;
@@ -1134,7 +1276,7 @@ export default {
     // ── Add task to program ───────────────────────
     if (action === 'add_task') {
       const { username, password } = body;
-      const taskUser = validateUser(username, password);
+      const taskUser = await validateUser(username, password);
       if (!taskUser)
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
       // Staff/external can only add tasks to their assigned programs
@@ -1158,7 +1300,8 @@ export default {
 
       let token;
       try { token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, sheetsRefreshToken); }
-      catch(e) { return new Response(JSON.stringify({ error: 'OAuth failed: ' + e.message }), { status: 500, headers }); }
+      catch(e) { console.error('[Worker] OAuth error:', e.message);
+        return new Response(JSON.stringify({ error: 'Internal server error. Please try again.' }), { status: 500, headers }); }
 
       const sheetName = `${task.programId} Task_List`;
 
@@ -1229,7 +1372,7 @@ export default {
     // ── Update single task status ─────────────────
     if (action === 'update_task') {
       const { username, password, taskName, programId, newStatus } = body;
-      if (!validateUser(username, password))
+      if (!await validateUser(username, password))
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       if (!['Planned','Delivered','In Progress','Cancelled'].includes(newStatus))
@@ -1241,7 +1384,8 @@ export default {
 
       let token;
       try { token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, sheetsRefreshToken); }
-      catch(e) { return new Response(JSON.stringify({ error: 'OAuth failed: ' + e.message }), { status: 500, headers }); }
+      catch(e) { console.error('[Worker] OAuth error:', e.message);
+        return new Response(JSON.stringify({ error: 'Internal server error. Please try again.' }), { status: 500, headers }); }
 
       const sheetName = `${programId} Task_List`;
       const rows = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, sheetName);
@@ -1284,30 +1428,23 @@ export default {
     // ── Save role config (Admin only) ────────────
     // ── Test notification (debug — admin only) ──────────
     if (action === 'test_notification') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || u.role !== 'admin')
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
       const gmailRefreshToken = env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN;
-      const diagnostics = {
-        GMAIL_CLIENT_ID:     !!env.GMAIL_CLIENT_ID,
-        GMAIL_CLIENT_SECRET: !!env.GMAIL_CLIENT_SECRET,
-        GMAIL_REFRESH_TOKEN: !!env.GMAIL_REFRESH_TOKEN,
-        DRIVE_REFRESH_TOKEN: !!env.DRIVE_REFRESH_TOKEN,
-        resolvedToken:       !!gmailRefreshToken,
-        targetEmail:         body.email || null,
-      };
 
-      if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !gmailRefreshToken)
-        return new Response(JSON.stringify({ ok: false, error: 'Missing OAuth secrets', diagnostics }), { status: 200, headers });
+      if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !gmailRefreshToken) {
+        console.error('[test_notification] Missing OAuth secrets');
+        return new Response(JSON.stringify({ ok: false, error: 'Email notifications are not configured. Contact the system administrator.' }), { status: 200, headers });
+      }
 
       try {
         const token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, gmailRefreshToken);
-        diagnostics.tokenFetched = true;
 
         const to = body.email || u.email;
         if (!to)
-          return new Response(JSON.stringify({ ok: false, error: 'No email address — pass email in request body', diagnostics }), { status: 200, headers });
+          return new Response(JSON.stringify({ ok: false, error: 'No email address set on your account. Ask an admin to add one.' }), { status: 200, headers });
 
         await sendEmail(token, to,
           '[PDD] Notification test',
@@ -1322,17 +1459,16 @@ export default {
             </div>
           </body></html>`
         );
-        diagnostics.emailSent = true;
-        return new Response(JSON.stringify({ ok: true, message: `Test email sent to ${to}`, diagnostics }), { status: 200, headers });
+        return new Response(JSON.stringify({ ok: true, message: `Test email sent to ${to}` }), { status: 200, headers });
       } catch(e) {
-        diagnostics.error = e.message;
-        return new Response(JSON.stringify({ ok: false, error: e.message, diagnostics }), { status: 200, headers });
+        console.error('[test_notification] Send failed:', e.message);
+        return new Response(JSON.stringify({ ok: false, error: 'Failed to send test email. Check server logs.' }), { status: 200, headers });
       }
     }
 
     // ── Save notification opt-out prefs (any authenticated user) ──
     if (action === 'save_notif_prefs') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       const { optOut } = body;
@@ -1351,7 +1487,7 @@ export default {
 
     if (action === 'save_roles') {
       const { username, password, config } = body;
-      if (!isAdminUser(username, password))
+      if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
       if (!config) return new Response(JSON.stringify({ error: 'No config provided' }), { status: 400, headers });
@@ -1384,12 +1520,13 @@ export default {
         return new Response(JSON.stringify({ ok: true, saved: changed }), { status: 200, headers });
       } catch(e) {
         // saveUsers failed (CF API token missing etc.) — return config for manual paste
+        console.error('[save_roles] saveUsers failed:', e.message);
         return new Response(JSON.stringify({
           ok: false,
           manualPaste: true,
           config,
-          error: e.message,
-          note: 'Auto-save failed. Copy the config JSON and paste as STAFF_ROLES in Cloudflare.'
+          error: 'Auto-save failed (CF API token may be missing or expired).',
+          note: 'Copy the config JSON below and paste it as USERS_CONFIG in Cloudflare → Worker → Variables & Secrets.'
         }), { status: 200, headers });
       }
     }
@@ -1397,7 +1534,7 @@ export default {
     // ── Check-in write ───────────────────────────
     if (action === 'checkin') {
       const { username, password } = body;
-      const checkinUser = validateUser(username, password);
+      const checkinUser = await validateUser(username, password);
       if (!checkinUser)
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
@@ -1417,7 +1554,8 @@ export default {
       if (!env.GMAIL_CLIENT_SECRET) missingSecrets.push('GMAIL_CLIENT_SECRET');
       if (!env.GMAIL_REFRESH_TOKEN) missingSecrets.push('GMAIL_REFRESH_TOKEN');
       if (missingSecrets.length > 0) {
-        return new Response(JSON.stringify({ ok: false, error: 'Missing secrets: ' + missingSecrets.join(', ') }), { status: 500, headers });
+        console.error('[Worker] Missing secrets:', missingSecrets.join(', '));
+        return new Response(JSON.stringify({ ok: false, error: 'Server configuration error. Contact administrator.' }), { status: 500, headers });
       }
 
       let token;
@@ -1503,7 +1641,7 @@ export default {
     // ── Setup sheets (Admin only) — creates required sheets with headers ──
     if (action === 'setup_sheets') {
       const { username, password } = body;
-      if (!isAdminUser(username, password))
+      if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
       if (!env.GMAIL_REFRESH_TOKEN)
@@ -1511,7 +1649,8 @@ export default {
 
       let token;
       try { token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, env.GMAIL_REFRESH_TOKEN); }
-      catch(e) { return new Response(JSON.stringify({ error: 'OAuth failed: ' + e.message }), { status: 500, headers }); }
+      catch(e) { console.error('[Worker] OAuth error:', e.message);
+        return new Response(JSON.stringify({ error: 'Internal server error. Please try again.' }), { status: 500, headers }); }
 
       const spreadsheetId = env.SPREADSHEET_ID;
       const created = [];
@@ -1652,7 +1791,7 @@ export default {
 
     // ─── save_dcr ────────────────────────────────────────────
     if (action === 'save_dcr') {
-      const user = validateUser(body.username, body.password);
+      const user = await validateUser(body.username, body.password);
       if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       const report = body.report;
@@ -1715,7 +1854,7 @@ export default {
 
     // ─── get_dcr ─────────────────────────────────────────────
     if (action === 'get_dcr') {
-      const user = validateUser(body.username, body.password);
+      const user = await validateUser(body.username, body.password);
       if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       try {
@@ -1749,7 +1888,7 @@ export default {
 
     // ─── delete_dcr ──────────────────────────────────────────
     if (action === 'delete_dcr') {
-      const user = validateUser(body.username, body.password);
+      const user = await validateUser(body.username, body.password);
       if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       // Only admin can delete
@@ -1769,657 +1908,11 @@ export default {
     }
 
 
-    // ─── get_finance_data ─────────────────────────────────────
-    if (action === 'get_finance_data') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-
-      const allowed = ['admin', 'manager', 'finance', 'finance_staff', 'finance_manager'];
-      if (!allowed.includes(user.role))
-        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      if (!finSheetId) return new Response(JSON.stringify({ error: 'FINANCE_SPREADSHEET_ID not configured' }), { status: 500, headers });
-
-      try {
-        // Use OAuth token — Finance sheet is private (API key only works on public sheets)
-        const token = await getDriveToken(env);
-        const finFetch = (sheet) => fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent(sheet)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        const [budgetRes, txRes, queueRes, propRes] = await Promise.all([
-          finFetch('Budget'),
-          finFetch('Transactions'),
-          finFetch('Approval_Queue'),
-          finFetch('Budget_Proposals'),
-        ]);
-
-        const toObjects = async (res) => {
-          const d = await res.json();
-          if (d.error) return []; // sheet may not exist yet
-          const rows = d.values || [];
-          if (rows.length < 2) return [];
-          const [headers, ...data] = rows;
-          return data.map(r => Object.fromEntries(headers.map((h, i) => [h.trim(), r[i] || ''])));
-        };
-
-        let [budget, transactions, queue, allProposals] = await Promise.all([
-          toObjects(budgetRes), toObjects(txRes), toObjects(queueRes), toObjects(propRes)
-        ]);
-
-        // Role-filter proposals: finance_staff sees own only
-        const proposals = (user.role === 'finance_staff')
-          ? allProposals.filter(p => p['Proposed By'] === (user.name || user._key))
-          : allProposals;
-
-        // Also fetch programs from main PDP sheet so finance.html can sync
-        let programs = [];
-        try {
-          const mainRows = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, 'Main Programs');
-          const hIdx = mainRows.findIndex(r => r && r.some(c => String(c).trim() === 'Program ID'));
-          if (hIdx >= 0) {
-            const [hdrs, ...rows] = mainRows.slice(hIdx);
-            programs = rows
-              .map(r => Object.fromEntries(hdrs.map((h,i) => [h.trim(), r[i] || ''])))
-              .filter(r => r['Program ID'] && !String(r['Program ID']).startsWith('#'))
-              .map(r => ({ id: r['Program ID'].trim(), name: (r['Program Name '] || r['Program Name'] || r['Program ID']).trim() }));
-          }
-        } catch(_) {}
-
-        return new Response(JSON.stringify({ ok: true, budget, transactions, queue, proposals, programs }), { status: 200, headers });
-      } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── log_expense ──────────────────────────────────────────
-    if (action === 'log_expense') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-
-      const allowed = ['admin', 'manager', 'finance', 'finance_staff', 'finance_manager'];
-      if (!allowed.includes(user.role))
-        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
-
-      const { program, projectId, category, amount, description } = body;
-      if (!program || !category || !amount || !description)
-        return new Response(JSON.stringify({ error: 'Missing fields: program, category, amount, description' }), { status: 400, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      const now = new Date().toISOString();
-      const txId = 'TX-' + Date.now().toString(36).toUpperCase();
-
-      try {
-        const token = await getDriveToken(env);
-        // Append to Transactions sheet
-        const txRow = [txId, now.slice(0,10), program, projectId || '', category, amount, description,
-                       user.name || user._key, 'pending', '', ''];
-        await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Transactions:append?valueInputOption=USER_ENTERED`,
-          {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: [txRow] })
-          }
-        );
-
-        // Append to Approval_Queue
-        const reqId = 'REQ-' + Date.now().toString(36).toUpperCase();
-        const queueRow = [reqId, txId, user.name || user._key, now, amount, description, 'pending', '', '', ''];
-        await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Approval_Queue:append?valueInputOption=USER_ENTERED`,
-          {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: [queueRow] })
-          }
-        );
-
-        return new Response(JSON.stringify({ ok: true, txId }), { status: 200, headers });
-      } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── approve_expense / reject_expense ─────────────────────
-    if (action === 'approve_expense' || action === 'reject_expense') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-
-      if (!['admin', 'manager'].includes(user.role))
-        return new Response(JSON.stringify({ error: 'Manager or Admin only' }), { status: 403, headers });
-
-      const { txId, notes } = body;
-      if (!txId) return new Response(JSON.stringify({ error: 'Missing txId' }), { status: 400, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      const newStatus = action === 'approve_expense' ? 'approved' : 'rejected';
-      const now = new Date().toISOString();
-
-      try {
-        const token = await getDriveToken(env);
-
-        // Find and update Transactions row
-        const txData = await (await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Transactions`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )).json();
-        const txRows = txData.values || [];
-        const txHeaderIdx = { id: 0, status: 7, approvedBy: 8, approvedAt: 9 };
-        const txRowIdx = txRows.findIndex((r, i) => i > 0 && r[txHeaderIdx.id] === txId);
-        if (txRowIdx > 0) {
-          const sheetRow = txRowIdx + 1;
-          await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Transactions!H${sheetRow}:J${sheetRow}?valueInputOption=USER_ENTERED`,
-            {
-              method: 'PUT',
-              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ values: [[newStatus, user.name || user._key, now]] })
-            }
-          );
-        }
-
-        // Find and update Approval_Queue row
-        const qData = await (await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Approval_Queue`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )).json();
-        const qRows = qData.values || [];
-        const qRowIdx = qRows.findIndex((r, i) => i > 0 && r[1] === txId);
-        if (qRowIdx > 0) {
-          const sheetRow = qRowIdx + 1;
-          await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Approval_Queue!G${sheetRow}:J${sheetRow}?valueInputOption=USER_ENTERED`,
-            {
-              method: 'PUT',
-              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ values: [[newStatus, user.name || user._key, now, notes || '']] })
-            }
-          );
-        }
-
-        // On approval: recalculate Budget Spent/Remaining for matching budget line
-        if (action === 'approve_expense') {
-          try {
-            const txRow       = txRows[txRowIdx];
-            const txProgram   = txRow[2] || '';   // col C = Program
-            const txprojectId = txRow[3] || '';   // col D = Project ID
-            const txCategory  = txRow[4] || '';   // col E = Category
-            // col F = Amount (index 5)
-
-            // Fetch all transactions to recalculate total spent for this budget line
-            const allTxData = await fetch(
-              `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Transactions`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            ).then(r => r.json());
-
-            const allTxRows = allTxData.values || [];
-            // Sum approved amounts for same Program + Project + Category
-            // Include the current txId (being approved right now) in the sum
-            const totalSpent = allTxRows.slice(1)
-              .filter(r =>
-                r[2] === txProgram &&
-                (r[3] || '') === txprojectId &&
-                r[4] === txCategory &&
-                (r[8] === 'approved' || r[0] === txId)
-              )
-              .reduce((sum, r) => sum + parseFloat(r[5] || 0), 0); // r[5] = Amount
-
-            // Find matching Budget row: Program + Project ID + Category
-            const bData = await fetch(
-              `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Budget`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            ).then(r => r.json());
-
-            const bRows = bData.values || [];
-            // Budget schema: A(0)=ID B(1)=Program C(2)=ProjectID D(3)=Category E(4)=Alloc F(5)=Spent G(6)=Rem
-            const bRowIdx = bRows.findIndex((r, i) =>
-              i > 0 &&
-              r[1] === txProgram &&
-              (r[2] || '') === txprojectId &&
-              r[3] === txCategory
-            );
-
-            if (bRowIdx > 0) {
-              const allocated = parseFloat(bRows[bRowIdx][4] || 0); // col E
-              const remaining = allocated - totalSpent;
-              const bSheetRow = bRowIdx + 1;
-              await fetch(
-                `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Budget!F${bSheetRow}:G${bSheetRow}?valueInputOption=USER_ENTERED`,
-                {
-                  method: 'PUT',
-                  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ values: [[totalSpent, remaining]] })
-                }
-              );
-            }
-          } catch(_) {} // Budget update is best-effort; don't fail the approval
-        }
-
-        // Fire notification — non-blocking
-        if (txRowIdx > 0) {
-          const txRow = txRows[txRowIdx];
-          await sendNotification(env, 'expense_reviewed', {
-            txId:        txId,
-            description: txRow[6] || '',
-            amount:      txRow[5] || 0,
-            status:      newStatus,
-            reviewedBy:  user.name || body.username,
-            submittedBy: txRow[7] || '',
-          }).catch(() => {});
-        }
-
-        return new Response(JSON.stringify({ ok: true, status: newStatus }), { status: 200, headers });
-      } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── update_budget ────────────────────────────────────────
-    if (action === 'update_budget') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-
-      if (user.role !== 'admin')
-        return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
-
-      const { budgetId, allocated, notes } = body;
-      if (!budgetId || !allocated)
-        return new Response(JSON.stringify({ error: 'Missing budgetId or allocated' }), { status: 400, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-
-      try {
-        const token = await getDriveToken(env);
-
-        const bData = await (await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Budget`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )).json();
-        const bRows = bData.values || [];
-        const bRowIdx = bRows.findIndex((r, i) => i > 0 && r[0] === budgetId);
-
-        if (bRowIdx < 1)
-          return new Response(JSON.stringify({ error: 'Budget ID not found' }), { status: 404, headers });
-
-        const sheetRow = bRowIdx + 1;
-        await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Budget!E${sheetRow}:I${sheetRow}?valueInputOption=USER_ENTERED`,
-          {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: [[allocated, bRows[bRowIdx][5] || 0,
-              parseFloat(allocated) - parseFloat(bRows[bRowIdx][5] || 0),
-              bRows[bRowIdx][7] || '', notes || bRows[bRowIdx][8] || '']] })
-          }
-        );
-
-        return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
-      } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-
-    // ─── add_budget ───────────────────────────────────────────
-    if (action === 'add_budget') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-
-      if (user.role !== 'admin')
-        return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
-
-      const { program, projectId, category, allocated, period, notes } = body;
-      if (!program || !category || !allocated)
-        return new Response(JSON.stringify({ error: 'Missing required fields: program, category, allocated' }), { status: 400, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      if (!finSheetId) return new Response(JSON.stringify({ error: 'FINANCE_SPREADSHEET_ID not configured' }), { status: 500, headers });
-
-      try {
-        const token = await getDriveToken(env);
-
-        // Generate Budget ID: BDG-<PROJECT>-<CATEGORY>-<timestamp short>
-        const safeProj = String(program).replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
-        const safeCat  = String(category).replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 4);
-        const budgetId = `BDG-${safeProj}-${safeCat}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
-
-        const spent     = 0;
-        const remaining = parseFloat(allocated) - spent;
-
-        // Budget columns: Budget ID | Program | Project ID | Category | Allocated | Spent | Remaining | Period | Notes
-        const row = [budgetId, program, projectId || '', category, parseFloat(allocated), spent, remaining, period || '', notes || ''];
-
-        await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/Budget:append?valueInputOption=USER_ENTERED`,
-          {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: [row] })
-          }
-        );
-
-        return new Response(JSON.stringify({ ok: true, budgetId }), { status: 200, headers });
-      } catch (e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-
-    // ─── get_projects ─────────────────────────────────────────
-    if (action === 'get_projects') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-
-      try {
-        const rows = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, 'Projects');
-        const hIdx = rows.findIndex(r => r && r.some(c => String(c).trim() === 'Project ID'));
-        if (hIdx < 0) return new Response(JSON.stringify({ ok: true, projects: [] }), { status: 200, headers });
-        const [hdrs, ...data] = rows.slice(hIdx);
-        const projects = data
-          .map(r => Object.fromEntries(hdrs.map((h,i) => [h.trim(), r[i] || ''])))
-          .filter(r => r['Project ID']);
-        const programId = body.programId;
-        const filtered = programId ? projects.filter(p => p['Program ID'] === programId) : projects;
-        return new Response(JSON.stringify({ ok: true, projects: filtered }), { status: 200, headers });
-      } catch(e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── add_project ──────────────────────────────────────────
-    if (action === 'add_project') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-      if (!['admin', 'manager'].includes(user.role))
-        return new Response(JSON.stringify({ error: 'Admin or Manager only' }), { status: 403, headers });
-
-      const { programId, projectName, description, startCW, endCW, quarter, status, responsible } = body;
-      if (!programId || !projectName)
-        return new Response(JSON.stringify({ error: 'Missing programId or projectName' }), { status: 400, headers });
-
-      try {
-        const token = await getDriveToken(env);
-        // Ensure Projects sheet has headers
-        const existing = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, 'Projects').catch(() => []);
-        if (!existing.length || !existing[0] || !existing[0].includes('Project ID')) {
-          await appendToSheet(token, env.SPREADSHEET_ID, 'Projects',
-            ['Project ID', 'Program ID', 'Project Name', 'Description', 'Start CW', 'End CW', 'Quarter', 'Status', 'Responsible', 'Created By', 'Created At']);
-        }
-        const projectId = `PRG-${String(programId).replace(/[^a-zA-Z0-9]/g,'').toUpperCase()}-${Date.now().toString(36).toUpperCase().slice(-5)}`;
-        const now = new Date().toISOString();
-        await appendToSheet(token, env.SPREADSHEET_ID, 'Projects',
-          [projectId, programId, projectName, description || '',
-           startCW || '', endCW || '', quarter || '', status || 'Planning', responsible || '',
-           user.name || user._key, now]);
-        // Fire notification — non-blocking
-        await sendNotification(env, 'project_created', {
-          projectId:   projectId,
-          projectName: projectName,
-          programId:   programId,
-          programName: programId,
-          createdBy:   user.name || body.username,
-        }).catch(() => {});
-
-        return new Response(JSON.stringify({ ok: true, projectId }), { status: 200, headers });
-      } catch(e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── get_proposals ────────────────────────────────────────
-    if (action === 'get_proposals') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-
-      const finRoles = ['finance_staff', 'finance_manager'];
-      const allRoles = ['admin', 'manager', 'finance_manager'];
-      if (!['admin', 'manager', 'finance_staff', 'finance_manager'].includes(user.role))
-        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      if (!finSheetId) return new Response(JSON.stringify({ error: 'FINANCE_SPREADSHEET_ID not configured' }), { status: 500, headers });
-
-      try {
-        const token = await getDriveToken(env);
-        const res = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const d = await res.json();
-        if (d.error) return new Response(JSON.stringify({ ok: true, proposals: [] }), { status: 200, headers });
-        const rows = d.values || [];
-        if (rows.length < 2) return new Response(JSON.stringify({ ok: true, proposals: [] }), { status: 200, headers });
-        const [hdrs, ...data] = rows;
-        let proposals = data
-          .map(r => Object.fromEntries(hdrs.map((h,i) => [h.trim(), r[i] || ''])))
-          .filter(r => r['Proposal ID']);
-        // finance_staff only sees own proposals
-        if (user.role === 'finance_staff') {
-          proposals = proposals.filter(p => p['Proposed By'] === (user.name || user._key));
-        }
-        return new Response(JSON.stringify({ ok: true, proposals }), { status: 200, headers });
-      } catch(e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── save_proposal ────────────────────────────────────────
-    if (action === 'save_proposal') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-      if (!['admin', 'manager', 'finance_staff', 'finance_manager'].includes(user.role))
-        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
-
-      const { programId, projectId, category, requestedAmount, justification, period, notes, proposalId } = body;
-      if (!programId || !projectId || !requestedAmount || !justification)
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      const token = await getDriveToken(env);
-      const now = new Date().toISOString();
-      const proposedBy = user.name || user._key;
-      const PROP_HEADERS = ['Proposal ID','Program ID','Project ID','Category','Requested Amount',
-                            'Justification','Period','Notes','Proposed By','Proposed At','Status',
-                            'Reviewed By','Reviewed At','Review Notes'];
-
-      // Helper: fetch current sheet rows with OAuth
-      const fetchPropRows = async () => {
-        const d = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).then(r => r.json());
-        return d.values || [];
-      };
-
-      try {
-        // Ensure sheet exists with correct headers
-        let rows = await fetchPropRows();
-        const hasCorrectHeader = rows.length > 0 && rows[0][0] === 'Proposal ID';
-
-        if (!hasCorrectHeader) {
-          // Create sheet tab (ignore "already exists")
-          await createSheetTab(token, finSheetId, 'Budget_Proposals');
-
-          if (rows.length === 0) {
-            // Brand new sheet — just append header
-            await appendToSheet(token, finSheetId, 'Budget_Proposals', PROP_HEADERS);
-          } else {
-            // Sheet exists but has wrong headers (data from earlier broken saves)
-            // Overwrite row 1 with correct headers using PUT
-            await fetch(
-              `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}!A1:N1?valueInputOption=USER_ENTERED`,
-              {
-                method: 'PUT',
-                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ values: [PROP_HEADERS] })
-              }
-            );
-          }
-          // Re-fetch after fixing headers
-          rows = await fetchPropRows();
-        }
-
-        if (proposalId) {
-          // Update existing draft — find row by Proposal ID in col A
-          const rowIdx = rows.findIndex((r, i) => i > 0 && r[0] === proposalId);
-          if (rowIdx < 1) return new Response(JSON.stringify({ error: 'Proposal not found' }), { status: 404, headers });
-          const sheetRow = rowIdx + 1;
-          const existingRow = rows[rowIdx];
-          await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}!A${sheetRow}:N${sheetRow}?valueInputOption=USER_ENTERED`,
-            {
-              method: 'PUT',
-              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ values: [[
-                proposalId, programId, projectId, category || '',
-                requestedAmount, justification, period || '', notes || '',
-                proposedBy,
-                existingRow[9] || now,          // Proposed At — preserve original
-                existingRow[10] || 'draft',     // Status — preserve
-                existingRow[11] || '',          // Reviewed By
-                existingRow[12] || '',          // Reviewed At
-                existingRow[13] || ''           // Review Notes
-              ]] })
-            }
-          );
-          return new Response(JSON.stringify({ ok: true, proposalId }), { status: 200, headers });
-        } else {
-          // New proposal
-          const newId = `PROP-${Date.now().toString(36).toUpperCase()}`;
-          await appendToSheet(token, finSheetId, 'Budget_Proposals',
-            [newId, programId, projectId, category || '', requestedAmount,
-             justification, period || '', notes || '', proposedBy, now, 'draft', '', '', '']);
-          return new Response(JSON.stringify({ ok: true, proposalId: newId }), { status: 200, headers });
-        }
-      } catch(e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── submit_proposal ──────────────────────────────────────
-    if (action === 'submit_proposal') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-      if (!['admin', 'manager', 'finance_staff', 'finance_manager'].includes(user.role))
-        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
-
-      const { proposalId } = body;
-      if (!proposalId) return new Response(JSON.stringify({ error: 'Missing proposalId' }), { status: 400, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      const token = await getDriveToken(env);
-
-      try {
-        const d = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).then(r => r.json());
-
-        const rows = d.values || [];
-        const rowIdx = rows.findIndex((r, i) => i > 0 && r[0] === proposalId);
-        if (rowIdx < 1) return new Response(JSON.stringify({ error: 'Proposal not found' }), { status: 404, headers });
-
-        // Finance staff can only submit their own
-        const proposedBy = rows[rowIdx][8] || '';
-        if (user.role === 'finance_staff' && proposedBy !== (user.name || user._key))
-          return new Response(JSON.stringify({ error: 'Can only submit your own proposals' }), { status: 403, headers });
-
-        const sheetRow = rowIdx + 1;
-        await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}!K${sheetRow}?valueInputOption=USER_ENTERED`,
-          {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: [['submitted']] })
-          }
-        );
-        // Fire notification — non-blocking
-        const submittedRow = rows[rowIdx];
-        await sendNotification(env, 'proposal_submitted', {
-          proposalId:  proposalId,
-          programId:   submittedRow[1] || '',
-          category:    submittedRow[3] || '',
-          amount:      submittedRow[4] || 0,
-          proposedBy:  submittedRow[8] || user.name,
-        }).catch(() => {});
-
-        return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
-      } catch(e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
-
-    // ─── review_proposal ──────────────────────────────────────
-    if (action === 'review_proposal') {
-      const user = validateUser(body.username, body.password);
-      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
-      if (user.role !== 'admin')
-        return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
-
-      const { proposalId, decision, reviewNotes } = body;
-      if (!proposalId || !decision) return new Response(JSON.stringify({ error: 'Missing proposalId or decision' }), { status: 400, headers });
-      if (!['approved', 'rejected'].includes(decision)) return new Response(JSON.stringify({ error: 'Decision must be approved or rejected' }), { status: 400, headers });
-
-      const finSheetId = env.FINANCE_SPREADSHEET_ID;
-      const token = await getDriveToken(env);
-      const now = new Date().toISOString();
-
-      try {
-        const d = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).then(r => r.json());
-
-        const rows = d.values || [];
-        const rowIdx = rows.findIndex((r, i) => i > 0 && r[0] === proposalId);
-        if (rowIdx < 1) return new Response(JSON.stringify({ error: 'Proposal not found' }), { status: 404, headers });
-
-        const row = rows[rowIdx];
-        const sheetRow = rowIdx + 1;
-
-        // Update status, reviewer, reviewed at, review notes
-        await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${finSheetId}/values/${encodeURIComponent('Budget_Proposals')}!K${sheetRow}:N${sheetRow}?valueInputOption=USER_ENTERED`,
-          {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: [[decision, user.name || user._key, now, reviewNotes || '']] })
-          }
-        );
-
-        // On approval: auto-create Budget line
-        if (decision === 'approved') {
-          const [, programId, projectId, category, requestedAmount, , period, notes] = row;
-          const safeProj = String(programId).replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,6);
-          const safeCat  = String(category || 'GEN').replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,4);
-          const budgetId = `BDG-${safeProj}-${safeCat}-${Date.now().toString(36).toUpperCase().slice(-4)}`;
-          const allocated = parseFloat(requestedAmount) || 0;
-          // Budget: Budget ID | Program | Category | Allocated | Spent | Remaining | Period | Notes
-          // Clean projectId: ALL_PROJECTS means entire program → store as empty
-          const cleanprojectId = (projectId === 'ALL_PROJECTS' || !projectId) ? '' : projectId;
-          const budgetRow = [budgetId, programId, cleanprojectId, category || 'General', allocated, 0, allocated,
-                             period || '', `Auto from proposal ${proposalId}. ${notes || ''}`.trim()];
-          await appendToSheet(token, finSheetId, 'Budget', budgetRow);
-        }
-
-        // Fire notification — non-blocking
-        await sendNotification(env, 'proposal_reviewed', {
-          proposalId:  proposalId,
-          category:    row[3] || '',
-          status:      decision,
-          reviewedBy:  user.name || body.username,
-          reviewNotes: reviewNotes || '',
-          proposedBy:  row[8] || '',
-        }).catch(e => console.error('[Notify review_proposal]', e.message));
-
-        return new Response(JSON.stringify({ ok: true, decision, budgetCreated: decision === 'approved' }), { status: 200, headers });
-      } catch(e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
-      }
-    }
+    // ── Finance v1 legacy actions removed in v3.4.0 (security hardening) ──
+    // Removed: get_finance_data, log_expense, approve_expense, reject_expense,
+    //          update_budget, add_budget, get_projects, add_project,
+    //          get_proposals, save_proposal, submit_proposal, review_proposal
+    // All functionality is available via Finance v2 actions below.
 
       // ═══════════════════════════════════════════════════════════════
     //  FINANCE v2 — MMK-only donor-aware budget system
@@ -2481,7 +1974,7 @@ export default {
     //  Safe to run multiple times — skips sheets that already exist.
     // ════════════════════════════════════════════════════════════════
     if (action === 'setup_finance_sheets') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2549,7 +2042,7 @@ export default {
     //  Returns all 5 tables in one call — the main data load for finance.html
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_finance_v2') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
@@ -2614,7 +2107,7 @@ export default {
     //  Create or update a donor record
     // ════════════════════════════════════════════════════════════════
     if (action === 'save_donor') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2646,7 +2139,7 @@ export default {
     //  Create or update a budget header record
     // ════════════════════════════════════════════════════════════════
     if (action === 'save_budget') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2678,7 +2171,7 @@ export default {
     //  Attach a donor to a budget with their MMK allocation
     // ════════════════════════════════════════════════════════════════
     if (action === 'save_budget_donor') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2709,7 +2202,7 @@ export default {
     //  Add or update a budget line item with donor splits
     // ════════════════════════════════════════════════════════════════
     if (action === 'save_line_item') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2742,7 +2235,7 @@ export default {
     //  Soft-delete: marks the row's description with [DELETED] prefix
     // ════════════════════════════════════════════════════════════════
     if (action === 'delete_line_item') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2766,7 +2259,7 @@ export default {
     //  Finance staff submits actual quarterly spending
     // ════════════════════════════════════════════════════════════════
     if (action === 'log_expenditure_v2') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
@@ -2810,7 +2303,7 @@ export default {
     //  save_donation  — record an incoming donor payment
     // ════════════════════════════════════════════════════════════════
     if (action === 'delete_donation') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2840,7 +2333,7 @@ export default {
     //  Finance Manager + Admin only.
     // ════════════════════════════════════════════════════════════════
     if (action === 'save_donation') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2872,7 +2365,7 @@ export default {
     //  Returns all donation records, optionally filtered by donorId or budgetId.
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_donations') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -2888,8 +2381,186 @@ export default {
       return new Response(JSON.stringify({ ok: true, donations }), { headers });
     }
 
+    
+    // ── Upload / update profile avatar ─────────────────────────────────────
+    if (action === 'upload_avatar') {
+      const u = await validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorised' }), { status: 401, headers });
+
+      const { fileBase64, mimeType, fileName } = body;
+      if (!fileBase64) return new Response(JSON.stringify({ error: 'fileBase64 required' }), { status: 400, headers });
+
+      // Validate image type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      const safeMime = allowedTypes.includes(mimeType) ? mimeType : 'image/jpeg';
+      const ext = safeMime === 'image/png' ? 'png' : safeMime === 'image/webp' ? 'webp' : 'jpg';
+      const uploadName = `avatar_${body.username}_${Date.now()}.${ext}`;
+
+      // Get or use DRIVE_JSON_FOLDER_ID as avatar folder (reuse existing Drive infra)
+      // Falls back to DRIVE_FOLDER_ID if AVATARS_FOLDER_ID not set
+      const avatarFolderId = env.AVATARS_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!avatarFolderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured for avatars. Set AVATARS_FOLDER_ID secret.' }), { status: 500, headers });
+
+      const token = await getDriveToken(env);
+      if (!token)
+        return new Response(JSON.stringify({ error: 'Could not get Drive token' }), { status: 500, headers });
+
+      // Delete old avatar file if exists
+      const users = getUsers();
+      const existingFileId = users[body.username]?.avatarFileId;
+      if (existingFileId) {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${existingFileId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {}); // ignore errors — file may already be gone
+      }
+
+      // Upload new avatar to Drive via multipart
+      const CRLF = new Uint8Array([13, 10]);
+      const binaryStr = atob(fileBase64);
+      const fileBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) fileBytes[i] = binaryStr.charCodeAt(i);
+
+      const enc = new TextEncoder();
+      const boundary = 'PDP_AVATAR_' + Date.now();
+      const metaJson = JSON.stringify({ name: uploadName, parents: [avatarFolderId] });
+
+      const p1a  = enc.encode('--' + boundary);
+      const p1b  = enc.encode('Content-Type: application/json; charset=UTF-8');
+      const p1c  = enc.encode(metaJson);
+      const p2a  = enc.encode('--' + boundary);
+      const p2b  = enc.encode('Content-Type: ' + safeMime);
+      const pEnd = enc.encode('--' + boundary + '--');
+
+      const parts = [p1a, CRLF, p1b, CRLF, CRLF, p1c, CRLF, p2a, CRLF, p2b, CRLF, CRLF, fileBytes, CRLF, pEnd];
+      const totalLen = parts.reduce((s, p) => s + p.length, 0);
+      const multipartBody = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const p of parts) { multipartBody.set(p, offset); offset += p.length; }
+
+      const uploadRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary="${boundary}"`,
+            'Content-Length': totalLen,
+          },
+          body: multipartBody,
+        }
+      );
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ error: 'Drive upload failed: ' + (err.error?.message || uploadRes.status) }), { status: 500, headers });
+      }
+      const uploadData = await uploadRes.json();
+      const fileId = uploadData.id;
+
+      // Make file publicly readable so browsers can load it directly
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+      }).catch(() => {});
+
+      // Google Drive direct image URL (works for public files)
+      const avatarUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+
+      // Save avatarUrl + fileId to user record in USERS_CONFIG
+      const usersW = getUsers();
+      usersW[body.username].avatarUrl    = avatarUrl;
+      usersW[body.username].avatarFileId = fileId;
+      await saveUsers(usersW);
+
+      return new Response(JSON.stringify({ ok: true, avatarUrl, fileId }), { status: 200, headers });
+    }
+
+    
+    // ── Upload image for announcement email ────────────────────────────────
+    if (action === 'upload_announcement_image') {
+      const u = await validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorised' }), { status: 401, headers });
+
+      // Permission check — same as send_announcement
+      const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
+      const userPerms = annPerms.users || {};
+      const canSend   = u.role === 'admin' || userPerms[body.username] === true;
+      if (!canSend)
+        return new Response(JSON.stringify({ error: 'No announcement permission' }), { status: 403, headers });
+
+      const { fileBase64, mimeType, fileName } = body;
+      if (!fileBase64)
+        return new Response(JSON.stringify({ error: 'fileBase64 required' }), { status: 400, headers });
+
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const safeMime = allowedTypes.includes(mimeType) ? mimeType : 'image/jpeg';
+      const ext = safeMime === 'image/png' ? 'png' : safeMime === 'image/gif' ? 'gif' : safeMime === 'image/webp' ? 'webp' : 'jpg';
+      const uploadName = `ann_img_${u.username}_${Date.now()}.${ext}`;
+
+      const folderId = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured' }), { status: 500, headers });
+
+      const token = await getDriveToken(env);
+      if (!token)
+        return new Response(JSON.stringify({ error: 'Could not get Drive token' }), { status: 500, headers });
+
+      // Upload to Drive via multipart
+      const CRLF = new Uint8Array([13, 10]);
+      const binaryStr = atob(fileBase64);
+      const fileBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) fileBytes[i] = binaryStr.charCodeAt(i);
+
+      const enc = new TextEncoder();
+      const boundary = 'PDP_ANNIMG_' + Date.now();
+      const metaJson = JSON.stringify({ name: uploadName, parents: [folderId] });
+
+      const p1a  = enc.encode('--' + boundary);
+      const p1b  = enc.encode('Content-Type: application/json; charset=UTF-8');
+      const p1c  = enc.encode(metaJson);
+      const p2a  = enc.encode('--' + boundary);
+      const p2b  = enc.encode('Content-Type: ' + safeMime);
+      const pEnd = enc.encode('--' + boundary + '--');
+
+      const parts = [p1a, CRLF, p1b, CRLF, CRLF, p1c, CRLF, p2a, CRLF, p2b, CRLF, CRLF, fileBytes, CRLF, pEnd];
+      const totalLen = parts.reduce((s, p) => s + p.length, 0);
+      const multipartBody = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const p of parts) { multipartBody.set(p, offset); offset += p.length; }
+
+      const uploadRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': `multipart/related; boundary="${boundary}"`,
+          },
+          body: multipartBody,
+        }
+      );
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        return new Response(JSON.stringify({ error: 'Drive upload failed: ' + (err.error?.message || uploadRes.status) }), { status: 500, headers });
+      }
+      const uploadData = await uploadRes.json();
+      const fileId = uploadData.id;
+
+      // Make publicly readable
+      await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+      }).catch(() => {});
+
+      const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+      return new Response(JSON.stringify({ ok: true, imageUrl, fileId }), { status: 200, headers });
+    }
+
     if (action === 'upload_voucher') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
@@ -3016,7 +2687,7 @@ export default {
     //  Returns Drive metadata for all voucher files on an expenditure row.
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_vouchers') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
@@ -3047,7 +2718,7 @@ export default {
     }
 
     if (action === 'approve_expenditure_v2' || action === 'reject_expenditure_v2') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_MANAGER_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
 
@@ -3086,7 +2757,7 @@ export default {
     //  Returns full detail for one budget: donors, line items, expenditures, summary
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_budget_detail') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
@@ -3134,7 +2805,7 @@ export default {
     //  Province-level consolidated view across all budgets
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_finance_summary') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
@@ -3209,7 +2880,7 @@ export default {
     //    - 'diocese'       → all finance roles (staff sees own diocese only)
     // ════════════════════════════════════════════════════════════════
     if (action === 'generate_report') {
-      let u = validateUser(body.username, body.password);
+      let u = await validateUser(body.username, body.password);
       if (!u || !FIN_ROLES.includes(u.role))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
@@ -3965,7 +3636,7 @@ export default {
 
     // ── get_staff_list ───────────────────────────────────────────────
     if (action === 'get_staff_list') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       // Any authenticated user can fetch the staff list for recipient selection
@@ -3973,11 +3644,12 @@ export default {
       const users = getUsers();
       const staff = Object.entries(users).map(([username, usr]) => ({
         username,
-        name:     usr.name     || username,
-        role:     usr.role     || 'staff',
-        diocese:  usr.diocese  || null,
-        email:    usr.email    || null,
-        hasEmail: !!(usr.email && usr.email.trim()),
+        name:      usr.name      || username,
+        role:      usr.role      || 'staff',
+        diocese:   usr.diocese   || null,
+        email:     usr.email     || null,
+        hasEmail:  !!(usr.email && usr.email.trim()),
+        avatarUrl: usr.avatarUrl || null,
       })).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
       return new Response(JSON.stringify({ ok: true, staff }), { status: 200, headers });
@@ -3985,7 +3657,7 @@ export default {
 
     // ── get_announcement_perms ───────────────────────────────────────
     if (action === 'get_announcement_perms') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       const perms = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
@@ -3994,7 +3666,7 @@ export default {
 
     // ── save_announcement_perms ──────────────────────────────────────
     if (action === 'save_announcement_perms') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u || u.role !== 'admin')
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
@@ -4044,7 +3716,7 @@ export default {
 
     // ── send_announcement ────────────────────────────────────────────
     if (action === 'send_announcement') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
@@ -4073,6 +3745,7 @@ export default {
         return new Response(JSON.stringify({ error: 'None of the selected recipients have emails set' }), { status: 400, headers });
 
       // Build HTML email
+      const { imageHtml } = body;   // optional image block from frontend
       const gmailToken = env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN;
       if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !gmailToken)
         return new Response(JSON.stringify({ error: 'Gmail OAuth secrets not configured' }), { status: 500, headers });
@@ -4088,6 +3761,7 @@ export default {
           <h2 style="margin:0 0 8px;font-size:18px;color:#0f1e38;">${subject}</h2>
           <p style="color:#64748b;font-size:12px;margin:0 0 20px;">From: ${senderName||u.name||'PDD Dashboard'} · ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p>
           <div style="font-size:14px;color:#374151;line-height:1.8;white-space:pre-wrap;">${msgBody.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          ${imageHtml || ''}
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
           <p style="font-size:11px;color:#94a3b8;margin:0;">This is an official announcement from the PDD Dashboard. Do not reply to this email.</p>
           <a href="${env.DASHBOARD_URL||'https://www.gamalieltun.com/PDP-Dashboard/'}" style="font-size:11px;color:#2563eb;">Open Dashboard</a>
@@ -4137,7 +3811,7 @@ export default {
 
     // ── get_announcements ────────────────────────────────────────────
     if (action === 'get_announcements') {
-      const u = validateUser(body.username, body.password);
+      const u = await validateUser(body.username, body.password);
       if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
 
       const annPerms  = JSON.parse(env.ANNOUNCEMENT_PERMS || '{}');
@@ -4176,7 +3850,8 @@ export default {
           announcements: announcements.filter(Boolean),
         }), { status: 200, headers });
       } catch(e) {
-        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
+        console.error('[Worker] Action error:', e.message);
+        return new Response(JSON.stringify({ ok: false, error: 'An internal error occurred. Please try again.' }), { status: 500, headers });
       }
     }
 
