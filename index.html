@@ -5674,8 +5674,9 @@ function getProgramLabels() {
 
 // ─── DCR Reports — opens in new tab ────────────────────────
 function openDCR() {
-  window.open('dcr_form.html', '_blank');
-  // Deselect immediately — DCR is a launcher, not a panel
+  // Open in new tab — DCR is a separate full-page app
+  const dcrWin = window.open('dcr_form.html', '_blank');
+  // Deselect the tab button immediately
   setTimeout(() => {
     const btn = document.getElementById('tab-btn-dcr');
     if (btn) btn.classList.remove('active');

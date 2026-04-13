@@ -659,7 +659,7 @@
 <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
 <div class="topbar">
   <!-- Back button -->
-  <button class="topbar-btn" onclick="window.close()" title="Return to PDP Dashboard" style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+  <button class="topbar-btn" onclick="goBackToDashboard()" title="Return to PDP Dashboard" style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
     ← <span class="hide-mobile">Dashboard</span>
   </button>
 
@@ -2176,6 +2176,23 @@ function applyRoleRestrictions() {
     console.warn('DCR: No PDP session found. Running in demo mode.');
     if (roleSwitcher) roleSwitcher.style.display = 'flex';
   }
+}
+
+
+// ── Back button: return to dashboard ─────────────────────────────────
+function goBackToDashboard() {
+  // Tab was opened by script and opener is still alive → close this tab
+  if (window.opener && !window.opener.closed) {
+    window.close();
+    return;
+  }
+  // Tab was refreshed or opened directly → navigate back
+  if (window.history.length > 1 && document.referrer) {
+    history.back();
+    return;
+  }
+  // Final fallback: go to index.html in same directory
+  window.location.href = 'index.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
