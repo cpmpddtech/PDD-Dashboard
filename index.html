@@ -5323,8 +5323,8 @@ function renderProgramManagement() {
     pmProgSel.innerHTML = '<option value="">— Select program —</option>' +
       DATA.programs.map(p => `<option value="${p.id}">${p.id} — ${p.name}</option>`).join('');
   }
-  // Populate responsible staff chips with current staff list
-  if (typeof renderProjStaffChips === 'function') renderProjStaffChips(USERS_LIST || []);
+  // Populate responsible staff chips — fetch fresh from worker
+  loadAndRenderProjStaffChips();
 
   // Populate owner dropdown dynamically from users list
   const ownerSel = document.getElementById('nt-owner');
@@ -6039,5 +6039,110 @@ function resetProjRespChips() {
 }
 
 </script>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  PROJECT RESPONSIBLE — MULTI-SELECT STAFF CHIPS
+// ═══════════════════════════════════════════════════
+let PROJ_RESP_SELECTED = new Set();
+let PROJ_STAFF_LOADED  = false;
+
+async function loadAndRenderProjStaffChips() {
+  const grid = document.getElementById('pm-prog-resp-grid');
+  if (!grid) return;
+  grid.innerHTML = '<span style="font-size:11px;color:var(--gray-400);padding:4px 0;display:block;">Loading staff...</span>';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action:   'get_staff_list',
+        username: SESSION_USERNAME,
+        password: SESSION_PASSWORD,
+      }),
+    });
+    const data = await res.json();
+    if (data.ok && data.staff && data.staff.length) {
+      renderProjStaffChips(data.staff);
+      PROJ_STAFF_LOADED = true;
+    } else {
+      grid.innerHTML = '<span style="font-size:11px;color:var(--red);">Could not load staff list.</span>';
+    }
+  } catch(e) {
+    grid.innerHTML = '<span style="font-size:11px;color:var(--red);">Network error loading staff.</span>';
+  }
+}
+
+function renderProjStaffChips(staffList) {
+  const grid = document.getElementById('pm-prog-resp-grid');
+  if (!grid) return;
+  const prevSelected = new Set(PROJ_RESP_SELECTED); // preserve selections if re-rendering
+  PROJ_RESP_SELECTED = new Set();
+  grid.innerHTML = '';
+  const roleColors = {
+    admin:           '#2563eb',
+    manager:         '#16a34a',
+    finance_manager: '#7c3aed',
+    finance_staff:   '#9333ea',
+    staff:           '#0891b2',
+  };
+  (staffList || []).forEach(u => {
+    const name = (u.name || u.username || '').trim();
+    if (!name) return;
+    const dot   = roleColors[u.role] || '#6b7280';
+    const chip  = document.createElement('div');
+    chip.className    = 'proj-staff-chip';
+    chip.dataset.name = name;
+    const dotEl = document.createElement('span');
+    dotEl.style.cssText = 'display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + dot + ';margin-right:5px;vertical-align:middle;';
+    chip.appendChild(dotEl);
+    chip.appendChild(document.createTextNode(name));
+    chip.addEventListener('click', () => toggleProjStaffChip(chip, name));
+    if (prevSelected.has(name)) {
+      PROJ_RESP_SELECTED.add(name);
+      chip.classList.add('selected');
+    }
+    grid.appendChild(chip);
+  });
+  updateProjRespHidden();
+}
+
+function toggleProjStaffChip(chip, name) {
+  if (PROJ_RESP_SELECTED.has(name)) {
+    PROJ_RESP_SELECTED.delete(name);
+    chip.classList.remove('selected');
+  } else {
+    PROJ_RESP_SELECTED.add(name);
+    chip.classList.add('selected');
+  }
+  updateProjRespHidden();
+}
+
+function updateProjRespHidden() {
+  const val    = Array.from(PROJ_RESP_SELECTED).join(', ');
+  const hidden = document.getElementById('pm-prog-responsible');
+  if (hidden) hidden.value = val;
+  const count  = document.getElementById('pm-prog-resp-count');
+  if (count)  count.textContent = PROJ_RESP_SELECTED.size > 0 ? PROJ_RESP_SELECTED.size + ' selected' : '';
+}
+
+function filterProjStaffChips(query) {
+  const q = (query || '').toLowerCase().trim();
+  document.querySelectorAll('#pm-prog-resp-grid .proj-staff-chip').forEach(chip => {
+    const match = !q || (chip.dataset.name || '').toLowerCase().includes(q);
+    chip.style.display = match ? '' : 'none';
+  });
+}
+
+function resetProjRespChips() {
+  PROJ_RESP_SELECTED = new Set();
+  document.querySelectorAll('#pm-prog-resp-grid .proj-staff-chip').forEach(c => c.classList.remove('selected'));
+  updateProjRespHidden();
+  const search = document.getElementById('pm-prog-resp-search');
+  if (search) search.value = '';
+  filterProjStaffChips('');
+}
+</script>
+
 </body>
 </html>
