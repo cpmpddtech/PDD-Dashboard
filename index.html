@@ -5978,67 +5978,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script>
-// ── Project responsible staff chips ────────────────────────────────────
-let PROJ_RESP_SELECTED = new Set();
 
-function renderProjStaffChips(staffList) {
-  const grid = document.getElementById('pm-prog-resp-grid');
-  if (!grid) return;
-  PROJ_RESP_SELECTED = new Set();
-  grid.innerHTML = '';
-  const list = staffList || USERS_LIST || [];
-  list.forEach(u => {
-    const name = u.name || u.username || '';
-    if (!name) return;
-    const role = u.role || '';
-    const colors = { admin:'#2563eb', manager:'#16a34a', staff:'#0891b2', finance_manager:'#7c3aed', finance_staff:'#9333ea' };
-    const dot = colors[role] || '#6b7280';
-    const chip = document.createElement('div');
-    chip.className = 'proj-staff-chip';
-    chip.dataset.name = name;
-    chip.innerHTML = '<span class="chip-dot" style="background:' + dot + ';display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></span> ' + name;
-    chip.onclick = () => toggleProjStaffChip(chip, name);
-    grid.appendChild(chip);
-  });
-  updateProjRespHidden();
-}
-
-function toggleProjStaffChip(chip, name) {
-  if (PROJ_RESP_SELECTED.has(name)) {
-    PROJ_RESP_SELECTED.delete(name);
-    chip.classList.remove('selected');
-  } else {
-    PROJ_RESP_SELECTED.add(name);
-    chip.classList.add('selected');
-  }
-  updateProjRespHidden();
-}
-
-function updateProjRespHidden() {
-  const val = Array.from(PROJ_RESP_SELECTED).join(', ');
-  const hidden = document.getElementById('pm-prog-responsible');
-  if (hidden) hidden.value = val;
-  const count = document.getElementById('pm-prog-resp-count');
-  if (count) count.textContent = PROJ_RESP_SELECTED.size > 0 ? PROJ_RESP_SELECTED.size + ' selected' : '';
-}
-
-function filterProjStaffChips(query) {
-  const q = (query || '').toLowerCase().trim();
-  document.querySelectorAll('#pm-prog-resp-grid .proj-staff-chip').forEach(chip => {
-    chip.style.display = (!q || (chip.dataset.name || '').toLowerCase().includes(q)) ? '' : 'none';
-  });
-}
-
-function resetProjRespChips() {
-  PROJ_RESP_SELECTED = new Set();
-  document.querySelectorAll('#pm-prog-resp-grid .proj-staff-chip').forEach(c => c.classList.remove('selected'));
-  updateProjRespHidden();
-  const search = document.getElementById('pm-prog-resp-search');
-  if (search) search.value = '';
-}
-
-</script>
 
 <script>
 // ═══════════════════════════════════════════════════
