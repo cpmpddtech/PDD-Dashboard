@@ -1210,6 +1210,19 @@ if (typeof Chart !== 'undefined') {
     #profile-content .profile-stat-grid { grid-template-columns: 1fr !important; }
   }
 
+
+  /* ── Project responsible staff chips ── */
+  .proj-staff-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px; cursor: pointer;
+    border: 1.5px solid var(--gray-300); background: var(--surface3);
+    font-size: 11px; font-weight: 500; color: var(--gray-700);
+    transition: all .12s; user-select: none;
+  }
+  .proj-staff-chip:hover { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.08); }
+  .proj-staff-chip.selected { background: rgba(59,130,246,0.15); border-color: var(--blue); color: #93c5fd; }
+  .proj-staff-chip .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
 </style>
 </head>
 <body>
@@ -1890,8 +1903,17 @@ if (typeof Chart !== 'undefined') {
           </div>
         </div>
         <div class="rm-field">
-          <div class="rm-label">Responsible Person</div>
-          <input class="form-input" id="pm-prog-responsible" placeholder="e.g. John" style="font-family:var(--font);">
+          <div class="rm-label">Responsible Person(s)
+            <span id="pm-prog-resp-count" style="font-weight:400;font-size:10px;color:var(--gray-400);margin-left:6px;"></span>
+          </div>
+          <!-- Search filter -->
+          <input class="form-input" id="pm-prog-resp-search" placeholder="Search staff…"
+            style="font-family:var(--font);margin-bottom:6px;font-size:12px;"
+            oninput="filterProjStaffChips(this.value)">
+          <!-- Staff chip grid -->
+          <div id="pm-prog-resp-grid" style="display:flex;flex-wrap:wrap;gap:6px;max-height:140px;overflow-y:auto;padding:4px 0;"></div>
+          <!-- Hidden value store -->
+          <input type="hidden" id="pm-prog-responsible">
         </div>
 
         <button class="rm-save-btn" onclick="addProjectFromDashboard()" id="pm-prog-btn" style="background:var(--blue);">Add Project →</button>
@@ -5301,6 +5323,8 @@ function renderProgramManagement() {
     pmProgSel.innerHTML = '<option value="">— Select program —</option>' +
       DATA.programs.map(p => `<option value="${p.id}">${p.id} — ${p.name}</option>`).join('');
   }
+  // Populate responsible staff chips with current staff list
+  if (typeof renderProjStaffChips === 'function') renderProjStaffChips(USERS_LIST || []);
 
   // Populate owner dropdown dynamically from users list
   const ownerSel = document.getElementById('nt-owner');
@@ -5487,6 +5511,7 @@ async function addProjectFromDashboard() {
     msgEl.textContent = `✓ Project "${projectName}" added (${data.projectId})`;
 
     // Clear form
+    resetProjRespChips();
     ['pm-prog-name','pm-prog-desc','pm-prog-start','pm-prog-end','pm-prog-responsible','pm-prog-start-date','pm-prog-end-date'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
@@ -5953,7 +5978,65 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+// ── Project responsible staff chips ────────────────────────────────────
+let PROJ_RESP_SELECTED = new Set();
 
+function renderProjStaffChips(staffList) {
+  const grid = document.getElementById('pm-prog-resp-grid');
+  if (!grid) return;
+  PROJ_RESP_SELECTED = new Set();
+  grid.innerHTML = '';
+  const list = staffList || USERS_LIST || [];
+  list.forEach(u => {
+    const name = u.name || u.username || '';
+    if (!name) return;
+    const role = u.role || '';
+    const colors = { admin:'#2563eb', manager:'#16a34a', staff:'#0891b2', finance_manager:'#7c3aed', finance_staff:'#9333ea' };
+    const dot = colors[role] || '#6b7280';
+    const chip = document.createElement('div');
+    chip.className = 'proj-staff-chip';
+    chip.dataset.name = name;
+    chip.innerHTML = '<span class="chip-dot" style="background:' + dot + ';display:inline-block;width:6px;height:6px;border-radius:50%;flex-shrink:0;"></span> ' + name;
+    chip.onclick = () => toggleProjStaffChip(chip, name);
+    grid.appendChild(chip);
+  });
+  updateProjRespHidden();
+}
+
+function toggleProjStaffChip(chip, name) {
+  if (PROJ_RESP_SELECTED.has(name)) {
+    PROJ_RESP_SELECTED.delete(name);
+    chip.classList.remove('selected');
+  } else {
+    PROJ_RESP_SELECTED.add(name);
+    chip.classList.add('selected');
+  }
+  updateProjRespHidden();
+}
+
+function updateProjRespHidden() {
+  const val = Array.from(PROJ_RESP_SELECTED).join(', ');
+  const hidden = document.getElementById('pm-prog-responsible');
+  if (hidden) hidden.value = val;
+  const count = document.getElementById('pm-prog-resp-count');
+  if (count) count.textContent = PROJ_RESP_SELECTED.size > 0 ? PROJ_RESP_SELECTED.size + ' selected' : '';
+}
+
+function filterProjStaffChips(query) {
+  const q = (query || '').toLowerCase().trim();
+  document.querySelectorAll('#pm-prog-resp-grid .proj-staff-chip').forEach(chip => {
+    chip.style.display = (!q || (chip.dataset.name || '').toLowerCase().includes(q)) ? '' : 'none';
+  });
+}
+
+function resetProjRespChips() {
+  PROJ_RESP_SELECTED = new Set();
+  document.querySelectorAll('#pm-prog-resp-grid .proj-staff-chip').forEach(c => c.classList.remove('selected'));
+  updateProjRespHidden();
+  const search = document.getElementById('pm-prog-resp-search');
+  if (search) search.value = '';
+}
 
 </script>
 </body>
