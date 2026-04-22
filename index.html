@@ -5730,6 +5730,28 @@ function renderRoleManagement() {
   const grid = document.getElementById('rm-cards');
   if (!grid) return;
 
+  // Render immediately from cached USERS_LIST so the panel feels instant
+  if (USERS_LIST && USERS_LIST.length) _renderRoleManagementCards(grid);
+
+  // Then fetch fresh merged list in background and re-render if changed
+  fetch(WORKER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'get_staff_list', username: SESSION_USERNAME, password: SESSION_PASSWORD }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok && data.staff && data.staff.length) {
+      const prevCount = USERS_LIST ? USERS_LIST.length : 0;
+      USERS_LIST = data.staff;
+      // Only re-render if the list changed (new/removed accounts)
+      if (data.staff.length !== prevCount) _renderRoleManagementCards(grid);
+    }
+  })
+  .catch(() => {}); // silent — already rendered from cache
+}
+
+function _renderRoleManagementCards(grid) {
   grid.innerHTML = getStaffNames().map(name => {
     const cfg    = ROLE_CONFIG[name] || { role:'staff', programs:[], features:[] };
     const color  = getStaffColor(name);
