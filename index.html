@@ -5744,8 +5744,20 @@ function renderRoleManagement() {
     if (data.ok && data.staff && data.staff.length) {
       const prevCount = USERS_LIST ? USERS_LIST.length : 0;
       USERS_LIST = data.staff;
-      // Only re-render if the list changed (new/removed accounts)
-      if (data.staff.length !== prevCount) _renderRoleManagementCards(grid);
+
+      // Patch ROLE_CONFIG with fresh role, email, diocese from merged staff list
+      // This fixes Drive-only users missing email and stale roles after updates
+      data.staff.forEach(u => {
+        if (!ROLE_CONFIG[u.name]) ROLE_CONFIG[u.name] = {};
+        if (u.role)    ROLE_CONFIG[u.name].role    = u.role;
+        if (u.email)   ROLE_CONFIG[u.name].email   = u.email;
+        if (u.diocese) ROLE_CONFIG[u.name].diocese = u.diocese;
+        if (u.programs) ROLE_CONFIG[u.name].programs = u.programs;
+      });
+      sessionStorage.setItem('pdp_role_config', JSON.stringify(ROLE_CONFIG));
+
+      // Re-render if count changed OR always to reflect updated roles/emails
+      _renderRoleManagementCards(grid);
     }
   })
   .catch(() => {}); // silent — already rendered from cache
