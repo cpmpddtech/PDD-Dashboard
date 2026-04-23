@@ -1840,6 +1840,39 @@ if (typeof Chart !== 'undefined') {
     #mobile-more-menu  { display: none !important; }
   }
 
+  /* ── Header buttons on mobile ── */
+  @media (max-width: 768px) {
+    .logout-btn {
+      padding: 0 !important;
+      width: 34px !important; height: 34px !important;
+      border-radius: 50% !important;
+      display: inline-flex !important;
+      align-items: center !important; justify-content: center !important;
+      font-size: 16px !important; flex-shrink: 0;
+    }
+    .logout-btn:last-child {
+      width: auto !important; padding: 0 10px !important;
+      border-radius: 8px !important; font-size: 11px !important;
+      height: 34px !important;
+    }
+    .header-pill-quarter, #live-pill, .user-name-badge, #hdr-diocese { display: none !important; }
+    .main { padding: 0 !important; }
+    .tab-pane { padding: 0 !important; }
+    #tab-profile, #tab-mytasks, #tab-progress, #tab-kpi,
+    #tab-staff, #tab-checkin, #tab-digest, #tab-projmgmt,
+    #tab-roles, #tab-setup, #tab-dcr, #tab-finance,
+    #tab-announcements, #tab-minutes {
+      padding: 14px 12px 80px 12px !important;
+    }
+  }
+  @media (max-width: 360px) {
+    #tab-profile, #tab-mytasks, #tab-progress, #tab-kpi,
+    #tab-staff, #tab-checkin, #tab-digest, #tab-projmgmt,
+    #tab-roles, #tab-setup, #tab-dcr, #tab-finance,
+    #tab-announcements, #tab-minutes {
+      padding: 10px 8px 80px 8px !important;
+    }
+  }
 
 </style>
 </head>
