@@ -1500,6 +1500,273 @@ if (typeof Chart !== 'undefined') {
   }
 
 
+
+ /* ════════════════════════════════════
+     PROFILE PAGE — responsive classes
+  ════════════════════════════════════ */
+  .profile-page-wrap { max-width: 860px; }
+
+  .profile-header-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .profile-info-block { flex: 1; min-width: 0; }
+
+  .profile-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .profile-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .profile-meta-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-muted);
+    align-items: center;
+  }
+
+  .profile-quick-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  /* ════════════════════════════════════
+     HEADER — responsive classes
+  ════════════════════════════════════ */
+  .header-title-wrap { display: flex; flex-direction: column; }
+
+  /* ════════════════════════════════════
+     MOBILE OVERRIDES
+  ════════════════════════════════════ */
+  @media (max-width: 768px) {
+
+    /* Header */
+    .header {
+      padding: 0 12px;
+      height: 50px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
+    .logo img { width: 28px; height: 28px; }
+    .header-title { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-sub { display: none; }
+    .header-right { gap: 6px; flex-shrink: 0; }
+    .header-pill-quarter { display: none; }
+    .header-pill-cw { font-size: 10px; padding: 3px 8px; }
+    #live-pill { font-size: 9px; padding: 2px 6px; gap: 3px; }
+    .live-dot { width: 5px; height: 5px; }
+    .user-name-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .user-name-badge .role-badge { display: none; }
+    #hdr-diocese { display: none !important; }
+
+    /* Tab bar hidden — use bottom nav */
+    .tabs { display: none !important; }
+
+    /* Tab panels */
+    .tab-panel { padding: 12px 12px 80px 12px !important; }
+
+    /* Panels */
+    .panel { padding: 14px 12px; border-radius: 10px; margin-bottom: 10px; }
+    .panel-title { font-size: 12.5px; }
+
+    /* All inputs — 16px stops iOS auto-zoom */
+    input, select, textarea,
+    .form-input, .form-select, .form-textarea {
+      font-size: 16px !important;
+      padding: 10px 12px !important;
+      border-radius: 8px !important;
+      min-height: 44px;
+    }
+    textarea, .form-textarea { min-height: 88px !important; }
+    label, .rm-label { font-size: 12px !important; margin-bottom: 4px !important; }
+
+    /* Buttons */
+    .btn { min-height: 42px; padding: 10px 14px; font-size: 13px; border-radius: 8px; }
+
+    /* Grids → collapse */
+    .stat-grid   { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+    .form-row, .form-row.cols2 { grid-template-columns: 1fr !important; gap: 10px !important; }
+
+    /* ── Profile ── */
+    .profile-header-card {
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      padding: 20px 16px !important;
+      gap: 14px !important;
+    }
+    .profile-info-block { width: 100%; }
+    .profile-name { font-size: 20px !important; }
+    .profile-badges { justify-content: center !important; }
+    .profile-meta-row {
+      justify-content: center !important;
+      gap: 10px !important;
+      font-size: 11px !important;
+    }
+    .profile-meta-row span { white-space: nowrap; }
+    .profile-quick-btns {
+      flex-direction: row !important;
+      width: 100% !important;
+      gap: 8px !important;
+    }
+    .profile-quick-btns button {
+      flex: 1 !important;
+      justify-content: center !important;
+      font-size: 12px !important;
+      padding: 8px 10px !important;
+    }
+    .profile-stat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .profile-avatar-wrap label span { opacity: 1 !important; } /* always show change on touch */
+
+    /* ── Tasks ── */
+    .task-col-hdrs { display: none !important; }
+    .mytasks-header, .checkin-header, .kpi-header-row,
+    .progress-controls, .digest-header, .dcr-header,
+    .staff-perf-header, .um-header {
+      flex-direction: column !important;
+      gap: 8px !important;
+      align-items: flex-start !important;
+    }
+    .task-filter-row, .kpi-filter-row { flex-wrap: wrap !important; gap: 6px !important; }
+    .task-filter-row select, .kpi-filter-row select { flex: 1 !important; min-width: 0 !important; font-size: 13px !important; }
+
+    /* ── Gantt scrolls horizontally ── */
+    .gantt-wrap, .gantt-scroll { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+
+    /* ── Role management ── */
+    .rm-grid { grid-template-columns: 1fr !important; }
+    .rm-card { padding: 12px !important; }
+    .rm-card-header { flex-direction: column !important; gap: 6px !important; align-items: flex-start !important; }
+    .rm-toggles { flex-wrap: wrap !important; gap: 5px !important; }
+    .rm-toggle { font-size: 11px !important; padding: 4px 10px !important; min-height: 34px !important; }
+    .add-user-grid { grid-template-columns: 1fr !important; }
+
+    /* ── Program management ── */
+    .pm-date-row { flex-direction: column !important; gap: 8px !important; }
+    #pm-prog-resp-grid { max-height: 120px !important; }
+
+    /* ── Digest ── */
+    .digest-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+
+    /* ── Modals ── */
+    .modal-overlay { align-items: flex-end !important; padding: 0 !important; }
+    .modal-box {
+      border-radius: 20px 20px 0 0 !important;
+      max-height: 90vh !important;
+      width: 100% !important;
+      overflow-y: auto !important;
+      padding: 20px 16px 32px !important;
+    }
+
+    /* ── Staff chips ── */
+    .proj-staff-chip { font-size: 11px !important; padding: 5px 10px !important; }
+
+    /* ── Panel actions ── */
+    .panel-actions { flex-wrap: wrap !important; gap: 6px !important; }
+    .panel-actions .btn { flex: 1; min-width: 130px; justify-content: center; }
+
+    /* ── Bottom nav ── */
+    #mobile-bottom-nav {
+      display: flex !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface2);
+      border-top: 1px solid var(--border2);
+      z-index: 300;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.3);
+    }
+    .mobile-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 2px 5px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-family: var(--font);
+      cursor: pointer;
+      gap: 2px;
+      transition: color .12s;
+      min-height: 52px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-nav-btn:active { background: var(--surface3); }
+    .mobile-nav-btn.active { color: var(--blue); }
+    .mobile-nav-btn .mnb-icon { font-size: 20px; line-height: 1; }
+    .mobile-nav-btn .mnb-label { font-size: 9px; font-weight: 600; letter-spacing: .01em; }
+  }
+
+  /* ── Small phone ── */
+  @media (max-width: 480px) {
+    .header-title { font-size: 12px; max-width: 110px; }
+    .digest-grid { grid-template-columns: 1fr !important; }
+    .kpi-stat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .panel { padding: 12px 10px; }
+    .profile-quick-btns button { font-size: 11px !important; padding: 7px 8px !important; }
+  }
+
+  /* ── Very small phone ── */
+  @media (max-width: 360px) {
+    .header { padding: 0 8px; }
+    .header-title { font-size: 11.5px; max-width: 90px; }
+    .tab-panel { padding: 10px 8px 80px !important; }
+    .panel { padding: 10px 8px; }
+    .user-name-badge { display: none; }
+    .stat-grid { grid-template-columns: 1fr !important; }
+    .profile-stat-grid { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── Touch targets ── */
+  @media (hover: none) and (pointer: coarse) {
+    .btn, input[type="submit"] { min-height: 44px; }
+    input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
+    .rm-toggle { min-height: 36px; }
+    /* Show avatar change label on touch devices always */
+    .profile-avatar-wrap label { background: rgba(0,0,0,0.35) !important; }
+    .profile-avatar-wrap label span { opacity: 1 !important; }
+  }
+
+  /* ── Desktop — bottom nav hidden ── */
+  @media (min-width: 769px) {
+    #mobile-bottom-nav { display: none !important; }
+    #mobile-more-menu  { display: none !important; }
+  }
+
+
 </style>
 </head>
 <body>
