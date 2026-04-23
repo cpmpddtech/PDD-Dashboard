@@ -137,6 +137,7 @@ if (typeof Chart !== 'undefined') {
 
   /* Right panel — form */
   .login-card {
+    background: #131e30; /* Firefox fallback — solid dark */
     background: rgba(255,255,255,0.04);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -1223,6 +1224,31 @@ if (typeof Chart !== 'undefined') {
   .proj-staff-chip.selected { background: rgba(59,130,246,0.15); border-color: var(--blue); color: #93c5fd; }
   .proj-staff-chip .chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
+
+  /* ── Cross-browser date input fix ── */
+  input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    min-height: 36px;
+  }
+  /* Firefox date picker icon color */
+  input[type="date"]::-moz-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+  }
+  /* Firefox removes inner padding on date inputs */
+  input[type="date"]::-moz-focus-inner {
+    padding: 0;
+  }
+
+
+  /* ── Firefox scrollbar ── */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface3, #1a2640) var(--surface, #0f1825);
+  }
+
 </style>
 </head>
 <body>
@@ -1375,15 +1401,15 @@ if (typeof Chart !== 'undefined') {
       <div style="font-size:13px;color:var(--gray-400);margin-bottom:20px;">Your new password is stored securely and never visible to admins.</div>
       <div class="rm-field">
         <div class="rm-label">Current Password</div>
-        <input type="password" id="cpw-current" class="form-input" placeholder="Current password" style="font-family:var(--font);width:100%;box-sizing:border-box;">
+        <input type="password" id="cpw-current" class="form-input" placeholder="Current password" autocomplete="current-password" autocorrect="off" autocapitalize="none" spellcheck="false" style="font-family:var(--font);width:100%;box-sizing:border-box;">
       </div>
       <div class="rm-field">
         <div class="rm-label">New Password</div>
-        <input type="password" id="cpw-new1" class="form-input" placeholder="Min 8 characters" style="font-family:var(--font);width:100%;box-sizing:border-box;">
+        <input type="password" id="cpw-new1" class="form-input" placeholder="Min 8 characters" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" style="font-family:var(--font);width:100%;box-sizing:border-box;">
       </div>
       <div class="rm-field" style="margin-bottom:20px;">
         <div class="rm-label">Confirm New Password</div>
-        <input type="password" id="cpw-new2" class="form-input" placeholder="Repeat new password" style="font-family:var(--font);width:100%;box-sizing:border-box;"
+        <input type="password" id="cpw-new2" class="form-input" placeholder="Repeat new password" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" style="font-family:var(--font);width:100%;box-sizing:border-box;"
           onkeydown="if(event.key==='Enter') submitChangePassword()">
       </div>
       <div id="cpw-modal-msg" style="font-size:12px;margin-bottom:12px;display:none;padding:8px;border-radius:6px;"></div>
