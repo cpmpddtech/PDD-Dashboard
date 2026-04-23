@@ -1251,203 +1251,226 @@ if (typeof Chart !== 'undefined') {
 
 
   /* ════════════════════════════════════════════════════════════════
-     MOBILE RESPONSIVE — Full overhaul for phones and small tablets
-     Breakpoints: 768px (tablet), 480px (phone), 360px (small phone)
+     MOBILE — Clean responsive design for web browsers on phones
+     Design principle: feels like a proper mobile website, not a
+     shrunken desktop. Clean spacing, readable text, thumb-friendly.
   ════════════════════════════════════════════════════════════════ */
 
-  /* ── Base touch improvements ── */
   @media (max-width: 768px) {
-    * { -webkit-tap-highlight-color: transparent; }
 
-    /* ── Header ── */
+    /* ── Global ── */
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    body { font-size: 14px; }
+
+    /* ── Header — compact single row ── */
     .header {
-      padding: 10px 14px;
-      gap: 8px;
-      flex-wrap: wrap;
+      padding: 0 14px;
+      height: 50px;
+      gap: 10px;
     }
-    .header-left { gap: 8px; flex: 1; min-width: 0; }
-    .header-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-left { gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
+    .logo img { width: 26px; height: 26px; }
+    .header-title { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
     .header-sub { display: none; }
-    .header-right { gap: 6px; flex-shrink: 0; }
-    .header-right .btn { padding: 5px 10px; font-size: 11px; }
-    #hdr-status { font-size: 10px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #live-pill { font-size: 9px; padding: 2px 7px; }
-    #hdr-cw-badge { font-size: 10px; padding: 3px 8px; }
-    #hdr-quarter-badge { font-size: 10px; padding: 3px 8px; }
-    .logo img { width: 28px; height: 28px; }
+    .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    #hdr-status { display: none; }
+    #live-pill { font-size: 9px; padding: 2px 7px; gap: 4px; }
+    .live-dot { width: 5px; height: 5px; }
+    #hdr-quarter, #hdr-cw { font-size: 10px; padding: 2px 7px; }
+    .user-name-badge { font-size: 11px; padding: 4px 9px; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    /* ── Tab navigation — horizontal scroll ── */
-    .tabs {
-      padding: 0 10px;
-      gap: 0;
-      overflow-x: auto;
-      overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      white-space: nowrap;
-      display: flex;
-    }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tab {
-      padding: 10px 12px;
-      font-size: 11.5px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      border-bottom-width: 2.5px;
-    }
+    /* ── Tab bar — hidden on mobile, replaced by bottom nav ── */
+    .tabs { display: none !important; }
 
-    /* ── Tab panels ── */
-    .tab-panel { padding: 14px 12px; }
+    /* ── Tab panels — proper mobile padding ── */
+    .tab-panel {
+      padding: 14px 14px 80px 14px !important;
+      min-height: calc(100vh - 50px);
+    }
 
     /* ── Panels / Cards ── */
-    .panel { padding: 14px 14px; border-radius: 10px; }
-    .panel-title { font-size: 12px; }
+    .panel {
+      padding: 14px 14px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+    .panel-title {
+      font-size: 12.5px;
+      margin-bottom: 12px;
+    }
 
-    /* ── Form inputs ── */
-    .form-input, .form-select, .form-textarea {
-      font-size: 16px !important; /* prevents iOS zoom on focus */
-      padding: 10px 12px;
+    /* ── All form inputs — 16px prevents iOS zoom ── */
+    .form-input, .form-select, .form-textarea, input, select, textarea {
+      font-size: 16px !important;
+      padding: 11px 12px !important;
+      border-radius: 8px !important;
+      min-height: 44px;
+    }
+    .form-textarea, textarea { min-height: 88px !important; }
+    label, .rm-label { font-size: 12px !important; margin-bottom: 5px !important; }
+
+    /* ── Buttons — full touch target ── */
+    .btn, button.btn-primary, button.btn-secondary, button.btn-danger {
+      min-height: 42px;
+      padding: 10px 16px;
+      font-size: 13px;
       border-radius: 8px;
     }
-    .form-textarea { min-height: 100px; }
 
-    /* ── Buttons ── */
-    .btn { padding: 9px 14px; font-size: 12px; }
-    .btn-primary, .btn-danger { min-height: 40px; }
+    /* ── Stat grids ── */
+    .stat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
 
-    /* ── Grid layouts → single column ── */
-    .stat-grid   { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-    .grid-2      { grid-template-columns: 1fr !important; }
-    .grid-3      { grid-template-columns: 1fr !important; }
-    .form-row    { grid-template-columns: 1fr !important; }
-    .form-row.cols2 { grid-template-columns: 1fr !important; }
+    /* ── All 3+ column grids collapse ── */
+    .grid-2, .grid-3, .form-row, .form-row.cols2 { grid-template-columns: 1fr !important; gap: 10px !important; }
 
-    /* ── My Profile tab ── */
-    .profile-header-row { flex-direction: column !important; align-items: flex-start !important; gap: 14px !important; }
-    .profile-avatar-wrap { align-self: center !important; }
+    /* ── MY PROFILE ── */
+    .profile-header-row { flex-direction: column !important; align-items: center !important; text-align: center; gap: 12px !important; padding: 16px !important; }
+    .profile-header-row > div:last-child { width: 100%; }
+    .profile-name { font-size: 20px !important; text-align: center; }
+    .profile-badges { justify-content: center !important; flex-wrap: wrap !important; }
+    .profile-meta-row { justify-content: center !important; flex-wrap: wrap !important; gap: 8px !important; font-size: 11px !important; }
     .profile-stat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-    .profile-quick-btns { flex-direction: column !important; width: 100% !important; }
-    .profile-quick-btns button { width: 100% !important; min-height: 40px; }
-    .profile-program-list { font-size: 12px; }
+    .profile-quick-btns { flex-direction: column !important; width: 100% !important; gap: 8px !important; }
+    .profile-quick-btns button, .profile-quick-btns a { width: 100% !important; justify-content: center !important; }
+    .profile-programs-section { margin-top: 12px; }
 
-    /* ── My Tasks tab ── */
-    .task-add-row { grid-template-columns: 1fr 36px !important; gap: 8px !important; }
-    .task-add-row > *:not(:first-child):not(:last-child) { display: none; }
+    /* ── MY TASKS ── */
     .task-col-hdrs { display: none !important; }
-    .task-row { flex-direction: column !important; gap: 6px !important; padding: 10px !important; }
-    .task-row-name { font-size: 13px !important; font-weight: 600 !important; }
-    .task-row-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
-    .task-pill { font-size: 10px !important; padding: 2px 8px !important; }
+    .task-add-row {
+      grid-template-columns: 1fr auto !important;
+      gap: 8px !important;
+    }
+    .task-add-row > *:not(:first-child):not(:last-child) { display: none !important; }
+    .my-tasks-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+    .task-filter-row { flex-wrap: wrap !important; gap: 6px !important; }
+    .task-filter-row select { font-size: 13px !important; min-width: 0; flex: 1; }
 
-    /* ── Weekly Check-in tab ── */
-    .checkin-task-row { flex-direction: column !important; gap: 6px !important; padding: 10px 12px !important; }
-    .checkin-task-label { font-size: 13px !important; }
+    /* ── WEEKLY CHECK-IN ── */
+    .checkin-header { flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; }
+    .checkin-task-row { flex-direction: column !important; gap: 8px !important; padding: 12px !important; align-items: flex-start !important; }
+    .checkin-task-check { align-self: flex-start; }
 
-    /* ── KPI tab ── */
+    /* ── KPI ── */
     .kpi-header-row { flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; }
     .kpi-filter-row { flex-wrap: wrap !important; gap: 6px !important; }
-    .kpi-filter-row select { font-size: 13px !important; min-width: 120px; }
+    .kpi-filter-row select { font-size: 13px !important; }
+    .kpi-stat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
 
-    /* ── Program Progress tab ── */
-    .progress-filter-row { flex-wrap: wrap !important; gap: 8px !important; }
-    .gantt-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+    /* ── PROGRAM PROGRESS ── */
+    .progress-controls { flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; }
+    .gantt-wrap, .gantt-scroll { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+    .gantt-wrap::-webkit-scrollbar { height: 4px; }
 
-    /* ── Role & Program Management ── */
+    /* ── MANAGER DIGEST ── */
+    .digest-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .digest-header { flex-direction: column !important; gap: 8px !important; }
+
+    /* ── ROLE & PROGRAM MANAGEMENT ── */
     .rm-grid { grid-template-columns: 1fr !important; }
-    .rm-card { padding: 14px !important; }
+    .rm-card { padding: 12px !important; }
     .rm-card-header { flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; }
-    .rm-toggles { flex-wrap: wrap !important; gap: 6px !important; }
-    .rm-toggle { font-size: 11px !important; padding: 4px 10px !important; }
+    .rm-toggles { flex-wrap: wrap !important; gap: 5px !important; }
+    .rm-toggle { font-size: 11px !important; padding: 4px 10px !important; min-height: 32px !important; }
+    .rm-role-select { font-size: 13px !important; width: 100% !important; }
+
+    /* ── PROGRAM MANAGEMENT ── */
     .add-user-grid { grid-template-columns: 1fr !important; }
-
-    /* ── Program Management ── */
     .pm-date-row { flex-direction: column !important; gap: 8px !important; }
-    #pm-prog-resp-grid { max-height: 120px !important; }
+    .pm-date-row > * { width: 100% !important; }
+    #pm-prog-resp-grid { max-height: 130px !important; }
+    #pm-prog-resp-search { font-size: 14px !important; }
 
-    /* ── Staff Performance tab ── */
+    /* ── USER MANAGEMENT ── */
+    .user-table-row { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; padding: 10px 12px !important; }
+    .user-table-actions { align-self: flex-end !important; }
+    .um-header { flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; }
+
+    /* ── STAFF PERFORMANCE ── */
     .staff-perf-grid { grid-template-columns: 1fr !important; }
+    .staff-perf-header { flex-direction: column !important; gap: 8px !important; }
 
-    /* ── Manager Digest tab ── */
-    .digest-grid { grid-template-columns: 1fr 1fr !important; }
-    .digest-stat { padding: 12px !important; }
-
-    /* ── Meeting Minutes ── */
+    /* ── DCR / Meeting minutes ── */
+    .dcr-type-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .dcr-section-grid { grid-template-columns: 1fr !important; }
+    .dcr-header { flex-direction: column !important; gap: 8px !important; }
     .minutes-filter-row { flex-direction: column !important; gap: 8px !important; }
 
-    /* ── DCR Reports ── */
-    .dcr-section-grid { grid-template-columns: 1fr !important; }
-    .dcr-type-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    /* ── Modals — slide up from bottom ── */
+    .modal-overlay { align-items: flex-end !important; padding: 0 !important; background: rgba(0,0,0,0.65) !important; }
+    .modal-box {
+      border-radius: 20px 20px 0 0 !important;
+      max-height: 88vh !important;
+      width: 100% !important;
+      overflow-y: auto !important;
+      padding: 20px 16px 32px !important;
+    }
 
-    /* ── Modal / overlays ── */
-    .modal-overlay { padding: 12px !important; align-items: flex-end !important; }
-    .modal-box { border-radius: 16px 16px 0 0 !important; max-height: 90vh !important; overflow-y: auto; }
+    /* ── Responsive table rows ── */
+    .task-row {
+      display: flex !important;
+      flex-direction: column !important;
+      padding: 12px 12px !important;
+      gap: 6px !important;
+    }
+    .task-row-name { font-size: 13px !important; font-weight: 600 !important; }
+    .task-row-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; color: var(--gray-400); }
+    .task-pill { font-size: 10px !important; padding: 2px 8px !important; }
 
-    /* ── Bulk task rows ── */
-    .nt-row { grid-template-columns: 1fr 36px !important; }
-    .nt-row > *:not(:first-child):not(:last-child) { display: none; }
+    /* ── Better spacing for section titles ── */
+    .section-title { font-size: 14px !important; margin-bottom: 10px !important; }
+    .panel-actions { flex-wrap: wrap !important; gap: 6px !important; }
+    .panel-actions .btn { flex: 1; min-width: 120px; justify-content: center; }
 
-    /* ── Finance / Expense rows ── */
-    .expense-row { flex-direction: column !important; gap: 8px !important; }
-    .expense-row-meta { flex-wrap: wrap !important; gap: 6px !important; font-size: 11px; }
+    /* ── Staff chip picker ── */
+    .proj-staff-chip { font-size: 11px !important; padding: 5px 10px !important; }
+
+    /* ── Notification prefs ── */
+    .notif-row { flex-direction: column !important; gap: 6px !important; align-items: flex-start !important; }
+
+    /* ── Change password form ── */
+    #change-pw-form { padding: 14px !important; }
   }
 
-  /* ── Small phones ── */
+  /* ── Phone portrait ── */
   @media (max-width: 480px) {
-    .header-title { font-size: 12px; }
-    .tab { padding: 9px 10px; font-size: 11px; }
+    .header-title { max-width: 120px; font-size: 12.5px; }
     .stat-grid { grid-template-columns: 1fr 1fr !important; }
     .profile-stat-grid { grid-template-columns: 1fr 1fr !important; }
     .digest-grid { grid-template-columns: 1fr !important; }
     .dcr-type-grid { grid-template-columns: 1fr !important; }
     .panel { padding: 12px 12px; }
-    .panel-title { font-size: 11.5px; }
-    .rm-card { padding: 12px !important; }
-    .btn { font-size: 11.5px; padding: 8px 12px; }
-
-    /* Stack header badges vertically */
-    #hdr-cw-badge, #hdr-quarter-badge { font-size: 9px; padding: 2px 6px; }
-
-    /* Full-width primary actions */
-    [id$="-btn"].btn-primary { width: 100%; justify-content: center; margin-top: 4px; }
-
-    /* Chip grids for responsible person */
-    .proj-staff-chip { font-size: 10px !important; padding: 4px 8px !important; }
-    #pm-prog-resp-grid { max-height: 100px !important; }
+    .kpi-stat-grid { grid-template-columns: 1fr 1fr !important; }
+    #hdr-quarter { display: none; }
   }
 
-  /* ── Very small phones (360px) ── */
-  @media (max-width: 360px) {
-    .tab { padding: 8px 9px; font-size: 10.5px; }
-    .header { padding: 8px 10px; }
-    .tab-panel { padding: 10px 8px; }
+  /* ── Very small phones ── */
+  @media (max-width: 380px) {
+    .header { padding: 0 10px; }
+    .header-title { max-width: 100px; font-size: 12px; }
+    .tab-panel { padding: 10px 10px 80px !important; }
     .panel { padding: 10px 10px; }
-    .form-input, .form-select { font-size: 16px !important; }
-    .stat-grid { grid-template-columns: 1fr !important; }
+    .user-name-badge { display: none; }
   }
 
-  /* ── Touch-friendly tap targets ── */
+  /* ── Touch device improvements (no hover) ── */
   @media (hover: none) and (pointer: coarse) {
-    .tab         { min-height: 44px; display: inline-flex; align-items: center; }
-    .btn         { min-height: 44px; }
-    .rm-toggle   { min-height: 36px; min-width: 60px; justify-content: center; }
-    .form-input, .form-select { min-height: 44px; }
-    .task-row-check input[type="checkbox"] { width: 20px; height: 20px; }
-    .nav-item    { min-height: 44px; }
-    .proj-staff-chip { min-height: 36px; }
+    .btn, .tab, .nav-item, .rm-toggle, .proj-staff-chip { min-height: 44px; }
+    .form-input, .form-select, input, select { min-height: 44px; }
+    input[type="checkbox"] { width: 18px; height: 18px; }
+    input[type="date"] { min-height: 44px; }
   }
 
-
-  /* ── Mobile bottom quick-nav ── */
+  /* ── Mobile bottom nav — always on mobile ── */
   @media (max-width: 768px) {
     #mobile-bottom-nav {
-      display: flex;
+      display: flex !important;
       position: fixed;
       bottom: 0; left: 0; right: 0;
       background: var(--surface2);
       border-top: 1px solid var(--border);
-      z-index: 200;
-      padding: 0;
-      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 300;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
     }
     .mobile-nav-btn {
       flex: 1;
@@ -1455,33 +1478,27 @@ if (typeof Chart !== 'undefined') {
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 8px 4px 6px;
+      padding: 7px 2px 6px;
       border: none;
       background: none;
       color: var(--text-muted);
       font-family: var(--font);
-      font-size: 9px;
-      font-weight: 500;
       cursor: pointer;
-      gap: 3px;
-      transition: color .15s;
+      gap: 2px;
+      transition: color .12s, background .12s;
       min-height: 52px;
-      -webkit-tap-highlight-color: transparent;
     }
+    .mobile-nav-btn:active { background: var(--surface3); }
     .mobile-nav-btn.active { color: var(--blue); }
-    .mobile-nav-btn .mnb-icon { font-size: 20px; line-height: 1; }
-    .mobile-nav-btn .mnb-label { font-size: 9px; white-space: nowrap; }
-
-    /* Push tab panel content up so it's not hidden behind bottom nav */
-    .tab-panel { padding-bottom: 72px !important; }
-    #dashboard { padding-bottom: 0; }
-
-    /* Hide the regular tab bar on mobile — use bottom nav instead */
-    .tabs { display: none !important; }
+    .mobile-nav-btn .mnb-icon { font-size: 21px; line-height: 1; }
+    .mobile-nav-btn .mnb-label { font-size: 9.5px; font-weight: 500; white-space: nowrap; }
   }
+
   @media (min-width: 769px) {
     #mobile-bottom-nav { display: none !important; }
+    #mobile-more-menu  { display: none !important; }
   }
+
 
 </style>
 </head>
