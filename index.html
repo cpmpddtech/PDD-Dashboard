@@ -2591,24 +2591,35 @@ async function handleAvatarUpload(input) {
       if (me) me.avatarUrl = avatarUrl;
     }
 
-    // Immediately update ALL avatar imgs for this user across the whole page
-    const cacheBusted = avatarUrl + '&t=' + Date.now();
+    // Show the local file immediately (no network delay — instant feedback)
+    // Set blob URL globally FIRST so renderMyProfile() picks it up
+    const localUrl = URL.createObjectURL(file);
+    window._avatarBlobUrl = localUrl;
+
+    // Re-render — avatarImg() will use window._avatarBlobUrl instead of CDN URL
+    renderMyProfile();
+    renderCheckinTab();
+    renderTeamFeed();
+
+    // Directly patch any imgs already in the DOM
     document.querySelectorAll('img[alt="' + CURRENT_USER.name + '"]').forEach(img => {
-      img.src = cacheBusted;
+      img.src = localUrl;
       img.style.display = '';
-      // Hide the initials fallback sibling if visible
       if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
     });
 
     showStatus('✓ Photo updated!', 'green');
-    setTimeout(() => {
-      if (statusEl) statusEl.style.display = 'none';
-    }, 3000);
+    setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
 
-    // Full re-render profile tab + any other tabs showing avatars
-    renderMyProfile();
-    renderCheckinTab();
-    renderTeamFeed();
+    // After 4 seconds switch to Drive CDN (enough time for Google to process)
+    setTimeout(() => {
+      window._avatarBlobUrl = null;
+      const cacheBusted = avatarUrl + '&t=' + Date.now();
+      document.querySelectorAll('img[alt="' + CURRENT_USER.name + '"]').forEach(img => {
+        img.src = cacheBusted;
+      });
+      URL.revokeObjectURL(localUrl);
+    }, 4000);
 
     showToast('✓ Profile photo saved to Drive', false);
   } catch(e) {
@@ -3296,8 +3307,8 @@ function renderMyProfile() {
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 24px;margin-bottom:16px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;" class="profile-header-row">
         <!-- Avatar with upload -->
         <div style="position:relative;flex-shrink:0;" class="profile-avatar-wrap">
-          ${u.avatarUrl
-            ? `<img src="${u.avatarUrl + '&t=' + Date.now()}" alt="${u.name}"
+          ${(u.avatarUrl || window._avatarBlobUrl)
+            ? `<img src="${window._avatarBlobUrl || (u.avatarUrl + '&t=' + Date.now())}" alt="${u.name}"
                 style="width:80px;height:80px;border-radius:20px;object-fit:cover;box-shadow:0 4px 20px rgba(0,0,0,0.4);"
                 onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';">
                <div style="display:none;width:80px;height:80px;border-radius:20px;background:${color};align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;letter-spacing:-.02em;box-shadow:0 4px 20px ${color}55;">${initials}</div>`
