@@ -374,6 +374,57 @@ textarea{resize:vertical;min-height:140px}
     box-shadow: 0 4px 16px rgba(34,197,94,0.3);
   }
 
+
+  /* ── Rich Text Editor ── */
+  .rte-toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+    padding: 8px 10px; border: 1px solid var(--border2);
+    border-bottom: none; border-radius: 8px 8px 0 0;
+    background: var(--surface3);
+  }
+  .rte-group { display: flex; align-items: center; gap: 2px; }
+  .rte-sep { width: 1px; height: 20px; background: var(--border2); margin: 0 4px; }
+  .rte-btn {
+    padding: 4px 8px; border: 1px solid transparent; border-radius: 5px;
+    background: none; color: var(--text); font-family: var(--font);
+    font-size: 12px; font-weight: 500; cursor: pointer; line-height: 1.4;
+    transition: all .12s; min-width: 28px; text-align: center;
+  }
+  .rte-btn:hover { background: var(--surface2); border-color: var(--border2); }
+  .rte-btn.active { background: var(--blue-lt); color: var(--blue); border-color: var(--blue-bd); }
+  .rte-select {
+    padding: 3px 6px; border: 1px solid var(--border2); border-radius: 5px;
+    background: var(--surface2); color: var(--text); font-family: var(--font);
+    font-size: 11px; cursor: pointer; height: 26px;
+  }
+  .rte-editor {
+    min-height: 160px; max-height: 400px;
+    padding: 12px 14px; border: 1px solid var(--border2);
+    border-radius: 0 0 8px 8px; background: var(--surface2);
+    color: var(--text); font-family: var(--font); font-size: 13px;
+    line-height: 1.6; outline: none; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-word;
+    transition: border-color .13s;
+  }
+  .rte-editor:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+  .rte-editor:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-muted); pointer-events: none;
+  }
+  .rte-editor ul, .rte-editor ol { padding-left: 20px; margin: 6px 0; }
+  .rte-editor li { margin: 2px 0; }
+  .rte-editor b, .rte-editor strong { font-weight: 700; }
+  .rte-editor i, .rte-editor em { font-style: italic; }
+  .rte-editor u { text-decoration: underline; }
+  .rte-editor s { text-decoration: line-through; }
+
+  @media (max-width: 600px) {
+    .rte-toolbar { padding: 6px 8px; gap: 3px; }
+    .rte-btn { padding: 4px 6px; font-size: 11px; min-width: 26px; }
+    .rte-sep { display: none; }
+    .rte-select { font-size: 10px; padding: 2px 4px; }
+  }
+
 </style>
 </head>
 <body>
@@ -436,7 +487,61 @@ textarea{resize:vertical;min-height:140px}
           </div>
           <div class="form-group">
             <label>Message</label>
-            <textarea id="ann-body" placeholder="Type your announcement here…" oninput="updateCharCount()" maxlength="5000"></textarea>
+            <!-- Rich text toolbar -->
+            <div class="rte-toolbar" id="rte-toolbar">
+              <div class="rte-group">
+                <button type="button" class="rte-btn" onclick="rteCmd('bold')"          title="Bold (Ctrl+B)"><b>B</b></button>
+                <button type="button" class="rte-btn" onclick="rteCmd('italic')"        title="Italic (Ctrl+I)"><i>I</i></button>
+                <button type="button" class="rte-btn" onclick="rteCmd('underline')"     title="Underline (Ctrl+U)"><u>U</u></button>
+                <button type="button" class="rte-btn" onclick="rteCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+              </div>
+              <div class="rte-sep"></div>
+              <div class="rte-group">
+                <button type="button" class="rte-btn" onclick="rteCmd('justifyLeft')"   title="Align left">&#8676;</button>
+                <button type="button" class="rte-btn" onclick="rteCmd('justifyCenter')" title="Centre">&#8691;</button>
+                <button type="button" class="rte-btn" onclick="rteCmd('justifyRight')"  title="Align right">&#8677;</button>
+                <button type="button" class="rte-btn" onclick="rteCmd('justifyFull')"   title="Justify">&#8644;</button>
+              </div>
+              <div class="rte-sep"></div>
+              <div class="rte-group">
+                <button type="button" class="rte-btn" onclick="rteCmd('insertUnorderedList')" title="Bullet list">&#8226;&#8212;</button>
+                <button type="button" class="rte-btn" onclick="rteCmd('insertOrderedList')"   title="Numbered list">1.</button>
+                <button type="button" class="rte-btn" onclick="rteCmd('indent')"              title="Indent">&#8677;&#8677;</button>
+                <button type="button" class="rte-btn" onclick="rteCmd('outdent')"             title="Outdent">&#8676;&#8676;</button>
+              </div>
+              <div class="rte-sep"></div>
+              <div class="rte-group">
+                <select class="rte-select" onchange="rteCmd('fontSize', this.value); this.value=''" title="Font size">
+                  <option value="">Size</option>
+                  <option value="1">Small</option>
+                  <option value="3">Normal</option>
+                  <option value="4">Large</option>
+                  <option value="5">X-Large</option>
+                </select>
+                <select class="rte-select" onchange="rteForeColor(this.value); this.value=''" title="Text colour">
+                  <option value="">Colour</option>
+                  <option value="#000000">Black</option>
+                  <option value="#dc2626">Red</option>
+                  <option value="#2563eb">Blue</option>
+                  <option value="#16a34a">Green</option>
+                  <option value="#d97706">Amber</option>
+                  <option value="#ffffff">White</option>
+                </select>
+              </div>
+              <div class="rte-sep"></div>
+              <div class="rte-group">
+                <button type="button" class="rte-btn" onclick="rteCmd('removeFormat')" title="Clear formatting">✕ fmt</button>
+              </div>
+            </div>
+            <!-- Editable content area — replaces textarea -->
+            <div id="ann-body"
+              class="rte-editor"
+              contenteditable="true"
+              data-placeholder="Type your announcement here…"
+              oninput="updateCharCount(); updateRteToolbar()"
+              onkeyup="updateRteToolbar()"
+              onmouseup="updateRteToolbar()"
+              onselectionchange="updateRteToolbar()"></div>
             <div class="char-count"><span id="char-count">0</span> / 5000</div>
           </div>
 
@@ -789,9 +894,51 @@ function updateRecipientSummary() {
 }
 
 // ── CHAR COUNT ────────────────────────────────────────────────────────
+
+// ── Rich Text Editor functions ──────────────────────────────────────
+function rteCmd(cmd, value) {
+  document.getElementById('ann-body').focus();
+  document.execCommand(cmd, false, value || null);
+  updateRteToolbar();
+}
+
+function rteForeColor(color) {
+  document.getElementById('ann-body').focus();
+  document.execCommand('foreColor', false, color);
+  updateRteToolbar();
+}
+
+function updateRteToolbar() {
+  const cmds = ['bold','italic','underline','strikeThrough',
+                'justifyLeft','justifyCenter','justifyRight','justifyFull',
+                'insertUnorderedList','insertOrderedList'];
+  cmds.forEach(cmd => {
+    const btn = document.querySelector(`.rte-btn[onclick="rteCmd('${cmd}')"]`);
+    if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+  });
+  updateCharCount();
+}
+
+function getRteHtml() {
+  const el = document.getElementById('ann-body');
+  return el ? el.innerHTML.trim() : '';
+}
+
+function getRteText() {
+  const el = document.getElementById('ann-body');
+  return el ? el.innerText.trim() : '';
+}
+
+function clearRte() {
+  const el = document.getElementById('ann-body');
+  if (el) el.innerHTML = '';
+  document.getElementById('char-count').textContent = '0';
+}
+
 function updateCharCount() {
-  const len = document.getElementById('ann-body').value.length;
-  document.getElementById('char-count').textContent = len;
+  const el = document.getElementById('ann-body');
+  const len = el ? (el.innerText || el.textContent || '').length : 0;
+  document.getElementById('char-count').textContent = Math.min(len, 5000);
 }
 
 // ── PREVIEW ───────────────────────────────────────────────────────────
@@ -802,7 +949,7 @@ function togglePreview() {
     box.style.display = 'none'; btn.textContent = 'Preview email'; return;
   }
   const subject = document.getElementById('ann-subject').value.trim();
-  const body    = document.getElementById('ann-body').value.trim();
+  const body    = getRteText();
   if (!subject && !body) { toast('Fill in subject and message first.', 'red'); return; }
   box.style.display = 'block';
   btn.textContent = 'Hide preview';
@@ -815,7 +962,7 @@ function togglePreview() {
 // ── Step 1: Validate → show confirmation modal ───────────────────────
 async function sendAnnouncement() {
   const subject = document.getElementById('ann-subject').value.trim();
-  const body    = document.getElementById('ann-body').value.trim();
+  const body    = getRteText();
 
   if (!subject) { showMsg('send-msg', 'Subject is required.', false); return; }
   if (!body)    { showMsg('send-msg', 'Message body is required.', false); return; }
@@ -863,7 +1010,7 @@ async function confirmAndSend() {
   closeConfirmModal();
 
   const subject  = document.getElementById('ann-subject').value.trim();
-  const body     = document.getElementById('ann-body').value.trim();
+  const body     = getRteHtml(); // send rich HTML to worker
   const hasImages = ANN_IMAGES.length > 0;
 
   // Build steps list dynamically
@@ -976,8 +1123,7 @@ function closeSendProgress() {
 
 function clearForm() {
   document.getElementById('ann-subject').value = '';
-  document.getElementById('ann-body').value    = '';
-  document.getElementById('char-count').textContent = '0';
+  clearRte();
   document.getElementById('preview-box').style.display = 'none';
   document.getElementById('preview-btn').textContent = 'Preview email';
   SELECTED.clear(); ACTIVE_GROUPS.clear(); ACTIVE_DIOCESES.clear();
