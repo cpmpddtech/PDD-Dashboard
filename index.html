@@ -2596,10 +2596,8 @@ async function handleAvatarUpload(input) {
     const localUrl = URL.createObjectURL(file);
     window._avatarBlobUrl = localUrl;
 
-    // Re-render — avatarImg() will use window._avatarBlobUrl instead of CDN URL
+    // Re-render profile only — avatarImg() uses window._avatarBlobUrl
     renderMyProfile();
-    renderCheckinTab();
-    renderTeamFeed();
 
     // Directly patch any imgs already in the DOM
     document.querySelectorAll('img[alt="' + CURRENT_USER.name + '"]').forEach(img => {
@@ -2611,15 +2609,42 @@ async function handleAvatarUpload(input) {
     showStatus('✓ Photo updated!', 'green');
     setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
 
-    // After 4 seconds switch to Drive CDN (enough time for Google to process)
-    setTimeout(() => {
+    // Probe the CDN URL — only switch when it's actually ready
+    // Use a hidden img to detect load without affecting the visible UI
+    const probe = new Image();
+    probe.onload = () => {
+      // CDN is ready — switch all visible avatars and clear blob
       window._avatarBlobUrl = null;
       const cacheBusted = avatarUrl + '&t=' + Date.now();
       document.querySelectorAll('img[alt="' + CURRENT_USER.name + '"]').forEach(img => {
         img.src = cacheBusted;
       });
+      CURRENT_USER.avatarUrl = avatarUrl;
+      sessionStorage.setItem('pdp_user', JSON.stringify(CURRENT_USER));
       URL.revokeObjectURL(localUrl);
-    }, 4000);
+    };
+    probe.onerror = () => {
+      // CDN not ready yet — retry every 2 seconds for up to 30 seconds
+      let attempts = 0;
+      const retry = setInterval(() => {
+        attempts++;
+        const p2 = new Image();
+        p2.onload = () => {
+          clearInterval(retry);
+          window._avatarBlobUrl = null;
+          const cacheBusted = avatarUrl + '&t=' + Date.now();
+          document.querySelectorAll('img[alt="' + CURRENT_USER.name + '"]').forEach(img => {
+            img.src = cacheBusted;
+          });
+          CURRENT_USER.avatarUrl = avatarUrl;
+          sessionStorage.setItem('pdp_user', JSON.stringify(CURRENT_USER));
+          URL.revokeObjectURL(localUrl);
+        };
+        p2.src = avatarUrl + '&t=' + Date.now();
+        if (attempts >= 15) clearInterval(retry); // give up after 30s
+      }, 2000);
+    };
+    probe.src = avatarUrl + '&t=' + Date.now();
 
     showToast('✓ Profile photo saved to Drive', false);
   } catch(e) {
