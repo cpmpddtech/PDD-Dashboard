@@ -900,7 +900,7 @@ export default {
     //   2. Cloudflare Cache API — 30-second cross-request cache (avoids Drive on every login)
     let _usersCache = null;
     const USERS_CACHE_KEY = 'https://pdp-users-cache.internal/users';
-    const USERS_CACHE_TTL = 30; // seconds
+    const USERS_CACHE_TTL = 10; // seconds
 
     async function getUsers() {
       // Layer 1: per-request memory cache
@@ -1121,6 +1121,7 @@ export default {
         email:              u.email       || null,
         notifOptOut:        u.notifOptOut || [],
         mustChangePassword: !!u.mustChangePassword,
+        avatarUrl:          u.avatarUrl   || null,
         roleConfig,
         users: usersList,
       }), { status: 200, headers });
@@ -1234,23 +1235,65 @@ export default {
 
       const results = {};
       const errors  = {};
+      const SHEETS_CACHE_KEY = 'https://pdp-sheets-cache.internal/data';
+      const SHEETS_CACHE_TTL = 10; // seconds
 
-      // Step 1: fetch base sheets always
-      for (const sheet of BASE_SHEETS) {
-        try   { results[sheet] = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, sheet); }
-        catch(e) { errors[sheet] = e.message; results[sheet] = []; }
-      }
+      // Check CF cache first — avoids Sheets API on every page load
+      try {
+        const cache = caches.default;
+        const cached = await cache.match(SHEETS_CACHE_KEY);
+        if (cached) {
+          const cachedData = await cached.json();
+          Object.assign(results, cachedData.results || {});
+          Object.assign(errors, cachedData.errors || {});
+          console.log('[Worker] data: served from cache');
+        }
+      } catch(e) { /* cache miss */ }
 
-      // Step 2: discover all program IDs from Main Programs, then fetch each task sheet
-      const mainRows = results['Main Programs'] || [];
-      const programIds = mainRows.slice(1)
-        .map(r => r[0])
-        .filter(id => id && String(id).trim());
+      // If cache miss, fetch all sheets in PARALLEL (not sequential)
+      if (Object.keys(results).length === 0) {
+        // Step 1: fetch base sheets in parallel
+        await Promise.all(BASE_SHEETS.map(async sheet => {
+          try   { results[sheet] = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, sheet); }
+          catch(e) { errors[sheet] = e.message; results[sheet] = []; }
+        }));
 
-      for (const pid of programIds) {
-        const taskSheet = `${pid} Task_List`;
-        try   { results[taskSheet] = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, taskSheet); }
-        catch(e) { errors[taskSheet] = e.message; results[taskSheet] = []; }
+        // Step 2: fetch all program task sheets in parallel
+        const mainRows = results['Main Programs'] || [];
+        const programIds = mainRows.slice(1)
+          .map(r => r[0])
+          .filter(id => id && String(id).trim());
+
+        await Promise.all(programIds.map(async pid => {
+          const taskSheet = pid + ' Task_List';
+          try   { results[taskSheet] = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, taskSheet); }
+          catch(e) { errors[taskSheet] = e.message; results[taskSheet] = []; }
+        }));
+
+        // Cache the results for 60 seconds
+        try {
+          const cache = caches.default;
+          await cache.put(SHEETS_CACHE_KEY, new Response(JSON.stringify({ results, errors }), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'max-age=' + SHEETS_CACHE_TTL,
+            }
+          }));
+        } catch(e) { /* non-fatal */ }
+      } else {
+        // Cache hit — still need programIds for role config below
+        const mainRows = results['Main Programs'] || [];
+        const programIds = mainRows.slice(1)
+          .map(r => r[0])
+          .filter(id => id && String(id).trim());
+        // Fetch any missing task sheets not in cache
+        await Promise.all(programIds.map(async pid => {
+          const taskSheet = pid + ' Task_List';
+          if (!results[taskSheet]) {
+            try   { results[taskSheet] = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, taskSheet); }
+            catch(e) { errors[taskSheet] = e.message; results[taskSheet] = []; }
+          }
+        }));
       }
 
       // Build roleConfig from USERS_CONFIG (same as auth action)
@@ -1398,6 +1441,9 @@ export default {
         programName: program.name,
         createdBy:   body.username,
       }).catch(() => {});
+
+      // Invalidate sheets cache so new program appears immediately
+      try { await caches.default.delete('https://pdp-sheets-cache.internal/data'); } catch(e) {}
 
       return new Response(JSON.stringify({ ok: true, sheetName }), { status: 200, headers });
     }

@@ -6074,6 +6074,24 @@ window.addEventListener('DOMContentLoaded', () => {
     CURRENT_USER = JSON.parse(sessionStorage.getItem(SESSION_USER_KEY) || 'null');
     if (CURRENT_USER) applyRBAC();
     initDashboard();
+
+    // If avatarUrl missing from session (pre-fix sessions), fetch it silently
+    if (CURRENT_USER && !CURRENT_USER.avatarUrl) {
+      fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auth', username: SESSION_USERNAME, password: SESSION_PASSWORD }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && data.avatarUrl) {
+          CURRENT_USER.avatarUrl = data.avatarUrl;
+          sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(CURRENT_USER));
+          renderMyProfile(); // re-render with photo now available
+        }
+      })
+      .catch(() => {});
+    }
   }
 });
 </script>
