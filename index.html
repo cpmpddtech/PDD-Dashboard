@@ -2591,12 +2591,14 @@ async function handleAvatarUpload(input) {
       if (me) me.avatarUrl = avatarUrl;
     }
 
-    // Immediately update the profile avatar img in the DOM (before full re-render)
-    // so the user sees the change right away without waiting for a full render
-    const existingAvatar = document.querySelector('#tab-profile img[alt="' + CURRENT_USER.name + '"]');
-    if (existingAvatar) {
-      existingAvatar.src = avatarUrl + '&t=' + Date.now();
-    }
+    // Immediately update ALL avatar imgs for this user across the whole page
+    const cacheBusted = avatarUrl + '&t=' + Date.now();
+    document.querySelectorAll('img[alt="' + CURRENT_USER.name + '"]').forEach(img => {
+      img.src = cacheBusted;
+      img.style.display = '';
+      // Hide the initials fallback sibling if visible
+      if (img.nextElementSibling) img.nextElementSibling.style.display = 'none';
+    });
 
     showStatus('✓ Photo updated!', 'green');
     setTimeout(() => {

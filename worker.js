@@ -894,26 +894,65 @@ export default {
       return null; // valid
     }
 
-    function getUsers() {
-      // Primary: read from USERS_CONFIG env secret (fast, in-memory)
-      // This is always up to date because saveUsers writes back to it
-      if (!env.USERS_CONFIG) return {};
-      try { return JSON.parse(env.USERS_CONFIG); } catch { return {}; }
+    // ── USER STORAGE — Google Drive as single source of truth ────────────
+    // Two-layer cache:
+    //   1. _usersCache — per-request in-memory (fastest, free)
+    //   2. Cloudflare Cache API — 30-second cross-request cache (avoids Drive on every login)
+    let _usersCache = null;
+    const USERS_CACHE_KEY = 'https://pdp-users-cache.internal/users';
+    const USERS_CACHE_TTL = 30; // seconds
+
+    async function getUsers() {
+      // Layer 1: per-request memory cache
+      if (_usersCache) return _usersCache;
+
+      // Layer 2: Cloudflare Cache API (survives across requests, same PoP)
+      try {
+        const cache = caches.default;
+        const cached = await cache.match(USERS_CACHE_KEY);
+        if (cached) {
+          _usersCache = await cached.json();
+          return _usersCache;
+        }
+      } catch(e) { /* cache miss — continue to Drive */ }
+
+      // Layer 3: Google Drive (authoritative source)
+      try {
+        const token    = await getDriveToken(env);
+        const folderId = env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+        if (!folderId) {
+          _usersCache = env.USERS_CONFIG ? JSON.parse(env.USERS_CONFIG) : {};
+          return _usersCache;
+        }
+        const file = await driveFindFile(token, folderId, 'USERS_CONFIG.json');
+        if (!file) {
+          _usersCache = env.USERS_CONFIG ? JSON.parse(env.USERS_CONFIG) : {};
+          return _usersCache;
+        }
+        _usersCache = await driveReadFile(token, file.id);
+
+        // Populate CF cache for next 30 seconds
+        try {
+          const cache = caches.default;
+          await cache.put(USERS_CACHE_KEY, new Response(JSON.stringify(_usersCache), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'max-age=' + USERS_CACHE_TTL,
+            }
+          }));
+        } catch(e) { /* cache write failed — non-fatal */ }
+
+        return _usersCache;
+      } catch(e) {
+        console.error('[Worker] getUsers Drive read failed:', e.message);
+        try { _usersCache = JSON.parse(env.USERS_CONFIG || '{}'); } catch { _usersCache = {}; }
+        return _usersCache;
+      }
     }
 
+    // getUsersFromDrive kept for backward compat
     async function getUsersFromDrive() {
-      // Read users from Drive backup file (used as fallback)
-      try {
-        const token = await getDriveToken(env);
-        const folderId = env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
-        if (!folderId) return null;
-        const existing = await driveFindFile(token, folderId, 'USERS_CONFIG.json');
-        if (!existing) return null;
-        return await driveReadFile(token, existing.id);
-      } catch(e) {
-        console.warn('[Worker] getUsersFromDrive failed:', e.message);
-        return null;
-      }
+      return await getUsers();
     }
 
     async function validateUser(username, password) {
@@ -923,24 +962,8 @@ export default {
       if (username.length > 64 || password.length > 256) return null;
       username = username.replace(/[ -]/g, '').trim(); // strip control chars
 
-      // Try Cloudflare secret first (fast)
-      let users = getUsers();
-      let key = Object.keys(users).find(k => k.toLowerCase() === username.toLowerCase());
-
-      // Not found in CF secret — fall back to Drive (accounts created after CF size limit)
-      if (!key) {
-        console.log('[Worker] validateUser: ' + username + ' not in CF secret, checking Drive...');
-        const driveUsers = await getUsersFromDrive();
-        if (driveUsers && typeof driveUsers === 'object') {
-          users = driveUsers;
-          key = Object.keys(users).find(k => k.toLowerCase() === username.toLowerCase());
-          if (key) {
-            // Sync back to CF so future logins are fast (non-blocking)
-            saveUsers(users).catch(e => console.warn('[Worker] sync failed:', e.message));
-          }
-        }
-      }
-
+      const users = await getUsers();
+      const key = Object.keys(users).find(k => k.toLowerCase() === username.toLowerCase());
       const u = key ? users[key] : null;
       if (!u) return null;
       u._key = key;
@@ -971,73 +994,33 @@ export default {
     }
 
     async function saveUsers(users) {
-      const usersJson = JSON.stringify(users);
-      let driveOk = false;
-      let cfOk    = false;
-      let lastErr = '';
+      // Drive is the single source of truth — no CF size limits, no sync issues
+      _usersCache = users; // update in-memory cache immediately
+      const token    = await getDriveToken(env);
+      const folderId = env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId) throw new Error('DRIVE_JSON_FOLDER_ID or DRIVE_FOLDER_ID secret is required');
+      const existing = await driveFindFile(token, folderId, 'USERS_CONFIG.json');
+      await driveWriteFile(token, folderId, 'USERS_CONFIG.json', users, existing?.id || null);
+      console.log('[Worker] saveUsers: OK (' + Object.keys(users).length + ' users, ' + JSON.stringify(users).length + ' bytes)');
 
-      // ── 1. Save to Google Drive (primary, no size limit) ─────────────
+      // Invalidate the cross-request cache so next login gets fresh data
       try {
-        const token    = await getDriveToken(env);
-        const folderId = env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
-        if (folderId) {
-          const existing = await driveFindFile(token, folderId, 'USERS_CONFIG.json');
-          await driveWriteFile(token, folderId, 'USERS_CONFIG.json', users, existing?.id || null);
-          driveOk = true;
-          console.log('[Worker] saveUsers: Drive write OK (' + usersJson.length + ' bytes)');
-        }
-      } catch(e) {
-        console.error('[Worker] saveUsers Drive error:', e.message);
-        lastErr = 'Drive: ' + e.message;
-      }
-
-      // ── 2. Also try Cloudflare secret (fast reads, 5KB limit) ────────
-      if (env.CF_API_TOKEN && env.CF_ACCOUNT_ID && env.CF_WORKER_SCRIPT_NAME) {
-        try {
-          const res = await fetch(
-            'https://api.cloudflare.com/client/v4/accounts/' + env.CF_ACCOUNT_ID +
-            '/workers/scripts/' + env.CF_WORKER_SCRIPT_NAME + '/secrets',
-            {
-              method: 'PUT',
-              headers: {
-                'Authorization': 'Bearer ' + env.CF_API_TOKEN,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ name: 'USERS_CONFIG', text: usersJson, type: 'secret_text' }),
-            }
-          );
-          if (res.ok) {
-            cfOk = true;
-            console.log('[Worker] saveUsers: CF secret write OK');
-          } else {
-            const e = await res.json().catch(() => ({}));
-            const msg = (e.errors?.[0]?.message || res.status);
-            console.warn('[Worker] saveUsers CF secret failed (non-fatal if Drive OK):', msg);
-            lastErr = 'CF: ' + msg;
-          }
-        } catch(e) {
-          console.warn('[Worker] saveUsers CF fetch error:', e.message);
-          lastErr = 'CF: ' + e.message;
-        }
-      }
-
-      // ── 3. Succeed if either backend wrote OK ─────────────────────────
-      if (!driveOk && !cfOk) {
-        throw new Error('User save failed on all backends. Last error: ' + lastErr);
-      }
+        const cache = caches.default;
+        await cache.delete(USERS_CACHE_KEY);
+      } catch(e) { /* non-fatal */ }
+      _usersCache = users; // update in-request memory cache with new data
     }
 
-    async function loadUsersFromDriveIfNeeded() {
-      // If USERS_CONFIG env is empty/missing, load from Drive backup
-      if (env.USERS_CONFIG && env.USERS_CONFIG !== '{}') return;
-      const driveUsers = await getUsersFromDrive();
-      if (driveUsers && typeof driveUsers === 'object') {
-        // Merge into in-memory env for this request
-        env.USERS_CONFIG = JSON.stringify(driveUsers);
-      }
+    // loadUsersFromDriveIfNeeded — deprecated, Drive is now primary
+    async function loadUsersFromDriveIfNeeded() { /* no-op */ }
+
+    async function getMergedUsers() {
+      // Drive is now single source — just return getUsers()
+      return await getUsers();
     }
 
-    // ── Auth ─────────────────────────────────────
+
+    // ── Sync all users from CF secret to Drive (admin one-time fix) ───────
     if (action === 'auth') {
       const { username, password } = body;
       const ip       = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -1049,23 +1032,11 @@ export default {
         return new Response(JSON.stringify({ ok: false, error: 'Too many attempts. Please wait 15 minutes.' }), { status: 429, headers });
       }
 
-      // Try CF secret first, fall back to Drive for accounts created after size limit
-      let users = getUsers();
+      const users = await getUsers();
       let u = users[username];
-      if (!u) {
-        const driveUsers = await getUsersFromDrive();
-        if (driveUsers && typeof driveUsers === 'object') {
-          users = driveUsers;
-          u = users[username];
-          if (u) {
-            // Sync Drive users back to CF (non-blocking) so future logins hit CF
-            saveUsers(users).catch(e => console.warn('[Worker] auth sync failed:', e.message));
-          }
-        }
-      }
 
       if (!u || !(await verifyPassword(password, u.password))) {
-        await sleep(300); // constant-time delay frustrates timing attacks
+        await sleep(300); // constant-time delay
         return new Response(JSON.stringify({ ok: false, error: 'Invalid credentials' }), { status: 401, headers });
       }
 
@@ -1075,7 +1046,7 @@ export default {
       // Transparent migration: upgrade plaintext to PBKDF2 on successful login
       if (u.password && !u.password.startsWith('pbkdf2:')) {
         try {
-          const users2 = getUsers();
+          const users2 = await getUsers();
           users2[username].password = await hashPassword(password);
           saveUsers(users2).catch(() => {}); // non-blocking
         } catch(_) {}
@@ -1114,7 +1085,7 @@ export default {
       // This is keyed by display name for the Role Management panel
       let roleConfig = null;
       if (u.role === 'admin') {
-        const allUsers = getUsers();
+        const allUsers = await getUsers();
         roleConfig = {};
         Object.values(allUsers).forEach(usr => {
           roleConfig[usr.name] = {
@@ -1137,8 +1108,8 @@ export default {
         }
       }
 
-      // Return public user list to admin
-      const usersList = u.role === 'admin' ? usersPublicList(getUsers()) : null;
+      // Return public user list to admin — merge CF + Drive so all accounts appear
+      const usersList = u.role === 'admin' ? usersPublicList(await getMergedUsers()) : null;
 
       return new Response(JSON.stringify({
         ok: true,
@@ -1159,16 +1130,10 @@ export default {
     if (action === 'change_password') {
       const { username, oldPassword, newPassword } = body;
 
-      // Try CF secret first, fall back to Drive for newly created accounts
-      let users = getUsers();
-      let u = users[username];
-      if (!u) {
-        const driveUsers = await getUsersFromDrive();
-        if (driveUsers && typeof driveUsers === 'object') {
-          users = driveUsers;
-          u = users[username];
-        }
-      }
+      // Always use merged users so we find the account regardless of where it's stored
+      // and so saveUsers() writes the complete list (not a partial one)
+      const users = await getMergedUsers();
+      const u = users[username];
 
       if (!u || !(await verifyPassword(oldPassword, u.password))) {
         return new Response(JSON.stringify({ ok: false, error: 'Current password is incorrect.' }), { status: 401, headers });
@@ -1178,7 +1143,7 @@ export default {
 
       users[username].password = await hashPassword(newPassword);
       users[username].mustChangePassword = false;
-      await saveUsers(users);
+      await saveUsers(users); // writes full merged list to Drive + CF
 
       return new Response(JSON.stringify({
         ok: true,
@@ -1192,7 +1157,8 @@ export default {
       if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
-      const users = getUsers();
+      const users = await getUsers();
+
       if (users[newUser.username])
         return new Response(JSON.stringify({ error: 'Username already exists' }), { status: 400, headers });
 
@@ -1222,7 +1188,7 @@ export default {
       if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
-      const users = getUsers();
+      const users = await getUsers();
       if (!users[targetUsername])
         return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers });
       if (targetUsername === username)
@@ -1247,7 +1213,7 @@ export default {
       if (targetUsername === username)
         return new Response(JSON.stringify({ error: 'Cannot delete your own account' }), { status: 400, headers });
 
-      const users = getUsers();
+      const users = await getUsers();
       if (!users[targetUsername])
         return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers });
 
@@ -1290,7 +1256,7 @@ export default {
       // Build roleConfig from USERS_CONFIG (same as auth action)
       let roleConfig = null;
       if (u.role === 'admin') {
-        const allUsers = getUsers();
+        const allUsers = await getUsers();
         roleConfig = {};
         Object.values(allUsers).forEach(usr => {
           roleConfig[usr.name] = { role: usr.role || 'staff', programs: usr.programs || [], features: usr.features || [], diocese: usr.diocese || null, email: usr.email || null, notifOptOut: usr.notifOptOut || [] };
@@ -1299,7 +1265,8 @@ export default {
           try { const lg = JSON.parse(env.STAFF_ROLES); Object.entries(lg).forEach(([n,c]) => { if (!roleConfig[n]) roleConfig[n]=c; }); } catch(e) {}
         }
       }
-      const usersList  = u.role === 'admin' ? usersPublicList(getUsers()) : null;
+      // Merge CF + Drive users for complete admin list
+      const usersList = u.role === 'admin' ? usersPublicList(await getMergedUsers()) : null;
 
       return new Response(JSON.stringify({ ok: true, sheets: results, errors, roleConfig, users: usersList }), { status: 200, headers });
     }
@@ -1637,7 +1604,7 @@ export default {
       if (!Array.isArray(optOut))
         return new Response(JSON.stringify({ error: 'optOut must be an array' }), { status: 400, headers });
 
-      const users = getUsers();
+      const users = await getMergedUsers();
       const key   = u._key;
       if (!users[key]) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers });
 
@@ -1656,7 +1623,7 @@ export default {
 
       // Merge role config (programs, features, role) into each user in USERS_CONFIG
       // Config is keyed by display name: { "Gamaliel": { role, programs, features }, ... }
-      const users = getUsers();
+      const users = await getMergedUsers();
 
       // Build a lookup: display name → username key
       const nameToKey = {};
@@ -2118,7 +2085,7 @@ export default {
         }
 
         const emailToken = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, gmailToken);
-        const users      = getUsers();
+        const users      = await getUsers();
 
         // Resolve email addresses for each attendee username
         const resolved = attendeeUsernames.map(un => {
@@ -2831,7 +2798,7 @@ export default {
         return new Response(JSON.stringify({ error: 'Could not get Drive token' }), { status: 500, headers });
 
       // Delete old avatar file if exists
-      const users = getUsers();
+      const users = await getMergedUsers();
       const existingFileId = users[body.username]?.avatarFileId;
       if (existingFileId) {
         await fetch(`https://www.googleapis.com/drive/v3/files/${existingFileId}`, {
@@ -2893,7 +2860,7 @@ export default {
       const avatarUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
 
       // Save avatarUrl + fileId to user record in USERS_CONFIG
-      const usersW = getUsers();
+      const usersW = await getUsers();
       usersW[body.username].avatarUrl    = avatarUrl;
       usersW[body.username].avatarFileId = fileId;
       await saveUsers(usersW);
@@ -4065,7 +4032,7 @@ export default {
 
       // Any authenticated user can fetch the staff list for recipient selection
       // Sending permission is checked separately in send_announcement
-      const users = getUsers();
+      const users = await getMergedUsers();
       const staff = Object.entries(users).map(([username, usr]) => ({
         username,
         name:      usr.name      || username,
@@ -4074,6 +4041,8 @@ export default {
         email:     usr.email     || null,
         hasEmail:  !!(usr.email && usr.email.trim()),
         avatarUrl: usr.avatarUrl || null,
+        programs:  usr.programs  || [],
+        features:  usr.features  || [],
       })).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
       return new Response(JSON.stringify({ ok: true, staff }), { status: 200, headers });
@@ -4100,7 +4069,7 @@ export default {
 
       // Accept per-user structure: { users: { username: bool } }
       // Validate: only known usernames allowed
-      const users = getUsers();
+      const users = await getMergedUsers();
       const clean = { users: {} };
       if (permissions.users && typeof permissions.users === 'object') {
         Object.entries(permissions.users).forEach(([username, val]) => {
@@ -4155,7 +4124,7 @@ export default {
       if (!recipients || !recipients.length)
         return new Response(JSON.stringify({ error: 'No recipients specified' }), { status: 400, headers });
 
-      const users = getUsers();
+      const users = await getMergedUsers();
       const now   = new Date();
       const dateStr = now.toISOString();
 
