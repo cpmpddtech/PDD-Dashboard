@@ -610,26 +610,100 @@ if (typeof Chart !== 'undefined') {
     .task-col-hdrs > .tc-status { display:none; }
     .task-add-row  .ta-status   { display:none; }
   }
-  @media (max-width:640px) {
-    .task-add-row { grid-template-columns: 1fr 28px; gap:8px; }
-    .task-add-row > *:not(:first-child):not(:last-child) { display:none; }
-    .task-add-row .ta-date-wrap,
-    .task-add-row .ta-quarter   { display:none; }
-    /* Show as stacked card instead */
-    .task-add-row { display:flex; flex-direction:column; gap:6px;
-      background:var(--surface3); border:1px solid var(--border);
-      border-radius:8px; padding:10px; position:relative; }
-    .task-add-row .ta-del-btn { position:absolute; top:8px; right:8px; }
-    .task-add-row > * { display:block !important; width:100%; }
-    .task-add-row .ta-del-btn { width:28px; }
+  @media (max-width:768px) {
+    /* ── Add Task rows — stacked card layout on mobile ── */
     .task-col-hdrs { display:none !important; }
+
+    .task-add-row {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0 !important;
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 14px 14px 10px;
+      margin-bottom: 10px !important;
+      position: relative;
+    }
+
+    /* Delete button — top right corner */
+    .task-add-row .ta-del-btn {
+      position: absolute !important;
+      top: 10px; right: 10px;
+      width: 28px !important; height: 28px !important;
+      border-radius: 50% !important;
+      display: flex !important; align-items: center; justify-content: center;
+    }
+
+    /* Every direct child except delete button — full width with spacing */
+    .task-add-row > *:not(.ta-del-btn) {
+      display: block !important;
+      width: 100% !important;
+      margin-bottom: 8px !important;
+    }
+
+    /* Inputs and selects — proper size */
+    .task-add-row input,
+    .task-add-row select {
+      font-size: 15px !important;
+      min-height: 44px !important;
+      padding: 10px 12px !important;
+      width: 100% !important;
+      border-radius: 8px !important;
+    }
+
+    /* Date wrap — full width, show CW label */
+    .task-add-row .ta-date-wrap {
+      display: block !important;
+      width: 100% !important;
+    }
+    .task-add-row .ta-date-wrap input[type="date"] {
+      width: 100% !important;
+    }
+
+    /* Show all fields — nothing hidden */
+    .task-add-row .ta-quarter,
+    .task-add-row .ta-owner,
+    .task-add-row .ta-status {
+      display: block !important;
+      width: 100% !important;
+    }
+
+    /* Add labels above each field */
+    .task-add-row .ta-date-wrap::before   { content: 'Due Date'; display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+    .task-add-row .ta-quarter::before     { content: 'Quarter';  display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+    .task-add-row .ta-owner::before       { content: 'Assign To'; display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+    .task-add-row .ta-status::before      { content: 'Status';   display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+
     /* mt-task-row same treatment */
-    .mt-task-row { display:flex; flex-direction:column; gap:6px;
-      background:var(--surface3); border:1px solid var(--gray-200);
-      border-radius:8px; padding:10px; position:relative; margin-bottom:8px; }
-    .mt-task-row .mt-del-btn { position:absolute; top:8px; right:8px; }
-    .mt-task-row > * { display:block !important; width:100%; }
-    .mt-task-row .mt-del-btn { width:28px !important; }
+    .mt-task-row {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0 !important;
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 14px 14px 10px;
+      margin-bottom: 10px !important;
+      position: relative;
+    }
+    .mt-task-row .mt-del-btn {
+      position: absolute !important;
+      top: 10px; right: 10px;
+      width: 28px !important; height: 28px !important;
+    }
+    .mt-task-row > *:not(.mt-del-btn) {
+      display: block !important;
+      width: 100% !important;
+      margin-bottom: 8px !important;
+    }
+    .mt-task-row input, .mt-task-row select {
+      font-size: 15px !important;
+      min-height: 44px !important;
+      padding: 10px 12px !important;
+      width: 100% !important;
+      border-radius: 8px !important;
+    }
   }
 
   /* ── FILTER BAR ── */
