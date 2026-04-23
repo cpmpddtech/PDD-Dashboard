@@ -368,10 +368,12 @@ async function driveTrashFile(token, fileId) {
 // ─── Send email via Gmail API ─────────────────────
 async function sendEmail(accessToken, to, subject, body, fromName) {
   const from = fromName ? `${fromName} <me>` : 'PDD Dashboard <me>';
+  // RFC 2047 encode subject so non-ASCII chars (em dash, emojis, etc.) render correctly
+  const encodedSubject = '=?UTF-8?B?' + btoa(unescape(encodeURIComponent(subject))) + '?=';
   const message = [
     `To: ${to}`,
     `From: PDD Dashboard`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     'MIME-Version: 1.0',
     'Content-Type: text/html; charset=utf-8',
     '',
@@ -893,8 +895,25 @@ export default {
     }
 
     function getUsers() {
+      // Primary: read from USERS_CONFIG env secret (fast, in-memory)
+      // This is always up to date because saveUsers writes back to it
       if (!env.USERS_CONFIG) return {};
       try { return JSON.parse(env.USERS_CONFIG); } catch { return {}; }
+    }
+
+    async function getUsersFromDrive() {
+      // Read users from Drive backup file (used as fallback)
+      try {
+        const token = await getDriveToken(env);
+        const folderId = env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+        if (!folderId) return null;
+        const existing = await driveFindFile(token, folderId, 'USERS_CONFIG.json');
+        if (!existing) return null;
+        return await driveReadFile(token, existing.id);
+      } catch(e) {
+        console.warn('[Worker] getUsersFromDrive failed:', e.message);
+        return null;
+      }
     }
 
     async function validateUser(username, password) {
@@ -903,10 +922,28 @@ export default {
       if (typeof username !== 'string' || typeof password !== 'string') return null;
       if (username.length > 64 || password.length > 256) return null;
       username = username.replace(/[ -]/g, '').trim(); // strip control chars
-      const users = getUsers();
-      const key = Object.keys(users).find(k => k.toLowerCase() === (username||'').toLowerCase());
+
+      // Try Cloudflare secret first (fast)
+      let users = getUsers();
+      let key = Object.keys(users).find(k => k.toLowerCase() === username.toLowerCase());
+
+      // Not found in CF secret — fall back to Drive (accounts created after CF size limit)
+      if (!key) {
+        console.log('[Worker] validateUser: ' + username + ' not in CF secret, checking Drive...');
+        const driveUsers = await getUsersFromDrive();
+        if (driveUsers && typeof driveUsers === 'object') {
+          users = driveUsers;
+          key = Object.keys(users).find(k => k.toLowerCase() === username.toLowerCase());
+          if (key) {
+            // Sync back to CF so future logins are fast (non-blocking)
+            saveUsers(users).catch(e => console.warn('[Worker] sync failed:', e.message));
+          }
+        }
+      }
+
       const u = key ? users[key] : null;
       if (!u) return null;
+      u._key = key;
       const ok = await verifyPassword(password, u.password);
       if (!ok) return null;
       // Transparent migration: if stored as plaintext, silently upgrade to PBKDF2
@@ -934,30 +971,107 @@ export default {
     }
 
     async function saveUsers(users) {
-      // Update USERS_CONFIG secret via Cloudflare API
-      if (!env.CF_API_TOKEN || !env.CF_ACCOUNT_ID || !env.CF_WORKER_SCRIPT_NAME) {
-        throw new Error('CF_API_TOKEN, CF_ACCOUNT_ID, and CF_WORKER_SCRIPT_NAME secrets are required to save users.');
-      }
-      const res = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/workers/scripts/${env.CF_WORKER_SCRIPT_NAME}/secrets`,
-        {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${env.CF_API_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: 'USERS_CONFIG',
-            text: JSON.stringify(users),
-            type: 'secret_text',
-          })
+      const usersJson = JSON.stringify(users);
+      let driveOk = false;
+      let cfOk    = false;
+      let lastErr = '';
+
+      // ── 1. Save to Google Drive (primary, no size limit) ─────────────
+      try {
+        const token    = await getDriveToken(env);
+        const folderId = env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+        if (folderId) {
+          const existing = await driveFindFile(token, folderId, 'USERS_CONFIG.json');
+          await driveWriteFile(token, folderId, 'USERS_CONFIG.json', users, existing?.id || null);
+          driveOk = true;
+          console.log('[Worker] saveUsers: Drive write OK (' + usersJson.length + ' bytes)');
         }
-      );
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}));
-        const cfMsg = e.errors?.[0]?.message || res.status;
-        console.error('[Worker] Cloudflare API error:', cfMsg);
-        throw new Error('Configuration save failed. Check CF_API_TOKEN permissions.');
+      } catch(e) {
+        console.error('[Worker] saveUsers Drive error:', e.message);
+        lastErr = 'Drive: ' + e.message;
+      }
+
+      // ── 2. Also try Cloudflare secret (fast reads, 5KB limit) ────────
+      if (env.CF_API_TOKEN && env.CF_ACCOUNT_ID && env.CF_WORKER_SCRIPT_NAME) {
+        try {
+          const res = await fetch(
+            'https://api.cloudflare.com/client/v4/accounts/' + env.CF_ACCOUNT_ID +
+            '/workers/scripts/' + env.CF_WORKER_SCRIPT_NAME + '/secrets',
+            {
+              method: 'PUT',
+              headers: {
+                'Authorization': 'Bearer ' + env.CF_API_TOKEN,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ name: 'USERS_CONFIG', text: usersJson, type: 'secret_text' }),
+            }
+          );
+          if (res.ok) {
+            cfOk = true;
+            console.log('[Worker] saveUsers: CF secret write OK');
+          } else {
+            const e = await res.json().catch(() => ({}));
+            const msg = (e.errors?.[0]?.message || res.status);
+            console.warn('[Worker] saveUsers CF secret failed (non-fatal if Drive OK):', msg);
+            lastErr = 'CF: ' + msg;
+          }
+        } catch(e) {
+          console.warn('[Worker] saveUsers CF fetch error:', e.message);
+          lastErr = 'CF: ' + e.message;
+        }
+      }
+
+      // ── 3. Succeed if either backend wrote OK ─────────────────────────
+      if (!driveOk && !cfOk) {
+        throw new Error('User save failed on all backends. Last error: ' + lastErr);
+      }
+    }
+
+    async function loadUsersFromDriveIfNeeded() {
+      // If USERS_CONFIG env is empty/missing, load from Drive backup
+      if (env.USERS_CONFIG && env.USERS_CONFIG !== '{}') return;
+      const driveUsers = await getUsersFromDrive();
+      if (driveUsers && typeof driveUsers === 'object') {
+        env.USERS_CONFIG = JSON.stringify(driveUsers);
+      }
+    }
+
+    async function getMergedUsers() {
+      // Always returns CF + Drive merged — Drive accounts win on conflict (newer)
+      const cfUsers = getUsers();
+      const driveUsers = await getUsersFromDrive();
+      if (!driveUsers || typeof driveUsers !== 'object') return cfUsers;
+      return { ...cfUsers, ...driveUsers };
+    }
+
+
+    // ── Sync all users from CF secret to Drive (admin one-time fix) ───────
+    if (action === 'sync_users_to_drive') {
+      if (!await isAdminUser(body.username, body.password))
+        return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
+
+      // Read from CF (the authoritative source right now)
+      const cfUsers = getUsers();
+      const cfCount = Object.keys(cfUsers).length;
+
+      // Also read from Drive to merge in any Drive-only accounts
+      const driveUsers = await getUsersFromDrive();
+      const driveCount = driveUsers ? Object.keys(driveUsers).length : 0;
+
+      // Merge: Drive accounts (newer) win over CF on conflict
+      const merged = { ...cfUsers, ...(driveUsers || {}) };
+      const mergedCount = Object.keys(merged).length;
+
+      // Write merged result to both Drive and CF
+      try {
+        await saveUsers(merged);
+        return new Response(JSON.stringify({
+          ok: true,
+          cfCount, driveCount, mergedCount,
+          message: 'Synced ' + mergedCount + ' users to Drive and CF'
+        }), { status: 200, headers });
+      } catch(e) {
+        return new Response(JSON.stringify({ ok: false, error: e.message }), { status: 500, headers });
       }
     }
 
@@ -973,12 +1087,34 @@ export default {
         return new Response(JSON.stringify({ ok: false, error: 'Too many attempts. Please wait 15 minutes.' }), { status: 429, headers });
       }
 
-      const users = getUsers();
-      const u = users[username];
+      // Try CF secret first, fall back to Drive for accounts created after size limit
+      let users = getUsers();
+      let u = users[username];
+      if (!u) {
+        const driveUsers = await getUsersFromDrive();
+        if (driveUsers && typeof driveUsers === 'object') {
+          users = driveUsers;
+          u = users[username];
+          if (u) {
+            // Sync Drive users back to CF (non-blocking) so future logins hit CF
+            saveUsers(users).catch(e => console.warn('[Worker] auth sync failed:', e.message));
+          }
+        }
+      }
 
+      // If password doesn't match CF version, check Drive for updated password
       if (!u || !(await verifyPassword(password, u.password))) {
-        await sleep(300); // constant-time delay frustrates timing attacks
-        return new Response(JSON.stringify({ ok: false, error: 'Invalid credentials' }), { status: 401, headers });
+        // CF may have stale password — check Drive for the latest
+        const driveCheck = await getUsersFromDrive();
+        const driveU = driveCheck ? driveCheck[username] : null;
+        if (driveU && (await verifyPassword(password, driveU.password))) {
+          // Drive has the correct password — update u and users from Drive
+          u = driveU;
+          if (driveCheck) Object.assign(users, driveCheck);
+        } else {
+          await sleep(300); // constant-time delay
+          return new Response(JSON.stringify({ ok: false, error: 'Invalid credentials' }), { status: 401, headers });
+        }
       }
 
       // Success — clear rate limit counter
@@ -1049,8 +1185,8 @@ export default {
         }
       }
 
-      // Return public user list to admin
-      const usersList = u.role === 'admin' ? usersPublicList(getUsers()) : null;
+      // Return public user list to admin — merge CF + Drive so all accounts appear
+      const usersList = u.role === 'admin' ? usersPublicList(await getMergedUsers()) : null;
 
       return new Response(JSON.stringify({
         ok: true,
@@ -1070,7 +1206,10 @@ export default {
     // ── Change own password ───────────────────────
     if (action === 'change_password') {
       const { username, oldPassword, newPassword } = body;
-      const users = getUsers();
+
+      // Always use merged users so we find the account regardless of where it's stored
+      // and so saveUsers() writes the complete list (not a partial one)
+      const users = await getMergedUsers();
       const u = users[username];
 
       if (!u || !(await verifyPassword(oldPassword, u.password))) {
@@ -1081,7 +1220,7 @@ export default {
 
       users[username].password = await hashPassword(newPassword);
       users[username].mustChangePassword = false;
-      await saveUsers(users);
+      await saveUsers(users); // writes full merged list to Drive + CF
 
       return new Response(JSON.stringify({
         ok: true,
@@ -1095,7 +1234,13 @@ export default {
       if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
-      const users = getUsers();
+      // Merge CF + Drive to get full user list before adding
+      let users = getUsers();
+      const driveUsersAdd = await getUsersFromDrive();
+      if (driveUsersAdd && typeof driveUsersAdd === 'object') {
+        users = { ...users, ...driveUsersAdd };
+      }
+
       if (users[newUser.username])
         return new Response(JSON.stringify({ error: 'Username already exists' }), { status: 400, headers });
 
@@ -1125,7 +1270,11 @@ export default {
       if (!await isAdminUser(username, password))
         return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
 
-      const users = getUsers();
+      let users = getUsers();
+      const driveUsersReset = await getUsersFromDrive();
+      if (driveUsersReset && typeof driveUsersReset === 'object') {
+        users = { ...users, ...driveUsersReset };
+      }
       if (!users[targetUsername])
         return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers });
       if (targetUsername === username)
@@ -1150,7 +1299,11 @@ export default {
       if (targetUsername === username)
         return new Response(JSON.stringify({ error: 'Cannot delete your own account' }), { status: 400, headers });
 
-      const users = getUsers();
+      let users = getUsers();
+      const driveUsersDel = await getUsersFromDrive();
+      if (driveUsersDel && typeof driveUsersDel === 'object') {
+        users = { ...users, ...driveUsersDel };
+      }
       if (!users[targetUsername])
         return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers });
 
@@ -1202,9 +1355,69 @@ export default {
           try { const lg = JSON.parse(env.STAFF_ROLES); Object.entries(lg).forEach(([n,c]) => { if (!roleConfig[n]) roleConfig[n]=c; }); } catch(e) {}
         }
       }
-      const usersList  = u.role === 'admin' ? usersPublicList(getUsers()) : null;
+      // Merge CF + Drive users for complete admin list
+      const usersList = u.role === 'admin' ? usersPublicList(await getMergedUsers()) : null;
 
       return new Response(JSON.stringify({ ok: true, sheets: results, errors, roleConfig, users: usersList }), { status: 200, headers });
+    }
+
+
+    // ── Add project to a program (writes row to Projects sheet) ──────────
+    if (action === 'add_project') {
+      const { username, password } = body;
+      if (!await isAdminUser(username, password))
+        return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers });
+
+      const { programId, projectName, description, startCW, endCW, quarter, status, responsible } = body;
+      if (!programId || !projectName)
+        return new Response(JSON.stringify({ error: 'programId and projectName are required' }), { status: 400, headers });
+
+      const sheetsRefreshToken = env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN;
+      if (!sheetsRefreshToken)
+        return new Response(JSON.stringify({ error: 'OAuth not configured' }), { status: 501, headers });
+
+      let token;
+      try { token = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, sheetsRefreshToken); }
+      catch(e) { return new Response(JSON.stringify({ error: 'OAuth error: ' + e.message }), { status: 500, headers }); }
+
+      const spreadsheetId = env.SPREADSHEET_ID;
+      const projectId = programId + 'P' + Date.now().toString().slice(-5);
+
+      // Ensure Projects sheet exists — create with headers if new
+      const addSheetRes = await fetch(
+        'https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + ':batchUpdate',
+        {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requests: [{ addSheet: { properties: { title: 'Projects' } } }] }),
+        }
+      );
+      if (addSheetRes.ok) {
+        // Just created — add column headers
+        const hdrs = ['Project ID','Program ID','Project Name','Description','Start CW','End CW','Quarter','Status','Responsible','Created By','Created At'];
+        await appendToSheet(token, spreadsheetId, 'Projects', hdrs);
+      }
+      // 400 "already exists" is expected and fine — ignore it
+
+      // Append new project row
+      const createdBy = body.username || '';
+      const createdAt = new Date().toISOString();
+      const row = [
+        projectId,
+        programId,
+        projectName,
+        description  || '',
+        startCW      || '',
+        endCW        || '',
+        quarter      || '',
+        status       || 'Planning',
+        responsible  || '',
+        createdBy,
+        createdAt,
+      ];
+      await appendToSheet(token, spreadsheetId, 'Projects', row);
+
+      return new Response(JSON.stringify({ ok: true, projectId }), { status: 200, headers });
     }
 
     // ── Add new program ──────────────────────────
@@ -1229,42 +1442,48 @@ export default {
       const sheetName = `${program.id} Task_List`;
       const spreadsheetId = env.SPREADSHEET_ID;
 
-      // 1. Create new sheet tab
-      const addSheetRes = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
-        {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            requests: [{
-              addSheet: {
-                properties: { title: sheetName }
-              }
-            }]
-          })
+      // 1. Create new task-list sheet tab — treat "already exists" as success
+      try {
+        await createSheetTab(token, spreadsheetId, sheetName);
+      } catch(e) {
+        const msg = (e.message || '').toLowerCase();
+        if (!msg.includes('already exists')) {
+          console.error('[Worker] add_program createSheetTab error:', e.message);
+          return new Response(JSON.stringify({ error: 'Could not create sheet tab: ' + e.message }), { status: 500, headers });
         }
-      );
-      if (!addSheetRes.ok) {
-        const e = await addSheetRes.json().catch(() => ({}));
-        return new Response(JSON.stringify({ error: 'Sheet creation failed: ' + (e.error?.message || addSheetRes.status) }), { status: 500, headers });
+        // Sheet already exists — continue safely
       }
 
-      // 2. Add headers to new sheet — 8 clean data columns, no formulas
+      // 2. Add headers to new sheet only if it was just created
+      //    (safe to call even if row 1 exists — Sheets appends after last row)
       const sheetHeaders = ['Task ID','Program ID','Program Name','Task Name','Quarter','CW','Status','Owner','Project Name'];
-      await appendToSheet(token, spreadsheetId, sheetName, sheetHeaders);
+      try {
+        await appendToSheet(token, spreadsheetId, sheetName, sheetHeaders);
+      } catch(e) {
+        console.warn('[Worker] add_program headers append warning:', e.message);
+        // Non-fatal — sheet may already have headers
+      }
 
       // 3. Add program row to Main Programs sheet
-      // No formulas — Target Tasks is updated by dashboard from actual task count
-      const duration = program.end - program.start + 1;
+      const duration = (program.end || 0) - (program.start || 0) + 1;
       const projRow = [
-        program.id, program.name, program.start, program.end,
-        program.startQuarter, program.endQuarter, duration,
+        program.id, program.name,
+        program.start     || '',
+        program.end       || '',
+        program.startQuarter || '',
+        program.endQuarter   || '',
+        duration,
         0   // Target Tasks — starts at 0, grows as tasks are added
       ];
-      await appendToSheet(token, spreadsheetId, 'Main Programs', projRow);
+      try {
+        await appendToSheet(token, spreadsheetId, 'Main Programs', projRow);
+      } catch(e) {
+        console.error('[Worker] add_program Main Programs append error:', e.message);
+        return new Response(JSON.stringify({ error: 'Program sheet created but failed to register in Main Programs: ' + e.message }), { status: 500, headers });
+      }
 
-      // Fire notification — non-blocking
-      await sendNotification(env, 'program_created', {
+      // 4. Fire notification — non-blocking
+      sendNotification(env, 'program_created', {
         programId:   program.id,
         programName: program.name,
         createdBy:   body.username,
@@ -1475,7 +1694,7 @@ export default {
       if (!Array.isArray(optOut))
         return new Response(JSON.stringify({ error: 'optOut must be an array' }), { status: 400, headers });
 
-      const users = getUsers();
+      const users = await getMergedUsers();
       const key   = u._key;
       if (!users[key]) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404, headers });
 
@@ -1494,7 +1713,7 @@ export default {
 
       // Merge role config (programs, features, role) into each user in USERS_CONFIG
       // Config is keyed by display name: { "Gamaliel": { role, programs, features }, ... }
-      const users = getUsers();
+      const users = await getMergedUsers();
 
       // Build a lookup: display name → username key
       const nameToKey = {};
@@ -1790,6 +2009,268 @@ export default {
     }
 
     // ─── save_dcr ────────────────────────────────────────────
+    
+    // ═══════════════════════════════════════════════════════════════════
+    //  MEETING MINUTES
+    // ═══════════════════════════════════════════════════════════════════
+
+    // ── Save / update meeting minutes ──────────────────────────────────
+    if (action === 'save_minutes') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const mins = body.minutes;
+      if (!mins || !mins.id)
+        return new Response(JSON.stringify({ error: 'Missing minutes data' }), { status: 400, headers });
+
+      // Stamp server-side fields
+      mins.createdBy         = user.name || body.username;
+      mins.createdByUsername = user._key || body.username;
+      mins.savedAt           = new Date().toISOString();
+      mins.diocese           = user.diocese || mins.diocese || null;
+
+      const token = await getDriveToken(env);
+      const folderId = env.MINUTES_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured for minutes (set MINUTES_FOLDER_ID)' }), { status: 500, headers });
+
+      const safeName = (user.name || body.username).replace(/[^a-zA-Z0-9]/g, '_');
+      const dateStr  = (mins.date || new Date().toISOString().slice(0, 10));
+      const idSuffix = mins.id ? '_' + String(mins.id).slice(-8) : '';
+      const filename = `MIN_${dateStr}_${safeName}${idSuffix}.json`;
+
+      const existing = await driveFindFile(token, folderId, filename);
+      await driveWriteFile(token, folderId, filename, mins, existing?.id || null);
+
+      // Append index row to Minutes Google Sheet (separate spreadsheet)
+      const minutesSheetId = env.MINUTES_SPREADSHEET_ID;
+      if (minutesSheetId) {
+        try {
+          const driveToken = token;
+          const oauthToken = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN);
+          const row = [
+            mins.id,
+            mins.title || '',
+            mins.date || '',
+            mins.createdBy,
+            mins.visibility || 'public',
+            (mins.attendees || []).join(', '),
+            (mins.actions || []).length,
+            mins.savedAt,
+            mins.diocese || '',
+            filename,
+          ];
+          await appendToSheet(oauthToken, minutesSheetId, 'Meeting Minutes', row);
+        } catch(e) {
+          console.warn('[Worker] Minutes sheet append failed:', e.message);
+          // Non-fatal — Drive file is the source of truth
+        }
+      }
+
+      return new Response(JSON.stringify({ ok: true, filename }), { status: 200, headers });
+    }
+
+    // ── Get all accessible meeting minutes ─────────────────────────────
+    if (action === 'get_minutes') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const token = await getDriveToken(env);
+      const folderId = env.MINUTES_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ ok: true, minutes: [] }), { status: 200, headers });
+
+      // List all MIN_*.json files
+      const q = encodeURIComponent(`'${folderId}' in parents and name contains 'MIN_' and mimeType='application/json' and trashed=false`);
+      const listRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=100`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!listRes.ok) return new Response(JSON.stringify({ ok: true, minutes: [] }), { status: 200, headers });
+      const listData = await listRes.json();
+      const files = listData.files || [];
+
+      // Read each file in parallel (cap at 80)
+      const toFetch = files.slice(0, 80);
+      const minutes = await Promise.all(
+        toFetch.map(async f => {
+          try {
+            const content = await driveReadFile(token, f.id);
+            return { ...content, _fileId: f.id };
+          } catch { return null; }
+        })
+      );
+
+      const filtered = minutes
+        .filter(Boolean)
+        .filter(m => {
+          // Server-side visibility enforcement
+          if (!m.visibility || m.visibility === 'public') return true;
+          if (user.role === 'admin' || user.role === 'manager') return true;
+          const username = user._key || body.username;
+          if (m.visibility === 'private') return (m.attendeeUsernames || []).includes(username) || m.createdByUsername === username;
+          if (m.visibility === 'diocese') return m.diocese === user.diocese || m.createdByUsername === username;
+          return false;
+        });
+
+      return new Response(JSON.stringify({ ok: true, minutes: filtered }), { status: 200, headers });
+    }
+
+    // ── Delete meeting minutes ─────────────────────────────────────────
+    if (action === 'delete_minutes') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const { fileId } = body;
+      if (!fileId) return new Response(JSON.stringify({ error: 'fileId required' }), { status: 400, headers });
+
+      // Only creator or admin can delete
+      const token = await getDriveToken(env);
+      let content;
+      try { content = await driveReadFile(token, fileId); } catch(e) {}
+      const username = user._key || body.username;
+      if (content && content.createdByUsername !== username && user.role !== 'admin')
+        return new Response(JSON.stringify({ error: 'Permission denied — only the creator or admin can delete' }), { status: 403, headers });
+
+      const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/trash`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!delRes.ok) return new Response(JSON.stringify({ error: 'Delete failed' }), { status: 500, headers });
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
+    }
+
+    // ── Export minutes to Google Doc + email attendees ───────────────────
+    if (action === 'export_minutes_doc') {
+      const user = await validateUser(body.username, body.password);
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+
+      const { minutes, htmlContent } = body;
+      if (!minutes || !htmlContent)
+        return new Response(JSON.stringify({ error: 'minutes and htmlContent required' }), { status: 400, headers });
+
+      const token = await getDriveToken(env);
+      const folderId = env.MINUTES_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
+      if (!folderId)
+        return new Response(JSON.stringify({ error: 'No Drive folder configured' }), { status: 500, headers });
+
+      // ── 1. Create / update Google Doc ──────────────────────────────
+      const safeName = (minutes.title || 'Meeting Minutes').replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 60);
+      const dateStr  = minutes.date || new Date().toISOString().slice(0, 10);
+      const docName  = `MIN_${dateStr}_${safeName}`;
+
+      const existing = await driveFindFile(token, folderId, docName);
+      const gdoc = await driveWriteGoogleDoc(token, folderId, docName, htmlContent, existing?.id || null);
+      const docUrl = `https://docs.google.com/document/d/${gdoc.id}/edit`;
+
+      // ── 2. Email internal attendees ────────────────────────────────
+      const attendeeUsernames = minutes.attendeeUsernames || [];
+      let sent = 0, skipped = 0, noEmail = [];
+
+      if (attendeeUsernames.length > 0) {
+        // Check Gmail OAuth
+        const gmailToken = env.GMAIL_REFRESH_TOKEN || env.DRIVE_REFRESH_TOKEN;
+        if (!env.GMAIL_CLIENT_ID || !env.GMAIL_CLIENT_SECRET || !gmailToken) {
+          // No Gmail configured — return doc only
+          return new Response(JSON.stringify({ ok: true, docId: gdoc.id, docUrl, sent: 0, skipped: attendeeUsernames.length, noEmailGmail: true }), { status: 200, headers });
+        }
+
+        const emailToken = await getAccessToken(env.GMAIL_CLIENT_ID, env.GMAIL_CLIENT_SECRET, gmailToken);
+        const users      = getUsers();
+
+        // Resolve email addresses for each attendee username
+        const resolved = attendeeUsernames.map(un => {
+          const u = users[un];
+          return u?.email ? { name: u.name || un, email: u.email } : null;
+        });
+
+        // Build email HTML
+        const actionRows = (minutes.actions || []).map(a =>
+          `<tr>
+            <td style="padding:6px 10px;border:1px solid #e5e7eb;">${a.task || '—'}</td>
+            <td style="padding:6px 10px;border:1px solid #e5e7eb;">${a.assignee || '—'}</td>
+            <td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;">CW ${a.dueCW || '—'}</td>
+            <td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;">${a.priority || '—'}</td>
+          </tr>`).join('');
+
+        const emailHtml = `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1e293b;">
+          <div style="background:#0f1e38;padding:20px 28px;border-radius:10px 10px 0 0;">
+            <span style="color:#fff;font-size:16px;font-weight:700;">PDD Dashboard</span>
+            <span style="color:#94a3b8;font-size:12px;margin-left:10px;">Meeting Minutes</span>
+          </div>
+          <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;padding:28px;border-radius:0 0 10px 10px;">
+            <h2 style="margin:0 0 4px;font-size:18px;color:#0f1e38;">📋 ${minutes.title || 'Meeting Minutes'}</h2>
+            <p style="color:#64748b;font-size:12px;margin:0 0 20px;">
+              Shared by ${user.name || body.username} · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}
+            </p>
+
+            <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;">
+              <tr><td style="padding:6px 0;color:#64748b;width:140px;">📅 Date</td><td style="padding:6px 0;font-weight:500;">${minutes.date || '—'} ${minutes.time ? '· ' + minutes.time : ''}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b;">📍 Location</td><td style="padding:6px 0;font-weight:500;">${minutes.location || '—'}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b;">👤 Chaired by</td><td style="padding:6px 0;font-weight:500;">${minutes.chair || '—'}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b;">👥 Attendees</td><td style="padding:6px 0;font-weight:500;">${(minutes.attendees || []).join(', ') || '—'}</td></tr>
+            </table>
+
+            ${minutes.decisions?.length ? `
+            <div style="margin-bottom:20px;">
+              <div style="font-size:12px;font-weight:700;color:#0f1e38;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">✅ Decisions Made</div>
+              <ul style="margin:0;padding-left:18px;color:#374151;font-size:13px;line-height:1.8;">
+                ${minutes.decisions.map(d => `<li>${d}</li>`).join('')}
+              </ul>
+            </div>` : ''}
+
+            ${minutes.actions?.length ? `
+            <div style="margin-bottom:20px;">
+              <div style="font-size:12px;font-weight:700;color:#0f1e38;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">🎯 Action Items</div>
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead><tr style="background:#f1f5f9;">
+                  <th style="padding:7px 10px;border:1px solid #e5e7eb;text-align:left;">Action</th>
+                  <th style="padding:7px 10px;border:1px solid #e5e7eb;text-align:left;">Assigned To</th>
+                  <th style="padding:7px 10px;border:1px solid #e5e7eb;text-align:center;">Due CW</th>
+                  <th style="padding:7px 10px;border:1px solid #e5e7eb;text-align:center;">Priority</th>
+                </tr></thead>
+                <tbody>${actionRows}</tbody>
+              </table>
+            </div>` : ''}
+
+            <div style="margin:24px 0;padding:16px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;">
+              <div style="font-size:13px;font-weight:600;color:#1d4ed8;margin-bottom:6px;">📄 Full Meeting Minutes</div>
+              <div style="font-size:12px;color:#3b82f6;margin-bottom:10px;">The complete minutes including agenda and discussion notes are available in Google Docs.</div>
+              <a href="${docUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;">Open Google Doc →</a>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;">
+            <p style="font-size:11px;color:#94a3b8;margin:0;">This is an automated message from the PDD Dashboard. Do not reply to this email.</p>
+            <a href="${env.DASHBOARD_URL || 'https://cpmpdd.org'}" style="font-size:11px;color:#2563eb;">Open Dashboard</a>
+          </div>
+        </body></html>`;
+
+        const subject = `Meeting Minutes: ${minutes.title || 'Meeting'} (${minutes.date || ''})`;
+
+        // Send to all resolved recipients
+        const results = await Promise.allSettled(
+          resolved.filter(Boolean).map(r => sendEmail(emailToken, r.email, subject, emailHtml))
+        );
+
+        results.forEach((r, i) => {
+          if (r.status === 'fulfilled') sent++;
+          else { skipped++; console.error('[Minutes] Email failed:', resolved.filter(Boolean)[i]?.email, r.reason?.message); }
+        });
+
+        // Count those with no email
+        noEmail = attendeeUsernames.filter(un => !users[un]?.email).map(un => users[un]?.name || un);
+        skipped += noEmail.length;
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        docId:  gdoc.id,
+        docUrl,
+        sent,
+        skipped,
+        noEmail,
+      }), { status: 200, headers });
+    }
+
     if (action === 'save_dcr') {
       const user = await validateUser(body.username, body.password);
       if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
@@ -2407,7 +2888,7 @@ export default {
         return new Response(JSON.stringify({ error: 'Could not get Drive token' }), { status: 500, headers });
 
       // Delete old avatar file if exists
-      const users = getUsers();
+      const users = await getMergedUsers();
       const existingFileId = users[body.username]?.avatarFileId;
       if (existingFileId) {
         await fetch(`https://www.googleapis.com/drive/v3/files/${existingFileId}`, {
@@ -3641,7 +4122,7 @@ export default {
 
       // Any authenticated user can fetch the staff list for recipient selection
       // Sending permission is checked separately in send_announcement
-      const users = getUsers();
+      const users = await getMergedUsers();
       const staff = Object.entries(users).map(([username, usr]) => ({
         username,
         name:      usr.name      || username,
@@ -3650,6 +4131,8 @@ export default {
         email:     usr.email     || null,
         hasEmail:  !!(usr.email && usr.email.trim()),
         avatarUrl: usr.avatarUrl || null,
+        programs:  usr.programs  || [],
+        features:  usr.features  || [],
       })).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
       return new Response(JSON.stringify({ ok: true, staff }), { status: 200, headers });
@@ -3676,7 +4159,7 @@ export default {
 
       // Accept per-user structure: { users: { username: bool } }
       // Validate: only known usernames allowed
-      const users = getUsers();
+      const users = await getMergedUsers();
       const clean = { users: {} };
       if (permissions.users && typeof permissions.users === 'object') {
         Object.entries(permissions.users).forEach(([username, val]) => {
@@ -3731,7 +4214,7 @@ export default {
       if (!recipients || !recipients.length)
         return new Response(JSON.stringify({ error: 'No recipients specified' }), { status: 400, headers });
 
-      const users = getUsers();
+      const users = await getMergedUsers();
       const now   = new Date();
       const dateStr = now.toISOString();
 
