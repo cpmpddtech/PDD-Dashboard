@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>PDD Dashboard — CPMPDD</title>
   <link rel="icon" type="image/png" href="cpmpddlogo.png">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1247,6 +1247,240 @@ if (typeof Chart !== 'undefined') {
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--surface3, #1a2640) var(--surface, #0f1825);
+  }
+
+
+  /* ════════════════════════════════════════════════════════════════
+     MOBILE RESPONSIVE — Full overhaul for phones and small tablets
+     Breakpoints: 768px (tablet), 480px (phone), 360px (small phone)
+  ════════════════════════════════════════════════════════════════ */
+
+  /* ── Base touch improvements ── */
+  @media (max-width: 768px) {
+    * { -webkit-tap-highlight-color: transparent; }
+
+    /* ── Header ── */
+    .header {
+      padding: 10px 14px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .header-left { gap: 8px; flex: 1; min-width: 0; }
+    .header-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-sub { display: none; }
+    .header-right { gap: 6px; flex-shrink: 0; }
+    .header-right .btn { padding: 5px 10px; font-size: 11px; }
+    #hdr-status { font-size: 10px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #live-pill { font-size: 9px; padding: 2px 7px; }
+    #hdr-cw-badge { font-size: 10px; padding: 3px 8px; }
+    #hdr-quarter-badge { font-size: 10px; padding: 3px 8px; }
+    .logo img { width: 28px; height: 28px; }
+
+    /* ── Tab navigation — horizontal scroll ── */
+    .tabs {
+      padding: 0 10px;
+      gap: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      white-space: nowrap;
+      display: flex;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 10px 12px;
+      font-size: 11.5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      border-bottom-width: 2.5px;
+    }
+
+    /* ── Tab panels ── */
+    .tab-panel { padding: 14px 12px; }
+
+    /* ── Panels / Cards ── */
+    .panel { padding: 14px 14px; border-radius: 10px; }
+    .panel-title { font-size: 12px; }
+
+    /* ── Form inputs ── */
+    .form-input, .form-select, .form-textarea {
+      font-size: 16px !important; /* prevents iOS zoom on focus */
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+    .form-textarea { min-height: 100px; }
+
+    /* ── Buttons ── */
+    .btn { padding: 9px 14px; font-size: 12px; }
+    .btn-primary, .btn-danger { min-height: 40px; }
+
+    /* ── Grid layouts → single column ── */
+    .stat-grid   { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .grid-2      { grid-template-columns: 1fr !important; }
+    .grid-3      { grid-template-columns: 1fr !important; }
+    .form-row    { grid-template-columns: 1fr !important; }
+    .form-row.cols2 { grid-template-columns: 1fr !important; }
+
+    /* ── My Profile tab ── */
+    .profile-header-row { flex-direction: column !important; align-items: flex-start !important; gap: 14px !important; }
+    .profile-avatar-wrap { align-self: center !important; }
+    .profile-stat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .profile-quick-btns { flex-direction: column !important; width: 100% !important; }
+    .profile-quick-btns button { width: 100% !important; min-height: 40px; }
+    .profile-program-list { font-size: 12px; }
+
+    /* ── My Tasks tab ── */
+    .task-add-row { grid-template-columns: 1fr 36px !important; gap: 8px !important; }
+    .task-add-row > *:not(:first-child):not(:last-child) { display: none; }
+    .task-col-hdrs { display: none !important; }
+    .task-row { flex-direction: column !important; gap: 6px !important; padding: 10px !important; }
+    .task-row-name { font-size: 13px !important; font-weight: 600 !important; }
+    .task-row-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; }
+    .task-pill { font-size: 10px !important; padding: 2px 8px !important; }
+
+    /* ── Weekly Check-in tab ── */
+    .checkin-task-row { flex-direction: column !important; gap: 6px !important; padding: 10px 12px !important; }
+    .checkin-task-label { font-size: 13px !important; }
+
+    /* ── KPI tab ── */
+    .kpi-header-row { flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; }
+    .kpi-filter-row { flex-wrap: wrap !important; gap: 6px !important; }
+    .kpi-filter-row select { font-size: 13px !important; min-width: 120px; }
+
+    /* ── Program Progress tab ── */
+    .progress-filter-row { flex-wrap: wrap !important; gap: 8px !important; }
+    .gantt-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+
+    /* ── Role & Program Management ── */
+    .rm-grid { grid-template-columns: 1fr !important; }
+    .rm-card { padding: 14px !important; }
+    .rm-card-header { flex-direction: column !important; gap: 8px !important; align-items: flex-start !important; }
+    .rm-toggles { flex-wrap: wrap !important; gap: 6px !important; }
+    .rm-toggle { font-size: 11px !important; padding: 4px 10px !important; }
+    .add-user-grid { grid-template-columns: 1fr !important; }
+
+    /* ── Program Management ── */
+    .pm-date-row { flex-direction: column !important; gap: 8px !important; }
+    #pm-prog-resp-grid { max-height: 120px !important; }
+
+    /* ── Staff Performance tab ── */
+    .staff-perf-grid { grid-template-columns: 1fr !important; }
+
+    /* ── Manager Digest tab ── */
+    .digest-grid { grid-template-columns: 1fr 1fr !important; }
+    .digest-stat { padding: 12px !important; }
+
+    /* ── Meeting Minutes ── */
+    .minutes-filter-row { flex-direction: column !important; gap: 8px !important; }
+
+    /* ── DCR Reports ── */
+    .dcr-section-grid { grid-template-columns: 1fr !important; }
+    .dcr-type-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+
+    /* ── Modal / overlays ── */
+    .modal-overlay { padding: 12px !important; align-items: flex-end !important; }
+    .modal-box { border-radius: 16px 16px 0 0 !important; max-height: 90vh !important; overflow-y: auto; }
+
+    /* ── Bulk task rows ── */
+    .nt-row { grid-template-columns: 1fr 36px !important; }
+    .nt-row > *:not(:first-child):not(:last-child) { display: none; }
+
+    /* ── Finance / Expense rows ── */
+    .expense-row { flex-direction: column !important; gap: 8px !important; }
+    .expense-row-meta { flex-wrap: wrap !important; gap: 6px !important; font-size: 11px; }
+  }
+
+  /* ── Small phones ── */
+  @media (max-width: 480px) {
+    .header-title { font-size: 12px; }
+    .tab { padding: 9px 10px; font-size: 11px; }
+    .stat-grid { grid-template-columns: 1fr 1fr !important; }
+    .profile-stat-grid { grid-template-columns: 1fr 1fr !important; }
+    .digest-grid { grid-template-columns: 1fr !important; }
+    .dcr-type-grid { grid-template-columns: 1fr !important; }
+    .panel { padding: 12px 12px; }
+    .panel-title { font-size: 11.5px; }
+    .rm-card { padding: 12px !important; }
+    .btn { font-size: 11.5px; padding: 8px 12px; }
+
+    /* Stack header badges vertically */
+    #hdr-cw-badge, #hdr-quarter-badge { font-size: 9px; padding: 2px 6px; }
+
+    /* Full-width primary actions */
+    [id$="-btn"].btn-primary { width: 100%; justify-content: center; margin-top: 4px; }
+
+    /* Chip grids for responsible person */
+    .proj-staff-chip { font-size: 10px !important; padding: 4px 8px !important; }
+    #pm-prog-resp-grid { max-height: 100px !important; }
+  }
+
+  /* ── Very small phones (360px) ── */
+  @media (max-width: 360px) {
+    .tab { padding: 8px 9px; font-size: 10.5px; }
+    .header { padding: 8px 10px; }
+    .tab-panel { padding: 10px 8px; }
+    .panel { padding: 10px 10px; }
+    .form-input, .form-select { font-size: 16px !important; }
+    .stat-grid { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── Touch-friendly tap targets ── */
+  @media (hover: none) and (pointer: coarse) {
+    .tab         { min-height: 44px; display: inline-flex; align-items: center; }
+    .btn         { min-height: 44px; }
+    .rm-toggle   { min-height: 36px; min-width: 60px; justify-content: center; }
+    .form-input, .form-select { min-height: 44px; }
+    .task-row-check input[type="checkbox"] { width: 20px; height: 20px; }
+    .nav-item    { min-height: 44px; }
+    .proj-staff-chip { min-height: 36px; }
+  }
+
+
+  /* ── Mobile bottom quick-nav ── */
+  @media (max-width: 768px) {
+    #mobile-bottom-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      z-index: 200;
+      padding: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .mobile-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px 6px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      font-family: var(--font);
+      font-size: 9px;
+      font-weight: 500;
+      cursor: pointer;
+      gap: 3px;
+      transition: color .15s;
+      min-height: 52px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-nav-btn.active { color: var(--blue); }
+    .mobile-nav-btn .mnb-icon { font-size: 20px; line-height: 1; }
+    .mobile-nav-btn .mnb-label { font-size: 9px; white-space: nowrap; }
+
+    /* Push tab panel content up so it's not hidden behind bottom nav */
+    .tab-panel { padding-bottom: 72px !important; }
+    #dashboard { padding-bottom: 0; }
+
+    /* Hide the regular tab bar on mobile — use bottom nav instead */
+    .tabs { display: none !important; }
+  }
+  @media (min-width: 769px) {
+    #mobile-bottom-nav { display: none !important; }
   }
 
 </style>
@@ -6099,6 +6333,63 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 <script>
+
+// ── Mobile bottom nav ─────────────────────────────────────────────────
+function updateMobileNav(tabName) {
+  const map = { profile:'mnb-profile', mytasks:'mnb-mytasks', kpi:'mnb-kpi', checkin:'mnb-checkin' };
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = map[tabName] ? document.getElementById(map[tabName]) : document.getElementById('mnb-more');
+  if (btn) btn.classList.add('active');
+  // Close more menu if open
+  const menu = document.getElementById('mobile-more-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+function toggleMobileMoreMenu() {
+  const menu = document.getElementById('mobile-more-menu');
+  if (!menu) return;
+  if (menu.style.display !== 'none') { menu.style.display = 'none'; return; }
+
+  // Build menu items from available tabs
+  const tabs = [
+    { id:'progress', icon:'📈', label:'Program Progress' },
+    { id:'staff',    icon:'👥', label:'Staff Performance' },
+    { id:'digest',   icon:'📋', label:'Manager Digest',  role:'manager' },
+    { id:'pm',       icon:'🏗', label:'Program Mgmt',    role:'admin' },
+    { id:'rm',       icon:'🔑', label:'Role Mgmt',       role:'admin' },
+    { id:'um',       icon:'👤', label:'User Accounts',   role:'admin' },
+  ];
+
+  const items = tabs.filter(t => {
+    if (!t.role) return true;
+    if (t.role === 'admin') return CURRENT_USER?.role === 'admin';
+    if (t.role === 'manager') return ['admin','manager'].includes(CURRENT_USER?.role);
+    return true;
+  });
+
+  menu.innerHTML = items.map(t =>
+    `<div onclick="switchTab('${t.id}',document.getElementById('tab-btn-${t.id}'));updateMobileNav('${t.id}');document.getElementById('mnb-more').classList.add('active');document.getElementById('mobile-more-menu').style.display='none';"
+      style="display:flex;align-items:center;gap:12px;padding:12px 20px;font-size:14px;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);"
+      onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <span style="font-size:18px;">${t.icon}</span> ${t.label}
+    </div>`
+  ).join('');
+
+  menu.style.display = 'block';
+}
+
+// Close more menu on outside tap
+document.addEventListener('click', e => {
+  const menu = document.getElementById('mobile-more-menu');
+  const btn  = document.getElementById('mnb-more');
+  if (menu && menu.style.display !== 'none' && !menu.contains(e.target) && !btn?.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+
+// Sync mobile nav when tab switches via desktop tabs
+const _origSwitchTab = typeof switchTab === 'function' ? switchTab : null;
+
 // ═══════════════════════════════════════════════════
 //  PROJECT RESPONSIBLE — MULTI-SELECT STAFF CHIPS
 // ═══════════════════════════════════════════════════
@@ -6201,6 +6492,33 @@ function resetProjRespChips() {
   filterProjStaffChips('');
 }
 </script>
+
+<!-- ═══ MOBILE BOTTOM NAV ═══ -->
+<div id="mobile-bottom-nav">
+  <button class="mobile-nav-btn active" id="mnb-profile" onclick="switchTab('profile',document.getElementById('tab-btn-profile'));updateMobileNav('profile')">
+    <span class="mnb-icon">👤</span>
+    <span class="mnb-label">Profile</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnb-mytasks" onclick="switchTab('mytasks',document.getElementById('tab-btn-mytasks'));updateMobileNav('mytasks')">
+    <span class="mnb-icon">✅</span>
+    <span class="mnb-label">My Tasks</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnb-kpi" onclick="switchTab('kpi',document.getElementById('tab-btn-kpi'));updateMobileNav('kpi')">
+    <span class="mnb-icon">📊</span>
+    <span class="mnb-label">KPI</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnb-checkin" onclick="switchTab('checkin',document.getElementById('tab-btn-checkin'));updateMobileNav('checkin')">
+    <span class="mnb-icon">📝</span>
+    <span class="mnb-label">Check-in</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnb-more" onclick="toggleMobileMoreMenu()">
+    <span class="mnb-icon">☰</span>
+    <span class="mnb-label">More</span>
+  </button>
+</div>
+
+<!-- ═══ MOBILE MORE MENU ═══ -->
+<div id="mobile-more-menu" style="display:none;position:fixed;bottom:56px;left:0;right:0;background:var(--surface2);border-top:1px solid var(--border);z-index:199;padding:4px 0;box-shadow:0 -4px 20px rgba(0,0,0,0.3);"></div>
 
 </body>
 </html>
