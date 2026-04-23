@@ -104,7 +104,7 @@ textarea{resize:vertical;min-height:140px}
 .select-actions button{font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface3);cursor:pointer;color:var(--text-muted);font-family:var(--font)}
 .select-actions button:hover{background:var(--surface3)}
 
-.preview-box{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:13px;color:var(--text-muted);white-space:pre-wrap;line-height:1.7;display:none;margin-top:8px}
+.preview-box{background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:13px;color:var(--text-muted);line-height:1.7;display:none;margin-top:8px}
 
 .pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
 .pill-sent{background:var(--green-lt);color:var(--green);border:1px solid #bbf7d0}
@@ -948,14 +948,43 @@ function togglePreview() {
   if (box.style.display === 'block') {
     box.style.display = 'none'; btn.textContent = 'Preview email'; return;
   }
-  const subject = document.getElementById('ann-subject').value.trim();
-  const body    = getRteText();
-  if (!subject && !body) { toast('Fill in subject and message first.', 'red'); return; }
+  const subject  = document.getElementById('ann-subject').value.trim();
+  const bodyHtml = getRteHtml();
+  const bodyText = getRteText();
+  if (!subject && !bodyText) { toast('Fill in subject and message first.', 'red'); return; }
   box.style.display = 'block';
   btn.textContent = 'Hide preview';
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
   const imgCount = ANN_IMAGES.length;
-  const imgNote  = imgCount > 0 ? `\n\n[${imgCount} image${imgCount > 1 ? 's' : ''} attached${ANN_IMAGES.some(i => i.status === 'uploaded') ? ' ✓' : ' — will upload on send'}]` : '';
-  box.textContent = `Subject: ${subject||'(no subject)'}\nFrom: PDD Dashboard <cpmpdd.tech@gmail.com>\nTo: ${SELECTED.size} recipient(s)\n\n${body||'(no message)'}${imgNote}`;
+  const imgNote = imgCount > 0
+    ? `<p style="font-size:12px;color:#94a3b8;margin:12px 0 0;">[${imgCount} image${imgCount>1?'s':''} ${ANN_IMAGES.some(i=>i.status==='uploaded')?'uploaded ✓':'will upload on send'}]</p>`
+    : '';
+
+  // Render as a real email preview matching what recipients will see
+  box.innerHTML = `
+    <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;border-radius:8px;overflow:hidden;border:1px solid var(--border2);">
+      <!-- Email header -->
+      <div style="background:#0f1e38;padding:14px 20px;">
+        <span style="color:#fff;font-size:14px;font-weight:700;">PDD Dashboard</span>
+        <span style="color:#94a3b8;font-size:11px;margin-left:8px;">Provincial Development Department</span>
+      </div>
+      <!-- Email body -->
+      <div style="background:#1a2640;padding:20px 24px;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #2a3d55;">
+          <strong style="color:#94a3b8;">To:</strong> ${SELECTED.size} recipient${SELECTED.size!==1?'s':''}
+          &nbsp;·&nbsp;
+          <strong style="color:#94a3b8;">From:</strong> ${LIVE_NAME||PDP_NAME} &lt;cpmpdd.tech@gmail.com&gt;
+        </div>
+        <h2 style="margin:0 0 6px;font-size:16px;color:#e8f0f8;">${subject||'(no subject)'}</h2>
+        <p style="color:#64748b;font-size:11px;margin:0 0 16px;">${LIVE_NAME||PDP_NAME} · ${dateStr}</p>
+        <div style="font-size:13px;color:#cbd5e1;line-height:1.7;">${bodyHtml||'(no message)'}</div>
+        ${imgNote}
+        <hr style="border:none;border-top:1px solid #2a3d55;margin:16px 0;">
+        <p style="font-size:10px;color:#475569;margin:0;">This is an official announcement. Do not reply to this email.</p>
+      </div>
+    </div>`;
 }
 
 // ── SEND ──────────────────────────────────────────────────────────────
@@ -1475,7 +1504,6 @@ function toast(msg, type='blue') {
     <div class="send-steps" id="send-steps"></div>
     <button class="send-progress-done-btn" id="progress-done-btn" onclick="closeSendProgress()">Done ✓</button>
   </div>
-  
 </div>
 
 </body>

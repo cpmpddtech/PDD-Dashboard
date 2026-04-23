@@ -1021,6 +1021,33 @@ export default {
 
 
     // ── Sync all users from CF secret to Drive (admin one-time fix) ───────
+    // ── Migrate lh3 avatar URLs to stable drive.google.com/uc format ──────
+    if (action === 'migrate_avatar_urls') {
+      const u = await validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+      const users = await getUsers();
+      let fixed = 0;
+      Object.keys(users).forEach(uname => {
+        const u = users[uname];
+        if (u.avatarUrl && (u.avatarUrl.includes('lh3.googleusercontent.com/d/') || u.avatarUrl.includes('drive.google.com/uc?export=view'))) {
+          let fileId = null;
+          if (u.avatarUrl.includes('lh3.googleusercontent.com/d/')) {
+            fileId = u.avatarUrl.split('/d/')[1]?.split('?')[0];
+          } else if (u.avatarUrl.includes('drive.google.com/uc?export=view')) {
+            fileId = new URLSearchParams(u.avatarUrl.split('?')[1]).get('id');
+          } else if (u.avatarUrl.includes('drive.google.com/thumbnail')) {
+            fileId = new URLSearchParams(u.avatarUrl.split('?')[1]).get('id');
+          }
+          if (fileId) {
+            users[uname].avatarUrl = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w400';
+            fixed++;
+          }
+        }
+      });
+      if (fixed > 0) await saveUsers(users);
+      return new Response(JSON.stringify({ ok: true, fixed, message: 'Migrated ' + fixed + ' avatar URLs' }), { status: 200, headers });
+    }
+
     if (action === 'auth') {
       const { username, password } = body;
       const ip       = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -2900,10 +2927,24 @@ export default {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: 'reader', type: 'anyone' }),
-      }).catch(() => {});
+      });
 
-      // Google Drive direct image URL (works for public files)
-      const avatarUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+      // Make file publicly readable so the lh3 URL works
+      const permRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+      });
+      if (!permRes.ok) {
+        const permErr = await permRes.json().catch(() => ({}));
+        console.error('[Worker] avatar permission set failed:', permErr.error?.message || permRes.status);
+      } else {
+        console.log('[Worker] avatar permission set OK for', fileId);
+      }
+
+      // Use stable public URL — works after setting anyone+reader permission above
+      // uc?export=view is the reliable public-facing URL for Drive images
+      const avatarUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
 
       // Save avatarUrl + fileId to user record in USERS_CONFIG
       const usersW = await getUsers();
