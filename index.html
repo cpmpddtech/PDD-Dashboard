@@ -1621,14 +1621,14 @@ if (typeof Chart !== 'undefined') {
   <div class="header">
     <div class="header-left">
       <div class="logo"><img src="cpmpddlogo.png" alt="CPMPDD Logo"></div>
-      <div>
-        <div class="header-title">Program Delivery Dashboard</div>
+      <div class="header-title-wrap">
+        <div class="header-title">PDD Dashboard</div>
         <div class="header-sub" id="hdr-status">Loading data…</div>
       </div>
     </div>
     <div class="header-right">
-      <div class="pill pill-gray" id="hdr-quarter"></div>
-      <div class="pill pill-blue" id="hdr-cw"></div>
+      <div class="pill pill-gray header-pill-quarter" id="hdr-quarter"></div>
+      <div class="pill pill-blue header-pill-cw" id="hdr-cw"></div>
       <div class="pill pill-green" id="live-pill" style="display:none;">
         <div class="live-dot"></div>Live
       </div>
@@ -3577,10 +3577,10 @@ function renderMyProfile() {
   const rateColor = deliveryRate >= 75 ? 'var(--green)' : deliveryRate >= 40 ? 'var(--amber)' : 'var(--red)';
 
   el.innerHTML = `
-    <div style="max-width:860px;">
+    <div class="profile-page-wrap">
 
       <!-- ── HEADER CARD ── -->
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:28px 28px 24px;margin-bottom:16px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;" class="profile-header-row">
+      <div class="profile-header-card profile-header-row">
         <!-- Avatar with upload -->
         <div style="position:relative;flex-shrink:0;" class="profile-avatar-wrap">
           ${(u.avatarUrl || window._avatarBlobUrl)
@@ -3601,13 +3601,13 @@ function renderMyProfile() {
             onchange="handleAvatarUpload(this)">
         </div>
         <!-- Info -->
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;">${u.name}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <div class="profile-info-block">
+          <div class="profile-name">${u.name}</div>
+          <div class="profile-badges">
             <span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:${roleBg};color:${roleFg};">${roleLabels[u.role] || u.role}</span>
             ${u.diocese ? `<span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.12);color:#60a5fa;">${u.diocese}</span>` : ''}
           </div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);">
+          <div class="profile-meta-row">
             <span>🏷 <code style="background:var(--surface3);padding:2px 7px;border-radius:5px;font-size:11px;color:var(--gray-600);">${u.username}</code></span>
             ${u.email ? `<span>✉ <a href="mailto:${u.email}" style="color:var(--blue);text-decoration:none;">${u.email}</a></span>` : '<span style="color:var(--text-dim);">✉ No email set — ask your admin</span>'}
             <span>📅 ${today}</span>
@@ -3617,7 +3617,7 @@ function renderMyProfile() {
         <div id="avatar-upload-status" style="display:none;"></div>
 
         <!-- Quick action -->
-        <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;" class="profile-quick-btns">
+        <div class="profile-quick-btns">
           <button onclick="showChangePasswordModal()" style="padding:8px 16px;border:1px solid var(--border2);border-radius:8px;background:var(--surface3);color:var(--text);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
             🔑 Change Password
           </button>
