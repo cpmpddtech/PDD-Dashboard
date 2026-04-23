@@ -4316,4 +4316,5 @@ export default {
       return new Response(JSON.stringify({ error: 'Internal error: ' + e.message }), { status: 500, headers });
     }
   }
+
 };
