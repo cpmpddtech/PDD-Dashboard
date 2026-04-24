@@ -6,7 +6,29 @@
 <title>PDD Dashboard — CPMPDD</title>
   <link rel="icon" type="image/png" href="cpmpddlogo.png">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Load Chart.js with multiple CDN fallbacks for unreliable connections
+(function() {
+  const CDNs = [
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+    'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js',
+  ];
+  let idx = 0;
+  function tryLoad() {
+    if (idx >= CDNs.length) {
+      console.warn('[PDD] Chart.js unavailable — charts disabled');
+      window.Chart = null;
+      return;
+    }
+    const s = document.createElement('script');
+    s.src = CDNs[idx++];
+    s.onerror = () => { document.head.removeChild(s); tryLoad(); };
+    document.head.appendChild(s);
+  }
+  tryLoad();
+})();
+</script>
 <script>
 // PDD Dashboard — Chart.js dark theme defaults
 if (typeof Chart !== 'undefined') {
@@ -3864,6 +3886,13 @@ function renderEmptyState() {
 // ═══════════════════════════════════════════════════
 let charts = {};
 function dc(id) { if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+function chartAvailable() {
+  if (typeof Chart === 'undefined' || !window.Chart) {
+    console.warn('[PDD] Chart.js not loaded — chart skipped');
+    return false;
+  }
+  return true;
+}
 
 function perfBadge(pct) {
   if (pct===null) return `<span class="badge badge-gray">—</span>`;
@@ -4272,6 +4301,7 @@ function renderProgress() {
     </div>`;
   }).join('');
 
+  if (!chartAvailable()) return;
   dc('statusChart');
   charts.statusChart = new Chart(document.getElementById('statusChart'),{
     type:'doughnut',
@@ -4335,6 +4365,7 @@ function renderKpi() {
     <div class="stat-card"><div class="stat-label">Total Delivered</div><div class="stat-val">${totD}</div>${mainBadge(totT>0?Math.round(totD/totT*100):null)}</div>`;
 
   const labels = w.map(x=>`CW ${x.cw}`);
+  if (!chartAvailable()) return;
   dc('kpiBar');
   charts.kpiBar = new Chart(document.getElementById('kpiBar'),{
     type:'bar',
@@ -4411,6 +4442,7 @@ function renderStaff() {
     <div class="stat-card"><div class="stat-label">Team Tasks</div><div class="stat-val">${teamT}</div><span class="badge badge-gray">${rangeLabel('s')}</span></div>
     <div class="stat-card"><div class="stat-label">Team Delivery</div><div class="stat-val">${teamD}</div>${mainBadge(teamT>0?Math.round(teamD/teamT*100):null)}</div>`;
 
+  if (!chartAvailable()) return;
   dc('staffBar');
   charts.staffBar = new Chart(document.getElementById('staffBar'),{
     type:'bar',
@@ -6912,5 +6944,4 @@ function resetProjRespChips() {
 <div id="mobile-more-menu" style="display:none;position:fixed;bottom:56px;left:0;right:0;background:var(--surface2);border-top:1px solid var(--border);z-index:199;padding:4px 0;box-shadow:0 -4px 20px rgba(0,0,0,0.3);"></div>
 
 </body>
-
 </html>
