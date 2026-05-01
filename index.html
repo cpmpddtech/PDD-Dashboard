@@ -4549,7 +4549,7 @@ async function quickUpdateTask(taskName, programId, newStatus, btn) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Update failed');
 
-    // Update local DATA immediately
+    // Update local DATA immediately for instant UI feedback
     DATA.programs.forEach(p => {
       if (!p.taskList) return;
       p.taskList.forEach(t => {
@@ -4560,6 +4560,15 @@ async function quickUpdateTask(taskName, programId, newStatus, btn) {
     rebuildKpiFromTasks();
     renderAll();
     showToast('✓ "' + taskName + '" → ' + newStatus);
+
+    // Reload fresh data from worker in background to confirm sheet write
+    // This ensures re-login also shows the correct status
+    setTimeout(() => {
+      loadFromWorker().then(() => {
+        rebuildKpiFromTasks();
+        renderAll();
+      }).catch(() => {});
+    }, 1500);
   } catch(e) {
     btn.disabled = false;
     btn.textContent = origText;
