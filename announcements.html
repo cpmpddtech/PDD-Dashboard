@@ -555,10 +555,10 @@ textarea{resize:vertical;min-height:140px}
               ondragleave="this.style.borderColor='var(--border2)';this.style.background='var(--surface3)'"
               ondrop="handleImgDrop(event)">
               <div style="font-size:22px;margin-bottom:6px;">🖼</div>
-              <div style="font-size:13px;font-weight:600;color:var(--text);">Click to add images</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">or drag & drop · JPG, PNG, GIF, WebP · max 8MB each · up to 5 images</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);">Click to add images or files</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">or drag & drop · Images, PDF, Word, Excel, PowerPoint, ZIP · max 20MB · up to 5 files</div>
             </div>
-            <input type="file" id="ann-img-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:none;" onchange="handleImgSelect(this)">
+            <input type="file" id="ann-img-input" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/zip" multiple style="display:none;" onchange="handleImgSelect(this)">
             <div id="img-preview-row" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;"></div>
             <div id="img-upload-status" style="display:none;font-size:12px;margin-top:8px;padding:8px 12px;border-radius:8px;"></div>
           </div>
@@ -1328,7 +1328,7 @@ function handleImgDrop(e) {
   const zone = document.getElementById('img-drop-zone');
   zone.style.borderColor = 'var(--border2)';
   zone.style.background  = 'var(--surface3)';
-  const files = [...(e.dataTransfer.files || [])].filter(f => f.type.startsWith('image/'));
+  const files = [...(e.dataTransfer.files || [])];
   addImages(files);
 }
 
@@ -1344,7 +1344,7 @@ function addImages(files) {
   if (remaining <= 0) { showImgStatus('⚠ Maximum 5 images already added.', 'amber'); return; }
   files = files.slice(0, remaining);
 
-  const MAX_MB = 8;
+  const MAX_MB = 20;
   files.forEach(file => {
     if (file.size > MAX_MB * 1024 * 1024) {
       showImgStatus(`⚠ "${file.name}" is too large (max ${MAX_MB}MB).`, 'red');
@@ -1358,18 +1358,35 @@ function addImages(files) {
 
 function renderImgPreview(id, file) {
   const row = document.getElementById('img-preview-row');
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wrap = document.createElement('div');
-    wrap.className = 'img-thumb-wrap';
-    wrap.id = 'thumb-' + id;
+  const isImage = file.type.startsWith('image/');
+  const wrap = document.createElement('div');
+  wrap.className = 'img-thumb-wrap';
+  wrap.id = 'thumb-' + id;
+
+  if (isImage) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      wrap.innerHTML = `
+        <img src="${e.target.result}" alt="">
+        <button class="img-remove" onclick="removeImage('${id}')" title="Remove">×</button>
+        <div class="img-status" id="img-status-${id}">Ready</div>`;
+      row.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // Non-image — show file icon
+    const ext = file.name.split('.').pop().toUpperCase();
+    const iconMap = { PDF:'📄', DOC:'📝', DOCX:'📝', XLS:'📊', XLSX:'📊', PPT:'📋', PPTX:'📋', ZIP:'🗜', CSV:'📊', TXT:'📄' };
+    const icon = iconMap[ext] || '📎';
     wrap.innerHTML = `
-      <img src="${e.target.result}" alt="">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:8px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:4px;">${icon}</div>
+        <div style="font-size:9px;color:var(--text-muted);word-break:break-all;line-height:1.2;">${file.name.length > 20 ? file.name.slice(0,18)+'…' : file.name}</div>
+      </div>
       <button class="img-remove" onclick="removeImage('${id}')" title="Remove">×</button>
       <div class="img-status" id="img-status-${id}">Ready</div>`;
     row.appendChild(wrap);
-  };
-  reader.readAsDataURL(file);
+  }
 }
 
 function removeImage(id) {
@@ -1440,8 +1457,10 @@ async function uploadAllImages() {
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Upload failed');
 
-      img.driveUrl = data.imageUrl;
-      img.status   = 'uploaded';
+      img.driveUrl  = data.imageUrl;
+      img.isImage   = data.isImage;
+      img.fileName  = data.fileName;
+      img.status    = 'uploaded';
       setThumbStatus(img.id, '✓', 'green');
       return true;
     } catch(e) {
@@ -1464,12 +1483,42 @@ async function uploadAllImages() {
 function buildImageHtml() {
   const uploaded = ANN_IMAGES.filter(img => img.driveUrl);
   if (!uploaded.length) return '';
-  return uploaded.map(img =>
-    `<div style="margin:16px 0;text-align:center;">
-      <img src="${img.driveUrl}" alt="Announcement image"
-        style="max-width:100%;max-height:500px;border-radius:8px;border:1px solid #e5e7eb;display:block;margin:0 auto;">
-    </div>`
-  ).join('\n');
+
+  const images = uploaded.filter(img => img.isImage !== false && img.file?.type?.startsWith('image/'));
+  const files  = uploaded.filter(img => img.isImage === false || !img.file?.type?.startsWith('image/'));
+
+  let html = '';
+
+  // Embedded images
+  if (images.length) {
+    html += images.map(img =>
+      `<div style="margin:16px 0;text-align:center;">
+        <img src="${img.driveUrl}" alt="Attachment"
+          style="max-width:100%;max-height:500px;border-radius:8px;border:1px solid #e5e7eb;display:block;margin:0 auto;">
+      </div>`
+    ).join('\n');
+  }
+
+  // File attachments as download links
+  if (files.length) {
+    const extIcons = { pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊', ppt:'📋', pptx:'📋', zip:'🗜', csv:'📊', txt:'📄' };
+    html += `<div style="margin:20px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#374151;">📎 Attachments (${files.length})</p>
+      ${files.map(img => {
+        const ext = (img.fileName || img.file?.name || '').split('.').pop().toLowerCase();
+        const icon = extIcons[ext] || '📎';
+        const name = img.fileName || img.file?.name || 'Attachment';
+        return `<div style="margin:6px 0;">
+          <a href="${img.driveUrl}" target="_blank"
+            style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border:1px solid #d1d5db;border-radius:6px;text-decoration:none;color:#2563eb;font-size:13px;font-weight:500;">
+            ${icon} ${name}
+          </a>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  return html;
 }
 
 let _toastTimer;
