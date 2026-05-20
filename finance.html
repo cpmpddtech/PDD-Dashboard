@@ -684,7 +684,7 @@ textarea { resize:vertical; min-height:80px; }
     <div class="nav-item" id="nav-budgets" onclick="switchPane('budgets')">
       <div class="nav-dot" style="background:var(--teal);"></div> All Budgets
     </div>
-    <div class="nav-item" id="nav-budget-new" onclick="openBudgetModal(null)">
+    <div class="nav-item fin-edit-only" id="nav-budget-new" onclick="openBudgetModal(null)">
       <div class="nav-dot" style="background:var(--gray-300);"></div> New Budget
     </div>
 
@@ -697,7 +697,7 @@ textarea { resize:vertical; min-height:80px; }
     <div class="nav-item" id="nav-expenditures" onclick="switchPane('expenditures')">
       <div class="nav-dot" style="background:var(--amber);"></div> Log Expense
     </div>
-    <div class="nav-item" id="nav-approvals" onclick="switchPane('approvals')">
+    <div class="nav-item fin-approve-only" id="nav-approvals" onclick="switchPane('approvals')">
       <div class="nav-dot" style="background:var(--red);"></div> Approvals
       <span class="badge" id="approvals-badge" style="display:none;">0</span>
     </div>
@@ -706,10 +706,10 @@ textarea { resize:vertical; min-height:80px; }
     </div>
 
     <div class="sidebar-section" id="nav-admin-section">Config</div>
-    <div class="nav-item" id="nav-donors" onclick="switchPane('donors')">
+    <div class="nav-item fin-edit-only" id="nav-donors" onclick="switchPane('donors')">
       <div class="nav-dot" style="background:var(--purple);"></div> Donors
     </div>
-    <div class="nav-item" id="nav-setup" onclick="switchPane('setup')">
+    <div class="nav-item fin-edit-only" id="nav-setup" onclick="switchPane('setup')">
       <div class="nav-dot" style="background:var(--gray-400);"></div> Setup
     </div>
   </nav>
@@ -1434,7 +1434,7 @@ textarea { resize:vertical; min-height:80px; }
 // ══════════════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════════════
-const WORKER_URL = 'https://pdd-dashboard.cpmpdd-tech.workers.dev/';
+const WORKER_URL = 'https://cpmpdd.org/api/';
 const PDP_USER   = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
 const PDP_PW     = sessionStorage.getItem('pdp_pw') || '';
 const PDP_ROLE   = PDP_USER?.role || '';
@@ -1444,7 +1444,9 @@ const PDP_DIOCESE = PDP_USER?.diocese || null;
 const FIN_ROLES    = ['admin','manager','finance_manager','finance_staff','finance'];
 const MGR_ROLES    = ['admin','manager','finance_manager'];
 const IS_MANAGER   = MGR_ROLES.includes(PDP_ROLE);
-const IS_ADMIN     = PDP_ROLE === 'admin';
+const IS_ADMIN          = PDP_ROLE === 'admin';
+const IS_FINANCE_MANAGER = ['admin','manager','finance_manager'].includes(PDP_ROLE);
+const IS_FINANCE_STAFF   = PDP_ROLE === 'finance_staff' || PDP_ROLE === 'finance';
 
 const SECTION_NAMES = {
   '1':'Training & Community Mobilization',
@@ -1582,6 +1584,12 @@ async function loadAll() {
 }
 
 function renderAll() {
+  // Apply role-based UI visibility
+  const editEls = document.querySelectorAll('.fin-edit-only');
+  const approveEls = document.querySelectorAll('.fin-approve-only');
+  editEls.forEach(el => el.style.display = FIN.canEditBudget ? '' : 'none');
+  approveEls.forEach(el => el.style.display = FIN.canApprove ? '' : 'none');
+
   renderDashboard();
   renderBudgets();
   renderDonors();

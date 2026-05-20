@@ -3587,7 +3587,9 @@ function completeLogin(data, username, password) {
     // Merge email into ROLE_CONFIG from USERS_LIST if available
     if (data.users) {
       data.users.forEach(u => {
-        if (ROLE_CONFIG[u.name]) ROLE_CONFIG[u.name].email = u.email || null;
+        if (!ROLE_CONFIG[u.name]) ROLE_CONFIG[u.name] = {};
+        if (u.email)   ROLE_CONFIG[u.name].email   = u.email || null;
+        if (u.budgets) ROLE_CONFIG[u.name].budgets  = u.budgets || [];
       });
     }
     sessionStorage.setItem('pdp_role_config', JSON.stringify(ROLE_CONFIG));
@@ -6477,14 +6479,14 @@ function renderRoleManagement() {
       const prevCount = USERS_LIST ? USERS_LIST.length : 0;
       USERS_LIST = data.staff;
 
-      // Patch ROLE_CONFIG with fresh role, email, diocese from merged staff list
-      // This fixes Drive-only users missing email and stale roles after updates
+      // Patch ROLE_CONFIG with fresh data from merged staff list
       data.staff.forEach(u => {
         if (!ROLE_CONFIG[u.name]) ROLE_CONFIG[u.name] = {};
         if (u.role)    ROLE_CONFIG[u.name].role    = u.role;
         if (u.email)   ROLE_CONFIG[u.name].email   = u.email;
         if (u.diocese) ROLE_CONFIG[u.name].diocese = u.diocese;
         if (u.programs) ROLE_CONFIG[u.name].programs = u.programs;
+        if (u.budgets)  ROLE_CONFIG[u.name].budgets  = u.budgets;
       });
       sessionStorage.setItem('pdp_role_config', JSON.stringify(ROLE_CONFIG));
 
@@ -6572,6 +6574,25 @@ function _renderRoleManagementCards(grid) {
             <div class="rm-label">Extra Features</div>
             <div class="rm-toggle-row" id="rm-feat-${name}">${featureToggles}</div>
           </div>
+          ${['finance_staff','finance','finance_manager'].includes(cfg.role) ? `
+          <div class="rm-field" id="rm-budget-section-${name}">
+            <div class="rm-label">Assigned Budgets <span style="font-size:10px;color:var(--gray-400);font-weight:400;">(Finance access)</span></div>
+            <div class="rm-budget-input-wrap" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+              <input type="text" id="rm-budget-input-${name}" placeholder="Budget ID e.g. B001"
+                style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface3);color:var(--text);width:140px;"
+                onkeydown="if(event.key==='Enter'){addBudgetToUser('${name}');event.preventDefault();}">
+              <button style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface3);color:var(--text);cursor:pointer;"
+                onclick="addBudgetToUser('${name}')">+ Add</button>
+            </div>
+            <div class="rm-toggle-row" id="rm-budget-tags-${name}">
+              ${(cfg.budgets||[]).map(bid => `
+                <span class="rm-toggle on" style="display:inline-flex;align-items:center;gap:4px;">
+                  ${bid}
+                  <span onclick="removeBudgetFromUser('${name}','${bid}')" style="cursor:pointer;font-size:13px;line-height:1;margin-left:2px;opacity:.7;">×</span>
+                </span>`).join('')}
+              ${(cfg.budgets||[]).length === 0 ? '<span style="font-size:11px;color:var(--gray-400);">No budgets assigned</span>' : ''}
+            </div>
+          </div>` : ''}
           <div class="rm-divider"></div>
           <button class="rm-save-btn" onclick="saveIndividualRole('${name}')">Save changes</button>
           <div class="rm-saved-msg" id="rm-saved-${name}">✓ Saved successfully</div>
@@ -6639,6 +6660,51 @@ function toggleFeature(name, feat, el) {
   if (idx === -1) { arr.push(feat); el.classList.add('on'); }
   else            { arr.splice(idx,1); el.classList.remove('on'); }
   ROLE_CONFIG[name].features = arr;
+  updateConfigJSON();
+}
+
+
+// ── Budget assignment in Role Management ─────────────────────────────
+function addBudgetToUser(name) {
+  const input = document.getElementById('rm-budget-input-' + name);
+  if (!input) return;
+  const bid = input.value.trim().toUpperCase();
+  if (!bid) return;
+  if (!ROLE_CONFIG[name]) ROLE_CONFIG[name] = {};
+  if (!ROLE_CONFIG[name].budgets) ROLE_CONFIG[name].budgets = [];
+  if (ROLE_CONFIG[name].budgets.includes(bid)) {
+    input.value = '';
+    return;
+  }
+  ROLE_CONFIG[name].budgets.push(bid);
+  input.value = '';
+  // Re-render budget tags
+  const tagsEl = document.getElementById('rm-budget-tags-' + name);
+  if (tagsEl) {
+    tagsEl.innerHTML = ROLE_CONFIG[name].budgets.map(b =>
+      `<span class="rm-toggle on" style="display:inline-flex;align-items:center;gap:4px;">
+        ${b}
+        <span onclick="removeBudgetFromUser('${name}','${b}')" style="cursor:pointer;font-size:13px;line-height:1;margin-left:2px;opacity:.7;">×</span>
+      </span>`
+    ).join('');
+  }
+  updateConfigJSON();
+}
+
+function removeBudgetFromUser(name, bid) {
+  if (!ROLE_CONFIG[name]?.budgets) return;
+  ROLE_CONFIG[name].budgets = ROLE_CONFIG[name].budgets.filter(b => b !== bid);
+  const tagsEl = document.getElementById('rm-budget-tags-' + name);
+  if (tagsEl) {
+    tagsEl.innerHTML = ROLE_CONFIG[name].budgets.length
+      ? ROLE_CONFIG[name].budgets.map(b =>
+          `<span class="rm-toggle on" style="display:inline-flex;align-items:center;gap:4px;">
+            ${b}
+            <span onclick="removeBudgetFromUser('${name}','${b}')" style="cursor:pointer;font-size:13px;line-height:1;margin-left:2px;opacity:.7;">×</span>
+          </span>`
+        ).join('')
+      : '<span style="font-size:11px;color:var(--gray-400);">No budgets assigned</span>';
+  }
   updateConfigJSON();
 }
 

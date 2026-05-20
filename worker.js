@@ -1567,6 +1567,7 @@ export default {
         assignedBy:  body.username,
       }).catch(e => console.error('[Notify add_task]', e.message));
 
+      try { await caches.default.delete('https://pdp-sheets-cache.internal/data'); } catch(e) {}
       return new Response(JSON.stringify({ ok: true, taskId, sheetName, row }), { status: 200, headers });
     }
 
@@ -1615,8 +1616,13 @@ export default {
         const err = await res.json().catch(() => ({}));
         return new Response(JSON.stringify({ error: err.error?.message || res.status }), { status: 500, headers });
       }
+      // Invalidate Sheets cache so next data fetch gets fresh status
+      try {
+        await caches.default.delete('https://pdp-sheets-cache.internal/data');
+      } catch(e) { /* non-fatal */ }
+
       // Fire notification — non-blocking
-      await sendNotification(env, 'task_updated', {
+      sendNotification(env, 'task_updated', {
         taskName:  taskName,
         programId: programId,
         status:    newStatus,
@@ -1836,6 +1842,7 @@ export default {
         }).catch(e => console.error('[Notify checkin]', e.message));
       }
 
+      try { await caches.default.delete('https://pdp-sheets-cache.internal/data'); } catch(e) {}
       return new Response(JSON.stringify({ ok: true, taskErrors }), { status: 200, headers });
     }
 
@@ -2972,10 +2979,41 @@ export default {
       if (!fileBase64)
         return new Response(JSON.stringify({ error: 'fileBase64 required' }), { status: 400, headers });
 
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      const safeMime = allowedTypes.includes(mimeType) ? mimeType : 'image/jpeg';
-      const ext = safeMime === 'image/png' ? 'png' : safeMime === 'image/gif' ? 'gif' : safeMime === 'image/webp' ? 'webp' : 'jpg';
-      const uploadName = `ann_img_${u.username}_${Date.now()}.${ext}`;
+      // Allow images and common document/file types
+      const imageTypes = ['image/jpeg','image/png','image/gif','image/webp'];
+      const docTypes   = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain','text/csv',
+        'application/zip','application/x-zip-compressed',
+      ];
+      const isImage = imageTypes.includes(mimeType);
+      const isDoc   = docTypes.includes(mimeType);
+      if (!isImage && !isDoc) {
+        return new Response(JSON.stringify({ error: 'File type not allowed' }), { status: 400, headers });
+      }
+      const safeMime = mimeType;
+      // Derive extension from fileName or mimeType
+      const extMap = {
+        'image/jpeg':'jpg','image/png':'png','image/gif':'gif','image/webp':'webp',
+        'application/pdf':'pdf',
+        'application/msword':'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx',
+        'application/vnd.ms-excel':'xls',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx',
+        'application/vnd.ms-powerpoint':'ppt',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx',
+        'text/plain':'txt','text/csv':'csv',
+        'application/zip':'zip','application/x-zip-compressed':'zip',
+      };
+      const ext = extMap[mimeType] || (fileName?.split('.').pop() || 'bin');
+      const safeFileName = (fileName || 'attachment').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const uploadName = `ann_file_${u.username}_${Date.now()}_${safeFileName}`;
 
       const folderId = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
       if (!folderId)
@@ -3034,7 +3072,10 @@ export default {
       }).catch(() => {});
 
       const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
-      return new Response(JSON.stringify({ ok: true, imageUrl, fileId }), { status: 200, headers });
+      return new Response(JSON.stringify({
+        ok: true, imageUrl, fileId, isImage,
+        fileName: safeFileName, mimeType: safeMime,
+      }), { status: 200, headers });
     }
 
     if (action === 'upload_voucher') {
