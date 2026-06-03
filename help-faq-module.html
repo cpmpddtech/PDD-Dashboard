@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Help &amp; FAQ — PDD Dashboard</title>
+<link rel="icon" type="image/png" href="cpmpddlogo.png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:#3b82f6; --blue-lt:rgba(59,130,246,0.12); --blue-bd:rgba(59,130,246,0.3);
+    --green:#22c55e; --green-lt:rgba(34,197,94,0.12); --amber:#f59e0b; --amber-lt:rgba(245,158,11,0.12);
+    --red:#ef4444; --red-lt:rgba(239,68,68,0.12);
+    --gray-50:#0d1525; --gray-100:#131e30; --gray-200:#1e2d45; --gray-300:#2a3d55; --gray-400:#5a7a9a;
+    --gray-500:#7a9ab8; --gray-600:#94b4cc; --gray-700:#b8cfe0; --gray-900:#e8f0f8;
+    --surface:#0f1825; --surface2:#131e30; --surface3:#1a2640;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+    --text:#e8f0f8; --text-muted:#5a7a9a; --font:'Plus Jakarta Sans',sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:var(--font); background:var(--surface); color:var(--text); min-height:100vh; }
+  .role-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:0.03em; flex-shrink:0; }
+  .role-admin   { background:#1e3a5f; color:#93c5fd; }
+  .role-finance  { background:#3b1f5e; color:#c4b5fd; }
+  .role-manager { background:#14532d; color:#86efac; }
+  .role-staff   { background:#f3f4f6; color:#374151; border:1px solid var(--border); }
+  .help-topbar { display:flex; align-items:center; gap:13px; padding:14px 24px; background:var(--surface2); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; }
+  .help-topbar img { height:32px; width:auto; }
+  .ht-title { font-size:16px; font-weight:800; color:var(--text); line-height:1.2; }
+  .ht-sub { font-size:11.5px; color:var(--text-muted); }
+  .help-back { margin-left:auto; font-size:13px; font-weight:600; color:var(--blue); text-decoration:none; padding:8px 14px; border:1px solid var(--border2); border-radius:9px; transition:background .15s; white-space:nowrap; }
+  .help-back:hover { background:var(--surface3); }
+  #tab-help { display:block; padding:30px 20px 70px; }
+</style>
+<style>
+      /* ── FAQ (scoped) ── */
+      #tab-help .faq-root { max-width: 860px; margin: 0 auto; }
+      #tab-help .faq-root[data-lang="my"] .faq-my-text { font-family: 'Noto Sans Myanmar', var(--font); line-height: 1.9; }
+      #tab-help .faq-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
+      #tab-help .faq-title { font-size:22px; font-weight:800; color:var(--text); }
+      #tab-help .faq-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
+      #tab-help .faq-lang { display:inline-flex; background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:3px; gap:2px; }
+      #tab-help .faq-lang-btn { font-family:var(--font); font-size:13px; font-weight:600; padding:6px 14px; border:none; background:transparent; color:var(--text-muted); border-radius:7px; cursor:pointer; transition:all .15s; }
+      #tab-help .faq-lang-btn.active { background:var(--blue); color:#fff; }
+      #tab-help .faq-searchwrap { position:relative; margin-bottom:22px; }
+      #tab-help .faq-search-icn { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.6; pointer-events:none; }
+      #tab-help .faq-search { width:100%; padding:13px 16px 13px 40px; font-family:var(--font); font-size:14px; color:var(--text); background:var(--surface2); border:1px solid var(--border2); border-radius:12px; outline:none; transition:border-color .15s; }
+      #tab-help .faq-search:focus { border-color:var(--blue); }
+      #tab-help .faq-search::placeholder { color:var(--text-muted); }
+      #tab-help .faq-cat { margin-bottom:26px; }
+      #tab-help .faq-cat-title { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gray-600); margin-bottom:10px; padding-left:2px; }
+      #tab-help .faq-item { background:var(--surface2); border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden; transition:border-color .15s; }
+      #tab-help .faq-item.open { border-color:var(--blue-bd); }
+      #tab-help .faq-q { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:15px 18px; background:transparent; border:none; cursor:pointer; font-family:var(--font); }
+      #tab-help .faq-q:hover { background:rgba(255,255,255,0.02); }
+      #tab-help .faq-q-text { flex:1; font-size:14.5px; font-weight:600; color:var(--text); }
+      #tab-help .faq-chev { font-size:12px; color:var(--text-muted); transition:transform .2s; flex-shrink:0; }
+      #tab-help .faq-item.open .faq-chev { transform:rotate(180deg); }
+      #tab-help .faq-a { max-height:0; overflow:hidden; transition:max-height .25s ease; }
+      #tab-help .faq-a-inner { padding:0 18px 16px 18px; font-size:14px; color:var(--gray-700); line-height:1.7; }
+      #tab-help .faq-item.open .faq-a { max-height:600px; }
+      #tab-help .faq-empty { text-align:center; color:var(--text-muted); font-size:14px; padding:40px 0; }
+      #tab-help .faq-foot { text-align:center; color:var(--text-muted); font-size:13px; margin-top:30px; padding-top:20px; border-top:1px solid var(--border); }
+      /* role badge sizing inside FAQ (reuses your .role-badge colors) */
+      #tab-help .faq-q .role-badge { flex-shrink:0; font-size:10px; }
+      @media (max-width:600px){ #tab-help .faq-title{font-size:19px;} #tab-help .faq-q-text{font-size:13.5px;} }
+    </style>
+</head>
+<body>
+  <header class="help-topbar">
+    <img src="cpmpddlogo.png" alt="CPMPDD">
+    <div>
+      <div class="ht-title">Help &amp; FAQ</div>
+      <div class="ht-sub">PDD Dashboard · Provincial Development Department</div>
+    </div>
+    <a class="help-back" href="index.html">← Dashboard</a>
+  </header>
+
+  <div id="tab-help">
+      <div class="faq-root" id="faqRoot" data-lang="en">
+
+        <!-- Header -->
+        <div class="faq-head">
+          <div>
+            <div class="faq-title" data-en="Help &amp; FAQ" data-my="အကူအညီနှင့် မေးခွန်းများ">Help &amp; FAQ</div>
+            <div class="faq-sub" data-en="Common questions about using the dashboard." data-my="Dashboard အသုံးပြုပုံ မေးလေ့ရှိသော မေးခွန်းများ။">Common questions about using the dashboard.</div>
+          </div>
+          <div class="faq-lang">
+            <button type="button" class="faq-lang-btn active" data-setlang="en">EN</button>
+            <button type="button" class="faq-lang-btn" data-setlang="my">မြန်မာ</button>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="faq-searchwrap">
+          <span class="faq-search-icn">🔍</span>
+          <input type="text" id="faqSearch" class="faq-search"
+                 data-en-ph="Search help…  e.g. password, check-in, expense"
+                 data-my-ph="ရှာဖွေရန်…  ဥပမာ — စကားဝှက်၊ check-in"
+                 placeholder="Search help…  e.g. password, check-in, expense" autocomplete="off">
+        </div>
+
+        <!-- Rendered FAQ goes here -->
+        <div id="faqList" class="faq-list"></div>
+
+        <!-- No results -->
+        <div id="faqEmpty" class="faq-empty" style="display:none;"
+             data-en="No matching questions. Try different words."
+             data-my="ကိုက်ညီသော မေးခွန်း မတွေ့ပါ။ စကားလုံးပြောင်း၍ ပြန်ရှာပါ။">No matching questions. Try different words.</div>
+
+        <!-- Footer -->
+        <div class="faq-foot" data-en="Can't find an answer? Contact your administrator."
+             data-my="အဖြေ မတွေ့ပါက သင့် admin ကို ဆက်သွယ်ပါ။">Can't find an answer? Contact your administrator.</div>
+      </div>
+    </div>
+
+<script>
+    (function () {
+      // ── Category definitions (order shown) ──
+      const FAQ_CATS = [
+        { key:'start',    en:'Getting Started',      my:'စတင်အသုံးပြုခြင်း' },
+        { key:'tasks',    en:'Tasks & Check-ins',    my:'တာဝန်နှင့် Check-in' },
+        { key:'finance',  en:'Finance',              my:'ဘဏ္ဍာရေး' },
+        { key:'dcr',      en:'DCR Reports',          my:'DCR အစီရင်ခံစာ' },
+        { key:'minutes',  en:'Meeting Minutes',      my:'အစည်းအဝေး မှတ်တမ်း' },
+        { key:'announce', en:'Announcements',        my:'ကြေညာချက်များ' },
+        { key:'account',  en:'Account & Password',   my:'အကောင့်နှင့် စကားဝှက်' },
+      ];
+
+      // ── Role badge meta (reuses existing .role-* classes) ──
+      const FAQ_ROLES = {
+        all:     { en:'All staff', my:'ဝန်ထမ်းအားလုံး', cls:'role-staff'   },
+        admin:   { en:'Admin',     my:'Admin',          cls:'role-admin'   },
+        finance: { en:'Finance',   my:'ဘဏ္ဍာရေး',       cls:'role-finance' },
+        manager: { en:'Manager',   my:'မန်နေဂျာ',        cls:'role-manager' },
+      };
+
+      // ── FAQ content. c=category, r=role, q/a English, qm/am Burmese ──
+      const FAQ_DATA = [
+        // Getting Started
+        { c:'start', r:'all',
+          q:'What is the PDD Dashboard?',
+          a:'It is the central system for managing PDD programs, tasks, finances, reports, meeting minutes and announcements. You log in with the username and password your administrator gives you.',
+          qm:'PDD Dashboard ဆိုတာ ဘာလဲ?',
+          am:'PDD ၏ programs, တာဝန်များ, ဘဏ္ဍာရေး, အစီရင်ခံစာများ, အစည်းအဝေးမှတ်တမ်းနှင့် ကြေညာချက်များကို စီမံခန့်ခွဲသည့် ဗဟိုစနစ်ဖြစ်သည်။ admin ပေးထားသော username နှင့် password ဖြင့် ဝင်ရောက်ပါ။' },
+        { c:'start', r:'all',
+          q:'How do I log in?',
+          a:'Enter your username and password on the login screen. On your first login you will be asked to set a new password.',
+          qm:'ဘယ်လို log in ဝင်ရမလဲ?',
+          am:'Login screen တွင် သင့် username နှင့် password ကို ထည့်ပါ။ ပထမဆုံးအကြိမ် ဝင်ရောက်သည့်အခါ password အသစ် ပြောင်းရန် တောင်းခံပါမည်။' },
+        { c:'start', r:'all',
+          q:'Which tabs can I see?',
+          a:'Tabs depend on your role. Everyone sees Profile, My Tasks, Program Progress and Help. Finance, Minutes, Announcements and Role Management appear only if your role allows them.',
+          qm:'ကျွန်ုပ် ဘယ် tab တွေ မြင်ရမလဲ?',
+          am:'Tab များသည် သင့် role ပေါ်မူတည်သည်။ အားလုံးက Profile, My Tasks, Program Progress နှင့် Help ကို မြင်ရသည်။ Finance, Minutes, Announcements, Role Management တို့ကို သင့် role ခွင့်ပြုမှသာ မြင်ရပါမည်။' },
+        { c:'start', r:'all',
+          q:'The page looks broken or data is not loading. What do I do?',
+          a:'Refresh the page first — data is cached for about 10 seconds, so recent changes appear shortly after. If it keeps happening, check your internet connection and try logging out and back in.',
+          qm:'စာမျက်နှာ ပျက်နေသည် / data မတက်လာပါ။ ဘယ်လိုလုပ်ရမလဲ?',
+          am:'ပထမဆုံး စာမျက်နှာကို refresh လုပ်ပါ — data ကို စက္ကန့် ၁၀ ခန့် သိမ်းထားသဖြင့် မကြာမီ ပြောင်းလဲမှုများ ပေါ်လာပါမည်။ ဆက်ဖြစ်နေပါက internet ကို စစ်ပြီး log out / log in ပြန်လုပ်ကြည့်ပါ။' },
+        { c:'start', r:'all',
+          q:'Does the dashboard work on a phone?',
+          a:'Yes. It works in any mobile browser. The tabs at the top scroll sideways.',
+          qm:'ဖုန်းပေါ်တွင် အသုံးပြုလို့ ရလား?',
+          am:'ရပါသည်။ မည်သည့် mobile browser တွင်မဆို အလုပ်လုပ်သည်။ အပေါ်ရှိ tab များကို ဘေးတိုက် ဆွဲ၍ ကြည့်နိုင်ပါသည်။' },
+
+        // Tasks & Check-ins
+        { c:'tasks', r:'all',
+          q:'Where do I see my assigned tasks?',
+          a:'Open the "My Tasks" tab. It lists the tasks assigned to you, grouped by program, with each task\'s current status.',
+          qm:'ကျွန်ုပ်အား ပေးအပ်ထားသော တာဝန်များကို ဘယ်မှာ ကြည့်ရမလဲ?',
+          am:'"My Tasks" tab ကို ဖွင့်ပါ။ သင့်အား ပေးအပ်ထားသော တာဝန်များကို program အလိုက် စုစည်းပြီး လက်ရှိ status နှင့်တကွ ပြသပါသည်။' },
+        { c:'tasks', r:'all',
+          q:'How do I submit my weekly check-in?',
+          a:'Go to the "Weekly Check-in" tab, mark which tasks you delivered, add any blockers or notes, then submit. You can only submit your own check-in.',
+          qm:'အပတ်စဉ် Check-in ကို ဘယ်လို တင်ရမလဲ?',
+          am:'"Weekly Check-in" tab သို့ သွားပြီး ပြီးစီးခဲ့သော တာဝန်များကို မှတ်သားပါ၊ အခက်အခဲ (blockers) သို့မဟုတ် မှတ်ချက်များ ထည့်ပြီး submit လုပ်ပါ။ ကိုယ့် check-in ကိုသာ တင်နိုင်ပါသည်။' },
+        { c:'tasks', r:'all',
+          q:'What do the task statuses mean?',
+          a:'Planned = not started yet · In Progress = being worked on · Delivered = completed · Cancelled = no longer needed.',
+          qm:'Task status တွေရဲ့ အဓိပ္ပာယ်က ဘာလဲ?',
+          am:'Planned = မစတင်ရသေး · In Progress = လုပ်ဆောင်နေဆဲ · Delivered = ပြီးစီးပြီ · Cancelled = မလိုအပ်တော့ပါ။' },
+        { c:'tasks', r:'all',
+          q:'Will I be reminded to check in?',
+          a:'Yes. Every Monday morning the system emails a check-in reminder for the current week — as long as your email address is set on your account.',
+          qm:'Check-in လုပ်ရန် သတိပေးပါ့မလား?',
+          am:'ပေးပါသည်။ တနင်္လာနေ့ မနက်တိုင်း လက်ရှိအပတ်အတွက် check-in သတိပေးချက်ကို email ပို့ပါသည် — သင့်အကောင့်တွင် email သတ်မှတ်ထားမှသာ။' },
+        { c:'tasks', r:'manager',
+          q:'How do I see how my team is performing?',
+          a:'Managers and admins can use the "Staff Performance" and "Manager Digest" tabs to see delivery rates and weekly summaries.',
+          qm:'ကျွန်ုပ်အဖွဲ့၏ စွမ်းဆောင်ရည်ကို ဘယ်လို ကြည့်ရမလဲ?',
+          am:'Manager နှင့် admin များသည် "Staff Performance" နှင့် "Manager Digest" tab များတွင် delivery rate နှင့် အပတ်စဉ် အကျဉ်းချုပ်များကို ကြည့်နိုင်ပါသည်။' },
+
+        // Finance
+        { c:'finance', r:'finance',
+          q:'Who can use the Finance section?',
+          a:'Only finance roles and admins (Finance Manager, Finance Officer, Admin/Manager). The Finance tab is hidden for other staff.',
+          qm:'Finance အပိုင်းကို ဘယ်သူတွေ သုံးနိုင်လဲ?',
+          am:'Finance role များနှင့် admin များ (Finance Manager, Finance Officer, Admin/Manager) သာ သုံးနိုင်သည်။ အခြားဝန်ထမ်းများအတွက် Finance tab ကို ဖျောက်ထားပါသည်။' },
+        { c:'finance', r:'finance',
+          q:'How do I record an expense?',
+          a:'In Finance, open the budget, choose the line item and donor, pick the quarter, enter the amount and the expense date, then submit. It goes to a Finance Manager for approval.',
+          qm:'အသုံးစရိတ် (expense) ကို ဘယ်လို မှတ်တမ်းတင်ရမလဲ?',
+          am:'Finance တွင် budget ကို ဖွင့်ပါ၊ line item နှင့် donor ကို ရွေးပါ၊ quarter ရွေးပြီး ပမာဏနှင့် expense date ထည့်ကာ submit လုပ်ပါ။ Finance Manager ထံ အတည်ပြုရန် ရောက်သွားပါမည်။' },
+        { c:'finance', r:'finance',
+          q:'Why is my expense still "pending"?',
+          a:'Submitted expenses stay pending until a Finance Manager or Admin approves them. Only approved amounts count toward spending totals.',
+          qm:'ကျွန်ုပ်၏ expense က ဘာကြောင့် "pending" ဖြစ်နေသလဲ?',
+          am:'တင်ထားသော expense များသည် Finance Manager သို့မဟုတ် Admin က အတည်ပြုသည်အထိ pending အဖြစ် ရှိနေပါမည်။ အတည်ပြုပြီးသော ပမာဏများသာ စုစုပေါင်း အသုံးစရိတ်တွင် ပါဝင်ပါသည်။' },
+        { c:'finance', r:'manager',
+          q:'How do I approve or reject an expense?',
+          a:'Finance Managers and Admins see the pending expenses and can approve or reject each one. The person who submitted it is notified by email.',
+          qm:'Expense ကို ဘယ်လို approve / reject လုပ်ရမလဲ?',
+          am:'Finance Manager နှင့် Admin များသည် pending expense များကို မြင်ပြီး တစ်ခုချင်းစီ approve သို့မဟုတ် reject လုပ်နိုင်သည်။ တင်သွင်းသူထံ email ဖြင့် အကြောင်းကြားပါမည်။' },
+        { c:'finance', r:'finance',
+          q:'How do I attach a voucher or receipt?',
+          a:'After logging an expense, use the voucher upload on that expense to attach a photo or PDF. Files are stored in that budget\'s folder in Google Drive.',
+          qm:'Voucher / ဘောက်ချာ ကို ဘယ်လို တွဲတင်ရမလဲ?',
+          am:'Expense တင်ပြီးနောက် ထို expense ရှိ voucher upload ကို သုံး၍ ဓာတ်ပုံ သို့မဟုတ် PDF တွဲတင်ပါ။ ဖိုင်များကို ထို budget ၏ Google Drive folder တွင် သိမ်းဆည်းပါသည်။' },
+        { c:'finance', r:'manager',
+          q:'How do I generate a finance report?',
+          a:'Use the report option in Finance and choose the type — budget, donor, consolidated (province-wide) or diocese. It builds a formatted Google Sheet you can open or download. Consolidated and donor reports are Finance Manager / Admin only.',
+          qm:'Finance report ကို ဘယ်လို ထုတ်ရမလဲ?',
+          am:'Finance ရှိ report option ကို သုံးပြီး အမျိုးအစား ရွေးပါ — budget, donor, consolidated (ပြည်နယ်တစ်ခွင်) သို့မဟုတ် diocese။ ဖွင့်/download လုပ်နိုင်သော Google Sheet ကို ဖန်တီးပေးပါသည်။ Consolidated နှင့် donor report များမှာ Finance Manager / Admin အတွက်သာ ဖြစ်သည်။' },
+        { c:'finance', r:'finance',
+          q:'Why are amounts shown in MMK?',
+          a:'The system records everything in MMK (Myanmar Kyat). If a donor funds in another currency, a reference exchange rate is used to show the equivalent in the reports.',
+          qm:'ပမာဏတွေကို ဘာကြောင့် MMK နဲ့ ပြတာလဲ?',
+          am:'စနစ်သည် အရာအားလုံးကို MMK (မြန်မာကျပ်) ဖြင့် မှတ်တမ်းတင်ပါသည်။ donor က အခြားငွေကြေးဖြင့် ထောက်ပံ့ပါက report များတွင် ညီမျှသော တန်ဖိုးကို ပြရန် reference exchange rate ကို သုံးပါသည်။' },
+
+        // DCR Reports
+        { c:'dcr', r:'all',
+          q:'What is a DCR report?',
+          a:'A Diocesan Consolidated Report — a periodic report (monthly, biannual or annual) that diocesan officers submit through the "DCR Reports" tab.',
+          qm:'DCR report ဆိုတာ ဘာလဲ?',
+          am:'Diocesan Consolidated Report — diocese officer များ "DCR Reports" tab မှတစ်ဆင့် တင်သွင်းသော အချိန်အပိုင်းအခြား အစီရင်ခံစာ (လစဉ်၊ ၆လတစ်ကြိမ် သို့မဟုတ် နှစ်စဉ်) ဖြစ်သည်။' },
+        { c:'dcr', r:'all',
+          q:'How do I submit a DCR report?',
+          a:'Open "DCR Reports", choose the report type and period, fill in the form and submit. You can save a draft first and submit it later.',
+          qm:'DCR report ကို ဘယ်လို တင်ရမလဲ?',
+          am:'"DCR Reports" ကို ဖွင့်ပါ၊ report အမျိုးအစားနှင့် ကာလ ရွေးပါ၊ form ဖြည့်ပြီး submit လုပ်ပါ။ draft အဖြစ် အရင်သိမ်းထားပြီး နောက်မှ တင်နိုင်ပါသည်။' },
+        { c:'dcr', r:'all',
+          q:'Can I see other people\'s DCR reports?',
+          a:'Staff can only see their own reports. Managers and admins can see all submitted reports.',
+          qm:'အခြားသူများ၏ DCR report များကို ကြည့်လို့ ရလား?',
+          am:'ဝန်ထမ်းများသည် မိမိ၏ report များကိုသာ မြင်ရသည်။ Manager နှင့် admin များက တင်သွင်းပြီးသမျှ report အားလုံးကို မြင်နိုင်ပါသည်။' },
+        { c:'dcr', r:'admin',
+          q:'Can a DCR report be deleted?',
+          a:'Only an admin can delete a DCR report.',
+          qm:'DCR report ကို ဖျက်လို့ ရလား?',
+          am:'Admin သာလျှင် DCR report ကို ဖျက်နိုင်ပါသည်။' },
+
+        // Meeting Minutes
+        { c:'minutes', r:'manager',
+          q:'Who can create meeting minutes?',
+          a:'Users with access to the Minutes tab. Each set of minutes records the date, attendees, decisions and action items.',
+          qm:'အစည်းအဝေး မှတ်တမ်းကို ဘယ်သူ ဖန်တီးနိုင်လဲ?',
+          am:'Minutes tab သုံးခွင့်ရှိသူများ ဖန်တီးနိုင်သည်။ မှတ်တမ်းတစ်ခုစီတွင် ရက်စွဲ, တက်ရောက်သူ, ဆုံးဖြတ်ချက်နှင့် action item များ ပါဝင်သည်။' },
+        { c:'minutes', r:'manager',
+          q:'How do I share minutes with attendees?',
+          a:'Use "Export" on the minutes. It creates a Google Doc and emails it to attendees who have an email address set.',
+          qm:'မှတ်တမ်းကို တက်ရောက်သူများထံ ဘယ်လို မျှဝေရမလဲ?',
+          am:'မှတ်တမ်းတွင် "Export" ကို သုံးပါ။ Google Doc တစ်ခု ဖန်တီးပြီး email သတ်မှတ်ထားသော တက်ရောက်သူများထံ ပေးပို့ပါသည်။' },
+        { c:'minutes', r:'all',
+          q:'Why can\'t I see some minutes?',
+          a:'Minutes can be public, diocese-only, or private to attendees. You only see the ones your role and diocese allow.',
+          qm:'အချို့ မှတ်တမ်းတွေ ဘာကြောင့် မမြင်ရတာလဲ?',
+          am:'မှတ်တမ်းများကို public, diocese-only သို့မဟုတ် တက်ရောက်သူများသာ (private) အဖြစ် သတ်မှတ်နိုင်သည်။ သင့် role နှင့် diocese ခွင့်ပြုသည့် မှတ်တမ်းများကိုသာ မြင်ရပါသည်။' },
+
+        // Announcements
+        { c:'announce', r:'admin',
+          q:'Who can send announcements?',
+          a:'Admins, plus any user the admin has granted announcement permission to. Other staff cannot see the Announcements tab.',
+          qm:'ကြေညာချက်ကို ဘယ်သူ ပို့နိုင်လဲ?',
+          am:'Admin များနှင့် admin က ကြေညာချက်ပို့ခွင့် ပေးထားသူများ ပို့နိုင်သည်။ အခြားဝန်ထမ်းများသည် Announcements tab ကို မမြင်ရပါ။' },
+        { c:'announce', r:'admin',
+          q:'How do I send an announcement?',
+          a:'In Announcements, write the subject and message, choose recipients, optionally attach a file, then send. It emails each recipient and logs the announcement.',
+          qm:'ကြေညာချက်ကို ဘယ်လို ပို့ရမလဲ?',
+          am:'Announcements တွင် ခေါင်းစဉ်နှင့် စာသား ရေးပါ၊ လက်ခံမည့်သူများ ရွေးပါ၊ လိုအပ်ပါက ဖိုင်တွဲ၍ ပို့ပါ။ လက်ခံသူတိုင်းထံ email ပို့ပြီး ကြေညာချက်ကို မှတ်တမ်းတင်ပါသည်။' },
+        { c:'announce', r:'admin',
+          q:'Can I attach files to an announcement?',
+          a:'Yes — images and common documents (PDF, Word, Excel, PowerPoint, and similar).',
+          qm:'ကြေညာချက်တွင် ဖိုင် တွဲတင်လို့ ရလား?',
+          am:'ရပါသည် — ဓာတ်ပုံများနှင့် အသုံးများသော စာရွက်စာတမ်းများ (PDF, Word, Excel, PowerPoint စသည်)။' },
+
+        // Account & Password
+        { c:'account', r:'all',
+          q:'How do I change my password?',
+          a:'Go to Setup (or your Profile) → Change Password. New passwords must be at least 10 characters with an uppercase letter, a lowercase letter, a number and a special character.',
+          qm:'စကားဝှက်ကို ဘယ်လို ပြောင်းရမလဲ?',
+          am:'Setup (သို့မဟုတ် Profile) → Change Password သို့ သွားပါ။ စကားဝှက်အသစ်တွင် အနည်းဆုံး စာလုံး ၁၀ လုံး၊ စာလုံးကြီး၊ စာလုံးသေး၊ ဂဏန်းနှင့် သင်္ကေတ တစ်ခုစီ ပါရပါမည်။' },
+        { c:'account', r:'all',
+          q:'I was asked to change my password on first login. Why?',
+          a:'New accounts get a temporary password and must set their own password on first login, for security.',
+          qm:'ပထမဆုံး log in တွင် စကားဝှက် ပြောင်းခိုင်းသည်။ ဘာကြောင့်လဲ?',
+          am:'အကောင့်အသစ်များသည် ယာယီ password ရရှိပြီး လုံခြုံရေးအတွက် ပထမဆုံးဝင်ချိန်တွင် မိမိ၏ password ကို ကိုယ်တိုင် သတ်မှတ်ရပါသည်။' },
+        { c:'account', r:'all',
+          q:'I forgot my password. What do I do?',
+          a:'Ask your admin to reset it. They will generate a new temporary password for you, which you change on your next login.',
+          qm:'စကားဝှက် မေ့သွားသည်။ ဘယ်လိုလုပ်ရမလဲ?',
+          am:'သင့် admin ကို reset လုပ်ပေးရန် တောင်းဆိုပါ။ သူတို့က ယာယီ password အသစ် ထုတ်ပေးမည်ဖြစ်ပြီး နောက်တစ်ကြိမ် ဝင်ချိန်တွင် ပြောင်းရပါမည်။' },
+        { c:'account', r:'all',
+          q:'How do I add a profile photo?',
+          a:'In My Profile, upload an avatar image (JPG, PNG or WebP). It then appears next to your name.',
+          qm:'Profile ဓာတ်ပုံ ဘယ်လို ထည့်ရမလဲ?',
+          am:'My Profile တွင် avatar ဓာတ်ပုံ (JPG, PNG သို့မဟုတ် WebP) တင်ပါ။ ထို့နောက် သင့်အမည်ဘေးတွင် ပေါ်လာပါမည်။' },
+        { c:'account', r:'all',
+          q:'How do I stop getting certain notification emails?',
+          a:'In your profile / notification settings you can opt out of specific notification types you don\'t want.',
+          qm:'အချို့ notification email တွေ မလိုချင်ရင် ဘယ်လို ပိတ်ရမလဲ?',
+          am:'သင့် profile / notification settings တွင် မလိုချင်သော notification အမျိုးအစားများကို opt out (ပိတ်) ထားနိုင်ပါသည်။' },
+      ];
+
+      // ── State ──
+      let faqLang = 'en';
+
+      const root   = document.getElementById('faqRoot');
+      const listEl  = document.getElementById('faqList');
+      const emptyEl = document.getElementById('faqEmpty');
+      const searchEl= document.getElementById('faqSearch');
+      if (!root || !listEl) return;
+
+      function esc(s){ return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+      function render() {
+        const term = (searchEl.value || '').trim().toLowerCase();
+        let total = 0;
+        let html = '';
+
+        FAQ_CATS.forEach(cat => {
+          const items = FAQ_DATA.filter(it => it.c === cat.key).filter(it => {
+            if (!term) return true;
+            const hay = ((it.q||'') + ' ' + (it.a||'') + ' ' + (it.qm||'') + ' ' + (it.am||'')).toLowerCase();
+            return hay.includes(term);
+          });
+          if (!items.length) return;
+          total += items.length;
+
+          html += '<div class="faq-cat"><div class="faq-cat-title faq-my-text">'
+                + esc(faqLang === 'my' ? cat.my : cat.en) + '</div>';
+
+          items.forEach(it => {
+            const role = FAQ_ROLES[it.r] || FAQ_ROLES.all;
+            const qText = faqLang === 'my' ? (it.qm || it.q) : it.q;
+            const aText = faqLang === 'my' ? (it.am || it.a) : it.a;
+            const roleLabel = faqLang === 'my' ? role.my : role.en;
+            html += '<div class="faq-item">'
+                  +   '<button type="button" class="faq-q">'
+                  +     '<span class="faq-q-text faq-my-text">' + esc(qText) + '</span>'
+                  +     '<span class="role-badge ' + role.cls + '">' + esc(roleLabel) + '</span>'
+                  +     '<span class="faq-chev">▼</span>'
+                  +   '</button>'
+                  +   '<div class="faq-a"><div class="faq-a-inner faq-my-text">' + esc(aText) + '</div></div>'
+                  + '</div>';
+          });
+          html += '</div>';
+        });
+
+        listEl.innerHTML = html;
+        emptyEl.style.display = total === 0 ? 'block' : 'none';
+      }
+
+      function applyLang() {
+        root.setAttribute('data-lang', faqLang);
+        // static UI strings
+        root.querySelectorAll('[data-en]').forEach(el => {
+          const v = el.getAttribute('data-' + faqLang);
+          if (v != null) el.innerHTML = v;
+        });
+        // placeholder
+        const ph = searchEl.getAttribute('data-' + faqLang + '-ph');
+        if (ph) searchEl.placeholder = ph;
+        // lang button active state
+        root.querySelectorAll('.faq-lang-btn').forEach(b =>
+          b.classList.toggle('active', b.getAttribute('data-setlang') === faqLang));
+        render();
+      }
+
+      // ── Events (delegation) ──
+      listEl.addEventListener('click', e => {
+        const q = e.target.closest('.faq-q');
+        if (!q) return;
+        q.parentElement.classList.toggle('open');
+      });
+      root.querySelector('.faq-lang').addEventListener('click', e => {
+        const b = e.target.closest('.faq-lang-btn');
+        if (!b) return;
+        faqLang = b.getAttribute('data-setlang');
+        applyLang();
+      });
+      searchEl.addEventListener('input', render);
+
+      // initial paint
+      applyLang();
+    })();
+    </script>
+</body>
+</html>

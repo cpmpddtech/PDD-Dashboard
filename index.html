@@ -2190,6 +2190,7 @@ if (typeof Chart !== 'undefined') {
     <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department">💰 Finance</button>
     <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff">📢 Announcements</button>
     <button class="tab tab-hidden" id="tab-btn-minutes" onclick="openMinutes()" title="Meeting Minutes">📋 Minutes</button>
+    <button class="tab" id="tab-btn-help" onclick="openHelp()" title="Help &amp; FAQ">❓ Help</button>
   </div>
 
   <div class="main">
@@ -6456,6 +6457,14 @@ function openMinutes() {
   const win = window.open('minutes.html', '_blank');
   setTimeout(() => {
     const btn = document.getElementById('tab-btn-minutes');
+    if (btn) btn.classList.remove('active');
+  }, 150);
+}
+
+function openHelp() {
+  const win = window.open('help-faq-module.html', '_blank');
+  setTimeout(() => {
+    const btn = document.getElementById('tab-btn-help');
     if (btn) btn.classList.remove('active');
   }, 150);
 }
