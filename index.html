@@ -2758,6 +2758,9 @@ if (typeof Chart !== 'undefined') {
             <div>
               <div class="rm-label">Role / Level</div>
               <select class="rm-select" id="nu-role" onchange="toggleNewUserDiocese()">
+                <optgroup label="Level 1 — Oversight">
+                  <option value="bishop">Bishop — Diocese (read-only)</option>
+                </optgroup>
                 <optgroup label="Level 2 — Executive">
                   <option value="admin">Admin — Director</option>
                 </optgroup>
@@ -6671,6 +6674,9 @@ function _renderRoleManagementCards(grid) {
           <div class="rm-field">
             <div class="rm-label">Role / Level</div>
             <select class="rm-select" id="rm-role-${name}" onchange="onRoleChange('${name}',this)">
+              <optgroup label="Level 1 — Oversight">
+                <option value="bishop"         ${cfg.role==='bishop'         ?'selected':''}>Bishop — Diocese (read-only)</option>
+              </optgroup>
               <optgroup label="Level 2 — Executive">
                 <option value="admin"          ${cfg.role==='admin'          ?'selected':''}>Admin — Director</option>
               </optgroup>
