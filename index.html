@@ -3432,6 +3432,7 @@ function isManager() { return CURRENT_USER?.role === 'manager' || isAdmin(); }
 function isStaff()   { return CURRENT_USER?.role === 'staff'; }
 function isBishop()  { return CURRENT_USER?.role === 'bishop'; }
 let _bishopObs = null;
+let BISHOP_STAFF = null; // diocese-scoped staff names for bishop Staff Performance
 function applyBishopReadonly() {
   if (!isBishop()) return;
   document.body.classList.add('bishop-ro');
@@ -3445,6 +3446,16 @@ function applyBishopReadonly() {
 function installBishopGuard() {
   if (!isBishop() || _bishopObs) return;
   applyBishopReadonly();
+  // Diocese-scoped staff names (worker filters get_staff_list to the bishop's diocese)
+  fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action:'get_staff_list', username: SESSION_USERNAME, password: SESSION_PASSWORD }) })
+    .then(r => r.json()).then(d => {
+      if (d.ok && Array.isArray(d.staff)) {
+        BISHOP_STAFF = new Set();
+        d.staff.forEach(u => { if (u.name) BISHOP_STAFF.add(u.name); if (u.username) BISHOP_STAFF.add(u.username); });
+        if (document.getElementById('tab-staff')?.classList.contains('active')) renderStaff();
+      }
+    }).catch(()=>{});
   const main = document.querySelector('.main') || document.body;
   let t = null;
   _bishopObs = new MutationObserver(() => { clearTimeout(t); t = setTimeout(applyBishopReadonly, 60); });
@@ -4516,7 +4527,8 @@ function renderKpi() {
 // ═══════════════════════════════════════════════════
 function renderStaff() {
   buildFilterBar('s');
-  const names  = Object.keys(DATA.staff);
+  let names  = Object.keys(DATA.staff);
+  if (isBishop() && BISHOP_STAFF) names = names.filter(n => BISHOP_STAFF.has(n));
 
   // Empty state
   if (!names.length) {
