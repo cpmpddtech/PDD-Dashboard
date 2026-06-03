@@ -367,6 +367,39 @@ if (typeof Chart !== 'undefined') {
   .tab:hover { color: var(--blue); }
   .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
 
+  /* GROUPED NAV (dropdowns) */
+  .tabs { flex-wrap: wrap; }
+  .tabs > .tab { white-space: nowrap; }
+  .tab-group { position: relative; display: inline-flex; }
+  .tab-grp-btn {
+    padding: 12px 16px; border: none; background: none;
+    font-family: var(--font); font-size: 13px; font-weight: 500;
+    color: var(--text-muted); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .tab-grp-btn:hover { color: var(--blue); }
+  .tg-chev { width: 0.8em; height: 0.8em; opacity: 0.6; transition: transform 0.15s; }
+  .tab-group.open .tg-chev { transform: rotate(180deg); }
+  .tab-group:has(.tab.active) > .tab-grp-btn { color: var(--blue); border-bottom-color: var(--blue); }
+  .tab-group:not(:has(.tab:not(.tab-hidden))) { display: none !important; }
+  .tab-grp-panel {
+    position: absolute; top: 100%; left: 0; min-width: 216px;
+    background: var(--surface2); border: 1px solid var(--border2); border-top: none;
+    border-radius: 0 0 12px 12px; box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+    padding: 6px; display: none; flex-direction: column; gap: 2px; z-index: 60;
+  }
+  .tab-group.open .tab-grp-panel { display: flex; animation: fadeIn 0.15s ease; }
+  .tab-grp-panel .tab {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    text-align: left; padding: 10px 12px; font-size: 13px;
+    border-bottom: none !important; border-radius: 8px;
+  }
+  .tab-grp-panel .tab:hover { background: var(--surface3); color: var(--blue); }
+  .tab-grp-panel .tab.active { background: var(--blue-lt); color: var(--blue); border-bottom: none !important; }
+  .tabs .tab-help-pin { margin-left: auto; }
+  .ic-chevron{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M6%209l6%206%206-6%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M6%209l6%206%206-6%27%2F%3E%3C%2Fsvg%3E");}
+
   /* ── MAIN ── */
   .main { padding: 24px 32px; }
   .tab-pane { display: none; }
@@ -2210,19 +2243,38 @@ if (typeof Chart !== 'undefined') {
   <div class="tabs">
     <button class="tab" id="tab-btn-profile" onclick="switchTab('profile',this)"><i class=ic-user></i> My Profile</button>
     <button class="tab" id="tab-btn-mytasks" onclick="switchTab('mytasks',this)"><i class=ic-home></i> My Tasks</button>
-    <button class="tab active" id="tab-btn-progress" onclick="switchTab('progress',this)">Program Progress</button>
-    <button class="tab" id="tab-btn-kpi" onclick="switchTab('kpi',this)">Weekly KPI</button>
-    <button class="tab" id="tab-btn-staff" onclick="switchTab('staff',this)">Staff Performance</button>
+    <button class="tab active" id="tab-btn-progress" onclick="switchTab('progress',this)"><i class=ic-trending></i> Program Progress</button>
     <button class="tab" id="tab-btn-checkin" onclick="switchTab('checkin',this)"><i class=ic-edit></i> Weekly Check-in</button>
-    <button class="tab" id="tab-btn-digest" onclick="switchTab('digest',this)"><i class=ic-clipboard></i> Manager Digest</button>
-    <button class="tab" id="tab-btn-projmgmt" onclick="switchTab('projmgmt',this)"><i class=ic-folder></i> Program Management</button>
-    <button class="tab" id="tab-btn-roles" onclick="switchTab('roles',this)"><i class=ic-lock></i> Role Management</button>
-    <button class="tab" id="tab-btn-setup" onclick="switchTab('setup',this)"><i class=ic-settings></i> Setup</button>
-    <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report"><i class=ic-file></i> DCR Reports</button>
-    <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department"><i class=ic-wallet></i> Finance</button>
-    <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff"><i class=ic-megaphone></i> Announcements</button>
-    <button class="tab tab-hidden" id="tab-btn-minutes" onclick="openMinutes()" title="Meeting Minutes"><i class=ic-clipboard></i> Minutes</button>
-    <button class="tab" id="tab-btn-help" onclick="openHelp()" title="Help &amp; FAQ"><i class=ic-help></i> Help</button>
+
+    <div class="tab-group" id="grp-performance">
+      <button type="button" class="tab-grp-btn" onclick="toggleTabGroup('performance')"><i class=ic-chart></i> Performance <i class="ic-chevron tg-chev"></i></button>
+      <div class="tab-grp-panel">
+        <button class="tab" id="tab-btn-kpi" onclick="switchTab('kpi',this)"><i class=ic-chart></i> Weekly KPI</button>
+        <button class="tab" id="tab-btn-staff" onclick="switchTab('staff',this)"><i class=ic-users></i> Staff Performance</button>
+        <button class="tab" id="tab-btn-digest" onclick="switchTab('digest',this)"><i class=ic-clipboard></i> Manager Digest</button>
+      </div>
+    </div>
+
+    <div class="tab-group" id="grp-manage">
+      <button type="button" class="tab-grp-btn" onclick="toggleTabGroup('manage')"><i class=ic-settings></i> Manage <i class="ic-chevron tg-chev"></i></button>
+      <div class="tab-grp-panel">
+        <button class="tab" id="tab-btn-projmgmt" onclick="switchTab('projmgmt',this)"><i class=ic-folder></i> Program Management</button>
+        <button class="tab" id="tab-btn-roles" onclick="switchTab('roles',this)"><i class=ic-lock></i> Role Management</button>
+        <button class="tab" id="tab-btn-setup" onclick="switchTab('setup',this)"><i class=ic-settings></i> Setup</button>
+      </div>
+    </div>
+
+    <div class="tab-group" id="grp-modules">
+      <button type="button" class="tab-grp-btn" onclick="toggleTabGroup('modules')"><i class=ic-folder></i> Modules <i class="ic-chevron tg-chev"></i></button>
+      <div class="tab-grp-panel">
+        <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report"><i class=ic-file></i> DCR Reports</button>
+        <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department"><i class=ic-wallet></i> Finance</button>
+        <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff"><i class=ic-megaphone></i> Announcements</button>
+        <button class="tab tab-hidden" id="tab-btn-minutes" onclick="openMinutes()" title="Meeting Minutes"><i class=ic-clipboard></i> Minutes</button>
+      </div>
+    </div>
+
+    <button class="tab tab-help-pin" id="tab-btn-help" onclick="openHelp()" title="Help &amp; FAQ"><i class=ic-help></i> Help</button>
   </div>
 
   <div class="main">
@@ -6500,6 +6552,21 @@ function openHelp() {
     if (btn) btn.classList.remove('active');
   }, 150);
 }
+
+function toggleTabGroup(name) {
+  const g = document.getElementById('grp-' + name);
+  if (!g) return;
+  const wasOpen = g.classList.contains('open');
+  document.querySelectorAll('.tab-group.open').forEach(x => x.classList.remove('open'));
+  if (!wasOpen) g.classList.add('open');
+}
+document.addEventListener('click', e => {
+  const inGroup     = e.target.closest('.tab-group');
+  const isPanelItem = e.target.closest('.tab-grp-panel .tab');
+  if (!inGroup || isPanelItem) {
+    document.querySelectorAll('.tab-group.open').forEach(x => x.classList.remove('open'));
+  }
+});
 
 function renderRoleManagement() {
   const grid = document.getElementById('rm-cards');
