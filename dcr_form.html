@@ -1159,7 +1159,8 @@ const PDP_USER = JSON.parse(sessionStorage.getItem('pdp_user') || 'null');
 const PDP_ROLE = PDP_USER?.role || 'staff';   // 'admin' | 'manager' | 'staff'
 const PDP_NAME = PDP_USER?.name || '';
 
-let MODE         = (PDP_ROLE === 'admin' || PDP_ROLE === 'manager') ? 'admin' : 'staff';
+const IS_BISHOP  = PDP_ROLE === 'bishop';
+let MODE         = (PDP_ROLE === 'admin' || PDP_ROLE === 'manager' || IS_BISHOP) ? 'admin' : 'staff';
 let REPORT_TYPE  = null;
 let CURRENT_SCREEN = 'select';
 let REPORT_ID    = null;
@@ -1247,6 +1248,7 @@ const CHECKLIST_ITEMS = [
 function setMode(m) {
   // Staff can only ever be in staff mode — enforce role restriction
   if (PDP_ROLE === 'staff' && m === 'admin') m = 'staff';
+  if (IS_BISHOP) m = 'admin'; // bishops are read-only viewers
   MODE = m;
   document.getElementById('btn-mode-staff').className = m === 'staff' ? 'topbar-btn primary' : 'topbar-btn';
   document.getElementById('btn-mode-admin').className = m === 'admin' ? 'topbar-btn primary' : 'topbar-btn';
@@ -1274,9 +1276,23 @@ function setMode(m) {
 }
 
 function showNewReport() {
+  if (IS_BISHOP) return; // read-only
   setMode('staff');
   showScreen('select');
 }
+document.addEventListener('DOMContentLoaded', () => {
+  if (!IS_BISHOP) return;
+  const rs = document.getElementById('role-switcher'); if (rs) rs.style.display = 'none';
+  const nb = document.getElementById('btn-new-report'); if (nb) nb.style.display = 'none';
+  document.body.classList.add('bishop-ro');
+  const ro = () => document.querySelectorAll('#admin-panel button[onclick]').forEach(el => {
+    const fn = ((el.getAttribute('onclick')||'').match(/([a-zA-Z_]+)\s*\(/)||[])[1] || '';
+    if (/(delete|remove|save|submit|approve|reject|^edit)/i.test(fn) && !/(view|open|download|export|pdf|print|detail|preview|filter)/i.test(fn))
+      el.style.display = 'none';
+  });
+  const ap = document.getElementById('admin-panel');
+  ro(); if (ap) new MutationObserver(() => { clearTimeout(window._drt); window._drt = setTimeout(ro, 60); }).observe(ap, { childList:true, subtree:true });
+});
 
 // ══════════════════════════════════════════════════════
 //  NAVIGATION

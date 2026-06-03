@@ -1447,6 +1447,7 @@ const IS_MANAGER   = MGR_ROLES.includes(PDP_ROLE);
 const IS_ADMIN          = PDP_ROLE === 'admin';
 const IS_FINANCE_MANAGER = ['admin','manager','finance_manager'].includes(PDP_ROLE);
 const IS_FINANCE_STAFF   = PDP_ROLE === 'finance_staff' || PDP_ROLE === 'finance';
+const IS_BISHOP          = PDP_ROLE === 'bishop';
 
 const SECTION_NAMES = {
   '1':'Training & Community Mobilization',
@@ -1476,11 +1477,29 @@ document.addEventListener('DOMContentLoaded', () => {
     el.textContent = PDP_DIOCESE; el.style.display = '';
   }
 
-  if (!FIN_ROLES.includes(PDP_ROLE)) {
+  if (!FIN_ROLES.includes(PDP_ROLE) && !IS_BISHOP) {
     document.getElementById('access-denied').style.display   = 'flex';
     return;
   }
   document.getElementById('main-layout').style.display = 'flex';
+  if (IS_BISHOP) {
+    document.body.classList.add('bishop-ro');
+    setTimeout(() => {
+      const fd = document.getElementById('filter-diocese');
+      if (fd && PDP_DIOCESE) { fd.value = PDP_DIOCESE; fd.disabled = true; if (typeof renderBudgets==='function') renderBudgets(); }
+      const rd = document.getElementById('rpt-diocese-sel');
+      if (rd && PDP_DIOCESE) { rd.value = PDP_DIOCESE; rd.disabled = true; }
+    }, 500);
+    const _ro = () => document.querySelectorAll('#main-layout button[onclick]').forEach(el => {
+      const fn = ((el.getAttribute('onclick')||'').match(/([a-zA-Z_]+)\s*\(/)||[])[1] || '';
+      if (/(save|submit|approve|reject|delete|create|upload|newBudget|showNew|addBudget|addLine|addDonor|addExpense|addProgramme|^add|^edit|^remove)/i.test(fn)
+          && !/(report|export|download|print|view|open|filter|select|refresh|logout|nav|tab|close|cancel|back|search|toggle|expand|collapse|detail|generate)/i.test(fn))
+        el.style.display = 'none';
+    });
+    _ro();
+    new MutationObserver(() => { clearTimeout(window._frt); window._frt = setTimeout(_ro, 60); })
+      .observe(document.getElementById('main-layout'), { childList:true, subtree:true });
+  }
 
   // Hide manager-only items for finance_staff
   if (!IS_MANAGER) {
