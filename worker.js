@@ -1715,8 +1715,9 @@ export default {
         users[key].role     = cfg.role     || users[key].role;
         users[key].programs = cfg.programs || [];
         users[key].features = cfg.features || [];
-        if (cfg.diocese !== undefined) users[key].diocese = cfg.diocese  || null;
-        if (cfg.email   !== undefined) users[key].email   = cfg.email?.trim().toLowerCase() || null;
+        if (cfg.budgets  !== undefined) users[key].budgets  = cfg.budgets  || [];
+        if (cfg.diocese  !== undefined) users[key].diocese  = cfg.diocese  || null;
+        if (cfg.email    !== undefined) users[key].email    = cfg.email?.trim().toLowerCase() || null;
         changed++;
       }
 
@@ -2527,14 +2528,23 @@ export default {
         readFinSheet(token, 'Donations'),
       ]);
 
-      // Diocese staff: filter budgets to their diocese only
-      let filteredBudgets = budgets;
-      if (u.role === 'finance_staff' && u.diocese) {
-        filteredBudgets = budgets.filter(b => !b['Diocese'] || b['Diocese'] === u.diocese);
-      }
-      const allowedBudgetIds = new Set(filteredBudgets.map(b => b['Budget ID']));
+      // Access control:
+      // finance_manager / admin / manager → see ALL budgets, can approve & edit
+      // finance_staff → see ONLY assigned budgets (u.budgets[]), can log expenses to assigned only
+      const isManager = FIN_MANAGER_ROLES.includes(u.role);
 
-      // Filter downstream tables to match allowed budgets
+      let filteredBudgets;
+      if (isManager) {
+        filteredBudgets = budgets; // managers see all
+      } else {
+        // finance_staff: only budgets explicitly assigned by admin
+        const assignedBudgetIds = new Set(u.budgets || []);
+        filteredBudgets = assignedBudgetIds.size > 0
+          ? budgets.filter(b => assignedBudgetIds.has(b['Budget ID']))
+          : []; // no assigned budgets → see nothing
+      }
+
+      const allowedBudgetIds = new Set(filteredBudgets.map(b => b['Budget ID']));
       const filteredBDs    = budgetDonors.filter(bd => allowedBudgetIds.has(bd['Budget ID']));
       const allowedBDIds   = new Set(filteredBDs.map(bd => bd['BD ID']));
       const filteredLIs    = lineItems.filter(li => allowedBudgetIds.has(li['Budget ID']));
@@ -2542,7 +2552,7 @@ export default {
       const filteredExps   = expenditures.filter(e =>
         allowedLIIds.has(e['Line Item ID']) ||
         allowedBDIds.has(e['BD ID']) ||
-        (u.role === 'finance_staff' && e['Submitted By'] === u.name)
+        e['Submitted By'] === u.name // always see own submissions
       );
 
       // Also return programmes list from main sheet for dropdowns
@@ -2562,14 +2572,17 @@ export default {
       return new Response(JSON.stringify({
         ok: true,
         donors,
-        budgets: filteredBudgets,
+        budgets:      filteredBudgets,
         budgetDonors: filteredBDs,
-        lineItems: filteredLIs,
+        lineItems:    filteredLIs,
         expenditures: filteredExps,
         donations,
         programmes,
-        userRole: u.role,
-        userDiocese: u.diocese || null,
+        canEditBudget:   isManager,
+        canApprove:      isManager,
+        assignedBudgets: u.budgets || [],
+        userRole:        u.role,
+        userDiocese:     u.diocese || null,
       }), { status: 200, headers });
     }
 
@@ -2737,6 +2750,14 @@ export default {
       const { lineItemId, bdId, budgetId, donorId, quarter, amountMmk, expenseDate, description } = body;
       if (!lineItemId || !bdId || !quarter || !amountMmk)
         return new Response(JSON.stringify({ error: 'Line item, BD ID, quarter and amount are required' }), { status: 400, headers });
+
+      // finance_staff can only log expenses to their assigned budgets
+      if (!FIN_MANAGER_ROLES.includes(u.role) && budgetId) {
+        const assigned = u.budgets || [];
+        if (assigned.length > 0 && !assigned.includes(budgetId)) {
+          return new Response(JSON.stringify({ error: 'You are not assigned to this budget' }), { status: 403, headers });
+        }
+      }
 
       if (!['Q1', 'Q2', 'Q3', 'Q4'].includes(quarter))
         return new Response(JSON.stringify({ error: 'Quarter must be Q1, Q2, Q3 or Q4' }), { status: 400, headers });
@@ -4171,6 +4192,7 @@ export default {
         avatarUrl: usr.avatarUrl || null,
         programs:  usr.programs  || [],
         features:  usr.features  || [],
+        budgets:   usr.budgets   || [],
       })).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
       return new Response(JSON.stringify({ ok: true, staff }), { status: 200, headers });

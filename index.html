@@ -944,6 +944,7 @@ if (typeof Chart !== 'undefined') {
   .role-finance  { background:#3b1f5e; color:#c4b5fd; }
   .role-manager { background:#14532d; color:#86efac; }
   .role-staff   { background:#f3f4f6; color:#374151; border:1px solid var(--border); }
+  .role-bishop  { background:#4c1d95; color:#ddd6fe; }
 
   /* ── PROFESSIONAL ICONS (inline SVG via mask, no external deps) ── */
   i[class^="ic-"]{display:inline-block;width:1.05em;height:1.05em;vertical-align:-0.16em;background-color:currentColor;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;}
@@ -3403,7 +3404,7 @@ const ALL_DIOCESES = [
   'Myitkyina', 'Mandalay', 'Sittwe', 'Taungoo',
   'Pathein', 'Homalin', 'Yangon', 'Pyay', 'Hpa-an'
 ];
-const DIOCESE_SCOPE_ROLES = ['staff', 'finance_staff']; // roles that have diocese restriction
+const DIOCESE_SCOPE_ROLES = ['staff', 'finance_staff', 'bishop']; // roles that have diocese restriction
 function isProvinceWide() {
   return !DIOCESE_SCOPE_ROLES.includes(CURRENT_USER?.role);
 }
@@ -3426,6 +3427,26 @@ function userCan(feature) {
 function isAdmin()   { return CURRENT_USER?.role === 'admin'; }
 function isManager() { return CURRENT_USER?.role === 'manager' || isAdmin(); }
 function isStaff()   { return CURRENT_USER?.role === 'staff'; }
+function isBishop()  { return CURRENT_USER?.role === 'bishop'; }
+let _bishopObs = null;
+function applyBishopReadonly() {
+  if (!isBishop()) return;
+  document.body.classList.add('bishop-ro');
+  const WRITE = /^(save|approve|reject|submit|upload|delete|add|edit|create|remove|new|setup|migrate|send|reset)/i;
+  const KEEP  = /(report|export|download|print|view|open|filter|search|refresh|expand|collapse|switch|show|hide|close|cancel|logout|lang|nav|tab|menu|detail|preview|select)/i;
+  document.querySelectorAll('#tab-finance button[onclick], #tab-dcr button[onclick], #tab-staff button[onclick], #tab-progress button[onclick]').forEach(el => {
+    const fn = ((el.getAttribute('onclick')||'').match(/([a-zA-Z_]+)\s*\(/)||[])[1] || '';
+    if (WRITE.test(fn) && !KEEP.test(fn)) el.style.display = 'none';
+  });
+}
+function installBishopGuard() {
+  if (!isBishop() || _bishopObs) return;
+  applyBishopReadonly();
+  const main = document.querySelector('.main') || document.body;
+  let t = null;
+  _bishopObs = new MutationObserver(() => { clearTimeout(t); t = setTimeout(applyBishopReadonly, 60); });
+  _bishopObs.observe(main, { childList: true, subtree: true });
+}
 
 // ─── Apply RBAC to tabs ───────────────────────────────────────────────────────
 function applyRBAC() {
@@ -3434,19 +3455,20 @@ function applyRBAC() {
   // Show My Tasks for all, hide role management for non-admin
   const ext = isExternal();
   setTabVisible('profile',  true);
-  setTabVisible('mytasks',  true);
-  setTabVisible('progress', isAdmin() || isManager() || userCan('all_programs') || ext);
-  setTabVisible('staff',    isAdmin() || isManager() || userCan('staff_perf'));   // external: NO
+  setTabVisible('mytasks',  !isBishop());
+  setTabVisible('progress', isAdmin() || isManager() || userCan('all_programs') || ext || isBishop());
+  setTabVisible('staff',    isAdmin() || isManager() || userCan('staff_perf') || isBishop());   // external: NO
   setTabVisible('digest',   isAdmin() || isManager() || userCan('digest'));        // external: NO
   setTabVisible('projmgmt', isAdmin());
   setTabVisible('roles',    isAdmin());
   setTabVisible('kpi',      isAdmin() || isManager() || isStaff());               // external: NO
-  setTabVisible('checkin',  true);
+  setTabVisible('checkin',  !isBishop());
   setTabVisible('setup',    isAdmin());
   const isFinance = () => ['finance','finance_staff','finance_manager'].includes(CURRENT_USER?.role);
-  setTabVisible('finance',  isAdmin() || isManager() || isFinance());             // external: NO
+  setTabVisible('finance',  isAdmin() || isManager() || isFinance() || isBishop());             // external: NO
   setTabVisible('announcements', isAdmin() || isManager() || isFinance());
-  setTabVisible('minutes', true);
+  setTabVisible('minutes', !isBishop());
+  installBishopGuard();
 
   // Update header badge
   const nameBadge = document.getElementById('user-name-badge');
@@ -3455,8 +3477,8 @@ function applyRBAC() {
   if (nameBadge && CURRENT_USER.name) {
     nameBadge.style.display = 'flex';
     nameLabel.textContent   = CURRENT_USER.name;
-    const roleLabels  = { admin:'Admin', manager:'Manager', staff:'Staff', external:'External' };
-    const roleClasses = { admin:'role-admin', manager:'role-manager', staff:'role-staff', external:'role-staff', finance:'role-finance', finance_staff:'role-finance', finance_manager:'role-finance' };
+    const roleLabels  = { admin:'Admin', manager:'Manager', staff:'Staff', external:'External', bishop:'Bishop' };
+    const roleClasses = { admin:'role-admin', manager:'role-manager', staff:'role-staff', external:'role-staff', finance:'role-finance', finance_staff:'role-finance', finance_manager:'role-finance', bishop:'role-bishop' };
     roleBadge.textContent  = roleLabels[CURRENT_USER.role] || CURRENT_USER.role;
     roleBadge.className    = `role-badge ${roleClasses[CURRENT_USER.role] || 'role-staff'}`;
     // Diocese / scope pill
