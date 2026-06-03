@@ -945,6 +945,23 @@ if (typeof Chart !== 'undefined') {
   .role-manager { background:#14532d; color:#86efac; }
   .role-staff   { background:#f3f4f6; color:#374151; border:1px solid var(--border); }
   .role-bishop  { background:#4c1d95; color:#ddd6fe; }
+  /* ── COMMENTS ── */
+  .cmt-panel { margin-top:22px; background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:18px; }
+  .cmt-head { font-size:14px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .cmt-head .cmt-sub { font-size:11px; font-weight:500; color:var(--text-muted); margin-left:auto; }
+  .cmt-list { display:flex; flex-direction:column; gap:10px; max-height:340px; overflow-y:auto; margin-bottom:12px; }
+  .cmt-empty { color:var(--text-muted); font-size:13px; text-align:center; padding:18px 0; }
+  .cmt-item { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .cmt-meta { display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:11px; color:var(--text-muted); }
+  .cmt-author { font-weight:700; color:var(--text); font-size:12px; }
+  .cmt-time { margin-left:auto; }
+  .cmt-text { font-size:13px; color:#c7d6e6; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+  .cmt-box { display:flex; gap:8px; align-items:flex-end; }
+  .cmt-box textarea { flex:1; font-family:var(--font); font-size:13px; color:var(--text); background:var(--surface3); border:1px solid var(--border2); border-radius:9px; padding:9px 11px; resize:vertical; outline:none; }
+  .cmt-box textarea:focus { border-color:var(--blue-bd); }
+  .cmt-send { font-family:var(--font); font-size:13px; font-weight:600; color:#fff; background:var(--blue); border:none; border-radius:9px; padding:10px 18px; cursor:pointer; }
+  .cmt-send:hover { background:#2f6fe0; }
+  .cmt-send:disabled { opacity:.5; cursor:not-allowed; }
 
   /* ── PROFESSIONAL ICONS (inline SVG via mask, no external deps) ── */
   i[class^="ic-"]{display:inline-block;width:1.05em;height:1.05em;vertical-align:-0.16em;background-color:currentColor;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;}
@@ -2421,6 +2438,15 @@ if (typeof Chart !== 'undefined') {
             </div>
           </div>
         </div><!-- /progress-view-projects -->
+
+        <div class="cmt-panel" id="cmt-general" style="display:none;">
+          <div class="cmt-head"><i class=ic-clipboard></i> Notes to Admin <span class="cmt-sub">Two-way · visible to admins &amp; managers</span></div>
+          <div class="cmt-list" id="cmt-general-list"><div class="cmt-empty">Loading…</div></div>
+          <div class="cmt-box">
+            <textarea id="cmt-general-input" rows="2" placeholder="Write a note to your admin…"></textarea>
+            <button class="cmt-send" onclick="postComment('general','','cmt-general-input','cmt-general-list')">Send</button>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -4632,6 +4658,55 @@ function switchTab(name, btn) {
   btn.classList.add('active');
   if (name === 'projmgmt') setTimeout(initTaskRows, 80);
   if (name === 'profile') renderMyProfile();
+  if (name === 'progress' && canComment()) initGeneralComments();
+}
+
+// ─── Comments (Bishop ↔ Admin/Manager) ───────────────────────────
+const COMMENT_ROLES_FE = ['bishop','admin','manager','finance_manager'];
+function canComment(){ return COMMENT_ROLES_FE.includes(CURRENT_USER?.role); }
+function cmtEsc(x){ return String(x||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function cmtTime(iso){ try{ return new Date(iso).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function cmtRoleLabel(r){ return ({bishop:'Bishop',admin:'Admin',manager:'Manager',finance_manager:'Finance Mgr'})[r] || r; }
+
+function initGeneralComments(){
+  const panel = document.getElementById('cmt-general');
+  if (panel) panel.style.display = '';
+  loadComments('general','','cmt-general-list');
+}
+
+async function loadComments(type, targetId, listElId){
+  const listEl = document.getElementById(listElId);
+  if (!listEl) return;
+  try {
+    const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'list_comments', username:SESSION_USERNAME, password:SESSION_PASSWORD, targetType:type, targetId:targetId }) });
+    const data = await res.json();
+    const comments = (data.ok && data.comments) ? data.comments : [];
+    if (!comments.length) { listEl.innerHTML = '<div class="cmt-empty">No notes yet.</div>'; return; }
+    listEl.innerHTML = comments.map(c =>
+      '<div class="cmt-item"><div class="cmt-meta"><span class="cmt-author">'+cmtEsc(c.author)+'</span>'
+      +'<span class="role-badge '+(({bishop:'role-bishop',admin:'role-admin',manager:'role-manager',finance_manager:'role-finance'})[c.authorRole]||'role-staff')+'" style="font-size:9px;padding:2px 7px;">'+cmtEsc(cmtRoleLabel(c.authorRole))+'</span>'
+      +(c.diocese?'<span>· '+cmtEsc(c.diocese)+'</span>':'')
+      +'<span class="cmt-time">'+cmtEsc(cmtTime(c.createdAt))+'</span></div>'
+      +'<div class="cmt-text">'+cmtEsc(c.text)+'</div></div>').join('');
+    listEl.scrollTop = listEl.scrollHeight;
+  } catch(e) { listEl.innerHTML = '<div class="cmt-empty">Could not load notes.</div>'; }
+}
+
+async function postComment(type, targetId, inputElId, listElId){
+  const inputEl = document.getElementById(inputElId);
+  const text = (inputEl?.value || '').trim();
+  if (!text) return;
+  const btn = inputEl.parentElement.querySelector('.cmt-send');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+  try {
+    const res = await fetch(WORKER_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'add_comment', username:SESSION_USERNAME, password:SESSION_PASSWORD, targetType:type, targetId:targetId, comment:text }) });
+    const data = await res.json();
+    if (data.ok) { inputEl.value=''; loadComments(type, targetId, listElId); }
+    else alert(data.error || 'Could not post note.');
+  } catch(e) { alert('Network error.'); }
+  finally { if (btn) { btn.disabled=false; btn.textContent='Send'; } }
 }
 
 function renderAll() {
