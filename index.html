@@ -2384,6 +2384,16 @@ if (typeof Chart !== 'undefined') {
       <div id="p-content" style="display:none;">
         <div class="stat-grid" id="p-stats"></div>
 
+        <div class="cmt-panel" id="cmt-general" style="display:none;margin-top:0;margin-bottom:18px;">
+          <div class="cmt-head"><i class=ic-clipboard></i> Notes to Admin <span class="cmt-sub">Two-way · visible to admins &amp; managers</span></div>
+          <div class="cmt-list" id="cmt-general-list"><div class="cmt-empty">Loading…</div></div>
+          <div class="cmt-box">
+            <textarea id="cmt-general-input" rows="2" placeholder="Write a note to your admin…"></textarea>
+            <button class="cmt-send" onclick="postComment('general','','cmt-general-input','cmt-general-list')">Send</button>
+          </div>
+        </div>
+
+
         <!-- View toggle -->
         <div class="prog-view-toggle">
           <button class="prog-view-btn active" id="view-btn-programs" onclick="setProgressView('programs')">Programs</button>
@@ -2438,15 +2448,6 @@ if (typeof Chart !== 'undefined') {
             </div>
           </div>
         </div><!-- /progress-view-projects -->
-
-        <div class="cmt-panel" id="cmt-general" style="display:none;">
-          <div class="cmt-head"><i class=ic-clipboard></i> Notes to Admin <span class="cmt-sub">Two-way · visible to admins &amp; managers</span></div>
-          <div class="cmt-list" id="cmt-general-list"><div class="cmt-empty">Loading…</div></div>
-          <div class="cmt-box">
-            <textarea id="cmt-general-input" rows="2" placeholder="Write a note to your admin…"></textarea>
-            <button class="cmt-send" onclick="postComment('general','','cmt-general-input','cmt-general-list')">Send</button>
-          </div>
-        </div>
 
       </div>
     </div>
