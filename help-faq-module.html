@@ -8,117 +8,156 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --blue:#3b82f6; --blue-lt:rgba(59,130,246,0.12); --blue-bd:rgba(59,130,246,0.3);
-    --green:#22c55e; --green-lt:rgba(34,197,94,0.12); --amber:#f59e0b; --amber-lt:rgba(245,158,11,0.12);
-    --red:#ef4444; --red-lt:rgba(239,68,68,0.12);
-    --gray-50:#0d1525; --gray-100:#131e30; --gray-200:#1e2d45; --gray-300:#2a3d55; --gray-400:#5a7a9a;
-    --gray-500:#7a9ab8; --gray-600:#94b4cc; --gray-700:#b8cfe0; --gray-900:#e8f0f8;
-    --surface:#0f1825; --surface2:#131e30; --surface3:#1a2640;
-    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
-    --text:#e8f0f8; --text-muted:#5a7a9a; --font:'Plus Jakarta Sans',sans-serif;
+  :root{
+    --blue:#3b82f6;--blue2:#60a5fa;--blue-lt:rgba(59,130,246,.12);--blue-bd:rgba(59,130,246,.35);
+    --surface:#0b1320;--surface2:#0f1825;--surface3:#16233a;--card:#111c2e;
+    --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+    --text:#e8f0f8;--muted:#7c97b4;--muted2:#5a7a9a;
+    --green:#22c55e;--red:#ef4444;
+    --font:'Plus Jakarta Sans',system-ui,sans-serif;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:var(--font); background:var(--surface); color:var(--text); min-height:100vh; }
-  .role-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:0.03em; flex-shrink:0; }
-  .role-admin   { background:#1e3a5f; color:#93c5fd; }
-  .role-finance  { background:#3b1f5e; color:#c4b5fd; }
-  .role-manager { background:#14532d; color:#86efac; }
-  .role-staff   { background:#f3f4f6; color:#374151; border:1px solid var(--border); }
-  .help-topbar { display:flex; align-items:center; gap:13px; padding:14px 24px; background:var(--surface2); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; }
-  .help-topbar img { height:32px; width:auto; }
-  .ht-title { font-size:16px; font-weight:800; color:var(--text); line-height:1.2; }
-  .ht-sub { font-size:11.5px; color:var(--text-muted); }
-  .help-back { margin-left:auto; font-size:13px; font-weight:600; color:var(--blue); text-decoration:none; padding:8px 14px; border:1px solid var(--border2); border-radius:9px; transition:background .15s; white-space:nowrap; }
-  .help-back:hover { background:var(--surface3); }
-  #tab-help { display:block; padding:30px 20px 70px; }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);color:var(--text);min-height:100vh;
+    background:radial-gradient(1200px 600px at 80% -10%,rgba(59,130,246,.10),transparent 60%),var(--surface);}
+  [data-lang="my"] .my{font-family:'Noto Sans Myanmar',var(--font)}
+  a{color:inherit}
+  svg{display:block}
+  .ic{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+  /* Top bar */
+  .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:13px;
+    padding:13px 22px;background:rgba(11,19,32,.72);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border)}
+  .top img{height:30px;border-radius:7px}
+  .top .t1{font-size:15px;font-weight:800;letter-spacing:-.01em}
+  .top .t2{font-size:11px;color:var(--muted)}
+  .back{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;
+    color:var(--blue2);text-decoration:none;padding:8px 13px;border:1px solid var(--border2);border-radius:9px}
+  .back:hover{background:var(--surface3)}
+
+  .wrap{max-width:920px;margin:0 auto;padding:34px 20px 80px}
+
+  /* Hero */
+  .hero{text-align:center;margin-bottom:26px}
+  .hero h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .hero p{color:var(--muted);font-size:14px}
+  .lang{display:inline-flex;gap:2px;margin:18px auto 0;padding:3px;background:var(--surface2);
+    border:1px solid var(--border);border-radius:11px}
+  .lang button{font-family:var(--font);font-size:12.5px;font-weight:700;color:var(--muted);
+    background:none;border:none;padding:7px 16px;border-radius:8px;cursor:pointer}
+  .lang button.on{background:var(--blue);color:#fff}
+
+  /* Search */
+  .search{position:relative;margin:22px 0 14px}
+  .search .ic-s{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+  .search input{width:100%;font-family:var(--font);font-size:15px;color:var(--text);
+    background:var(--card);border:1px solid var(--border2);border-radius:13px;
+    padding:15px 44px 15px 46px;outline:none;transition:border-color .15s,box-shadow .15s}
+  .search input:focus{border-color:var(--blue-bd);box-shadow:0 0 0 4px var(--blue-lt)}
+  .search input::placeholder{color:var(--muted2)}
+  .clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:none;
+    background:var(--surface3);border:none;color:var(--muted);width:26px;height:26px;border-radius:50%;
+    cursor:pointer;align-items:center;justify-content:center}
+  .clear.show{display:flex}
+
+  /* Chips */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .chip{font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;
+    background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:7px 14px;transition:all .12s}
+  .chip:hover{color:var(--text);border-color:var(--border2)}
+  .chip.on{background:var(--blue-lt);border-color:var(--blue-bd);color:var(--blue2)}
+  .count{font-size:12px;color:var(--muted2);margin:14px 2px 10px}
+
+  /* Category + items */
+  .cat-h{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
+    color:var(--muted);margin:22px 4px 10px;display:flex;align-items:center;gap:9px}
+  .cat-h .n{color:var(--muted2);font-weight:600;letter-spacing:0}
+  .item{background:var(--card);border:1px solid var(--border);border-radius:13px;margin-bottom:9px;
+    overflow:hidden;transition:border-color .15s}
+  .item:hover{border-color:var(--border2)}
+  .item.open{border-color:var(--blue-bd)}
+  .q{width:100%;display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;
+    background:none;border:none;font-family:var(--font);color:var(--text);padding:16px 17px;font-size:14.5px;font-weight:600}
+  .q .qt{flex:1;line-height:1.45}
+  .q .badge{font-size:10px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:20px;flex:none}
+  .role-staff{background:#eef1f5;color:#374151}.role-admin{background:#1e3a5f;color:#93c5fd}
+  .role-finance{background:#3b1f5e;color:#c4b5fd}.role-manager{background:#14532d;color:#86efac}
+  .q .chev{width:17px;height:17px;color:var(--muted);transition:transform .22s}
+  .item.open .chev{transform:rotate(180deg);color:var(--blue2)}
+  .a{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s ease}
+  .item.open .a{grid-template-rows:1fr}
+  .a-in{overflow:hidden}
+  .a-tx{padding:0 17px 17px;color:#c7d6e6;font-size:13.7px;line-height:1.62}
+  mark{background:rgba(96,165,250,.28);color:#dbeafe;border-radius:3px;padding:0 2px}
+
+  /* Helpful */
+  .help{display:flex;align-items:center;gap:10px;padding:11px 17px 16px;border-top:1px solid var(--border);margin-top:3px}
+  .help .lab{font-size:12px;color:var(--muted)}
+  .hbtn{font-family:var(--font);font-size:12px;font-weight:600;color:var(--text);background:var(--surface3);
+    border:1px solid var(--border);border-radius:8px;padding:6px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .hbtn:hover{border-color:var(--border2)}
+  .hbtn.pick{border-color:var(--blue-bd);color:var(--blue2)}
+  .thanks{font-size:12px;color:var(--green);font-weight:600}
+
+  .empty{display:none;text-align:center;color:var(--muted);padding:48px 0;font-size:14px}
+
+  /* Contact */
+  .contact{margin-top:34px;padding:24px;border-radius:16px;text-align:center;
+    background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(59,130,246,.03));
+    border:1px solid var(--blue-bd)}
+  .contact h3{font-size:16px;font-weight:800;margin-bottom:6px}
+  .contact p{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .cbtn{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;
+    background:var(--blue);color:#fff;text-decoration:none;padding:11px 20px;border-radius:11px}
+  .cbtn:hover{background:#2f6fe0}
+
+  @media(max-width:560px){.hero h1{font-size:24px}.wrap{padding:24px 15px 70px}}
 </style>
-<style>
-      /* ── FAQ (scoped) ── */
-      #tab-help .faq-root { max-width: 860px; margin: 0 auto; }
-      #tab-help .faq-root[data-lang="my"] .faq-my-text { font-family: 'Noto Sans Myanmar', var(--font); line-height: 1.9; }
-      #tab-help .faq-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
-      #tab-help .faq-title { font-size:22px; font-weight:800; color:var(--text); }
-      #tab-help .faq-sub { font-size:13px; color:var(--text-muted); margin-top:4px; }
-      #tab-help .faq-lang { display:inline-flex; background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:3px; gap:2px; }
-      #tab-help .faq-lang-btn { font-family:var(--font); font-size:13px; font-weight:600; padding:6px 14px; border:none; background:transparent; color:var(--text-muted); border-radius:7px; cursor:pointer; transition:all .15s; }
-      #tab-help .faq-lang-btn.active { background:var(--blue); color:#fff; }
-      #tab-help .faq-searchwrap { position:relative; margin-bottom:22px; }
-      #tab-help .faq-search-icn { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.6; pointer-events:none; }
-      #tab-help .faq-search { width:100%; padding:13px 16px 13px 40px; font-family:var(--font); font-size:14px; color:var(--text); background:var(--surface2); border:1px solid var(--border2); border-radius:12px; outline:none; transition:border-color .15s; }
-      #tab-help .faq-search:focus { border-color:var(--blue); }
-      #tab-help .faq-search::placeholder { color:var(--text-muted); }
-      #tab-help .faq-cat { margin-bottom:26px; }
-      #tab-help .faq-cat-title { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gray-600); margin-bottom:10px; padding-left:2px; }
-      #tab-help .faq-item { background:var(--surface2); border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden; transition:border-color .15s; }
-      #tab-help .faq-item.open { border-color:var(--blue-bd); }
-      #tab-help .faq-q { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:15px 18px; background:transparent; border:none; cursor:pointer; font-family:var(--font); }
-      #tab-help .faq-q:hover { background:rgba(255,255,255,0.02); }
-      #tab-help .faq-q-text { flex:1; font-size:14.5px; font-weight:600; color:var(--text); }
-      #tab-help .faq-chev { font-size:12px; color:var(--text-muted); transition:transform .2s; flex-shrink:0; }
-      #tab-help .faq-item.open .faq-chev { transform:rotate(180deg); }
-      #tab-help .faq-a { max-height:0; overflow:hidden; transition:max-height .25s ease; }
-      #tab-help .faq-a-inner { padding:0 18px 16px 18px; font-size:14px; color:var(--gray-700); line-height:1.7; }
-      #tab-help .faq-item.open .faq-a { max-height:600px; }
-      #tab-help .faq-empty { text-align:center; color:var(--text-muted); font-size:14px; padding:40px 0; }
-      #tab-help .faq-foot { text-align:center; color:var(--text-muted); font-size:13px; margin-top:30px; padding-top:20px; border-top:1px solid var(--border); }
-      /* role badge sizing inside FAQ (reuses your .role-badge colors) */
-      #tab-help .faq-q .role-badge { flex-shrink:0; font-size:10px; }
-      @media (max-width:600px){ #tab-help .faq-title{font-size:19px;} #tab-help .faq-q-text{font-size:13.5px;} }
-    </style>
 </head>
 <body>
-  <header class="help-topbar">
+  <header class="top">
     <img src="cpmpddlogo.png" alt="CPMPDD">
-    <div>
-      <div class="ht-title">Help &amp; FAQ</div>
-      <div class="ht-sub">PDD Dashboard · Provincial Development Department</div>
-    </div>
-    <a class="help-back" href="index.html">← Dashboard</a>
+    <div><div class="t1">PDD Dashboard</div><div class="t2 my" data-en="Help Center" data-my="အကူအညီ စင်တာ">Help Center</div></div>
+    <a class="back" href="index.html"><svg class="ic" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg><span class="my" data-en="Dashboard" data-my="ပင်မ">Dashboard</span></a>
   </header>
 
-  <div id="tab-help">
-      <div class="faq-root" id="faqRoot" data-lang="en">
-
-        <!-- Header -->
-        <div class="faq-head">
-          <div>
-            <div class="faq-title" data-en="Help &amp; FAQ" data-my="အကူအညီနှင့် မေးခွန်းများ">Help &amp; FAQ</div>
-            <div class="faq-sub" data-en="Common questions about using the dashboard." data-my="Dashboard အသုံးပြုပုံ မေးလေ့ရှိသော မေးခွန်းများ။">Common questions about using the dashboard.</div>
-          </div>
-          <div class="faq-lang">
-            <button type="button" class="faq-lang-btn active" data-setlang="en">EN</button>
-            <button type="button" class="faq-lang-btn" data-setlang="my">မြန်မာ</button>
-          </div>
-        </div>
-
-        <!-- Search -->
-        <div class="faq-searchwrap">
-          <span class="faq-search-icn">🔍</span>
-          <input type="text" id="faqSearch" class="faq-search"
-                 data-en-ph="Search help…  e.g. password, check-in, expense"
-                 data-my-ph="ရှာဖွေရန်…  ဥပမာ — စကားဝှက်၊ check-in"
-                 placeholder="Search help…  e.g. password, check-in, expense" autocomplete="off">
-        </div>
-
-        <!-- Rendered FAQ goes here -->
-        <div id="faqList" class="faq-list"></div>
-
-        <!-- No results -->
-        <div id="faqEmpty" class="faq-empty" style="display:none;"
-             data-en="No matching questions. Try different words."
-             data-my="ကိုက်ညီသော မေးခွန်း မတွေ့ပါ။ စကားလုံးပြောင်း၍ ပြန်ရှာပါ။">No matching questions. Try different words.</div>
-
-        <!-- Footer -->
-        <div class="faq-foot" data-en="Can't find an answer? Contact your administrator."
-             data-my="အဖြေ မတွေ့ပါက သင့် admin ကို ဆက်သွယ်ပါ။">Can't find an answer? Contact your administrator.</div>
+  <main class="wrap" id="root" data-lang="en">
+    <div class="hero">
+      <h1 class="my" data-en="How can we help?" data-my="ဘာများ ကူညီပေးရမလဲ?">How can we help?</h1>
+      <p class="my" data-en="Search the guide or browse by topic." data-my="လမ်းညွှန်ကို ရှာဖွေပါ သို့မဟုတ် ခေါင်းစဉ်အလိုက် ကြည့်ပါ။">Search the guide or browse by topic.</p>
+      <div class="lang">
+        <button data-set="en" class="on">EN</button>
+        <button data-set="my" class="my">မြန်မာ</button>
       </div>
     </div>
 
+    <div class="search">
+      <svg class="ic ic-s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" type="text" autocomplete="off"
+        data-en-ph="Search help…  e.g. password, check-in, expense"
+        data-my-ph="ရှာဖွေရန်…  ဥပမာ — စကားဝှက်၊ check-in"
+        placeholder="Search help…  e.g. password, check-in, expense">
+      <button class="clear" id="clr" aria-label="Clear"><svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <div class="chips" id="chips"></div>
+    <div class="count" id="count"></div>
+    <div id="list"></div>
+    <div class="empty my" id="empty" data-en="No matching questions. Try different words." data-my="ကိုက်ညီသော မေးခွန်း မတွေ့ပါ။ စကားလုံးပြောင်း၍ ပြန်ရှာပါ။">No matching questions. Try different words.</div>
+
+    <div class="contact">
+      <h3 class="my" data-en="Still need help?" data-my="အကူအညီ ဆက်လိုပါသလား?">Still need help?</h3>
+      <p class="my" data-en="Contact your administrator and we'll get back to you." data-my="သင့် admin ကို ဆက်သွယ်ပါ — ပြန်လည် ဖြေကြားပေးပါမည်။">Contact your administrator and we'll get back to you.</p>
+      <a class="cbtn" id="contact" href="#"><svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg><span class="my" data-en="Email administrator" data-my="Admin ထံ email ပို့ရန်">Email administrator</span></a>
+    </div>
+  </main>
+
 <script>
-    (function () {
-      // ── Category definitions (order shown) ──
-      const FAQ_CATS = [
+(function(){
+  // ===== EDIT THIS: support / admin email shown on the contact button =====
+  const SUPPORT_EMAIL = 'admin@cpmpdd.org';
+
+  const FAQ_CATS = [
         { key:'start',    en:'Getting Started',      my:'စတင်အသုံးပြုခြင်း' },
         { key:'tasks',    en:'Tasks & Check-ins',    my:'တာဝန်နှင့် Check-in' },
         { key:'finance',  en:'Finance',              my:'ဘဏ္ဍာရေး' },
@@ -127,17 +166,13 @@
         { key:'announce', en:'Announcements',        my:'ကြေညာချက်များ' },
         { key:'account',  en:'Account & Password',   my:'အကောင့်နှင့် စကားဝှက်' },
       ];
-
-      // ── Role badge meta (reuses existing .role-* classes) ──
-      const FAQ_ROLES = {
+  const FAQ_ROLES = {
         all:     { en:'All staff', my:'ဝန်ထမ်းအားလုံး', cls:'role-staff'   },
         admin:   { en:'Admin',     my:'Admin',          cls:'role-admin'   },
         finance: { en:'Finance',   my:'ဘဏ္ဍာရေး',       cls:'role-finance' },
         manager: { en:'Manager',   my:'မန်နေဂျာ',        cls:'role-manager' },
       };
-
-      // ── FAQ content. c=category, r=role, q/a English, qm/am Burmese ──
-      const FAQ_DATA = [
+  const FAQ_DATA = [
         // Getting Started
         { c:'start', r:'all',
           q:'What is the PDD Dashboard?',
@@ -313,88 +348,96 @@
           am:'သင့် profile / notification settings တွင် မလိုချင်သော notification အမျိုးအစားများကို opt out (ပိတ်) ထားနိုင်ပါသည်။' },
       ];
 
-      // ── State ──
-      let faqLang = 'en';
+  let lang='en', cat='all', term='';
+  const root=document.getElementById('root'),listEl=document.getElementById('list'),
+        emptyEl=document.getElementById('empty'),qEl=document.getElementById('q'),
+        clrEl=document.getElementById('clr'),chipsEl=document.getElementById('chips'),
+        countEl=document.getElementById('count');
+  let votes={}; try{votes=JSON.parse(localStorage.getItem('pdd_faq_votes')||'{}')}catch(e){}
 
-      const root   = document.getElementById('faqRoot');
-      const listEl  = document.getElementById('faqList');
-      const emptyEl = document.getElementById('faqEmpty');
-      const searchEl= document.getElementById('faqSearch');
-      if (!root || !listEl) return;
+  const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const norm=s=>String(s||'').toLowerCase().normalize('NFKD');
+  function ed1(a,b){ // edit distance <=1 quick check
+    if(a===b)return true;const la=a.length,lb=b.length;if(Math.abs(la-lb)>1)return false;
+    let i=0,j=0,e=0;while(i<la&&j<lb){if(a[i]===b[j]){i++;j++;}else{if(++e>1)return false;if(la>lb)i++;else if(lb>la)j++;else{i++;j++;}}}
+    return e+(la-i)+(lb-j)<=1;
+  }
+  function matches(it){
+    if(!term)return true;
+    const hay=norm(it.q+' '+it.a+' '+it.qm+' '+it.am);
+    const words=hay.split(/[^a-z0-9\u1000-\u109f]+/).filter(Boolean);
+    return norm(term).split(/\s+/).filter(Boolean).every(tok=>
+      hay.includes(tok) || (tok.length>=4 && words.some(w=>ed1(w,tok))));
+  }
+  function hi(text){ // highlight literal search tokens
+    let out=esc(text); if(!term)return out;
+    norm(term).split(/\s+/).filter(t=>t.length>=2).forEach(tok=>{
+      const re=new RegExp('('+tok.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')',' ig');
+      out=out.replace(re,'<mark>$1</mark>');
+    });
+    return out;
+  }
 
-      function esc(s){ return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-
-      function render() {
-        const term = (searchEl.value || '').trim().toLowerCase();
-        let total = 0;
-        let html = '';
-
-        FAQ_CATS.forEach(cat => {
-          const items = FAQ_DATA.filter(it => it.c === cat.key).filter(it => {
-            if (!term) return true;
-            const hay = ((it.q||'') + ' ' + (it.a||'') + ' ' + (it.qm||'') + ' ' + (it.am||'')).toLowerCase();
-            return hay.includes(term);
-          });
-          if (!items.length) return;
-          total += items.length;
-
-          html += '<div class="faq-cat"><div class="faq-cat-title faq-my-text">'
-                + esc(faqLang === 'my' ? cat.my : cat.en) + '</div>';
-
-          items.forEach(it => {
-            const role = FAQ_ROLES[it.r] || FAQ_ROLES.all;
-            const qText = faqLang === 'my' ? (it.qm || it.q) : it.q;
-            const aText = faqLang === 'my' ? (it.am || it.a) : it.a;
-            const roleLabel = faqLang === 'my' ? role.my : role.en;
-            html += '<div class="faq-item">'
-                  +   '<button type="button" class="faq-q">'
-                  +     '<span class="faq-q-text faq-my-text">' + esc(qText) + '</span>'
-                  +     '<span class="role-badge ' + role.cls + '">' + esc(roleLabel) + '</span>'
-                  +     '<span class="faq-chev">▼</span>'
-                  +   '</button>'
-                  +   '<div class="faq-a"><div class="faq-a-inner faq-my-text">' + esc(aText) + '</div></div>'
-                  + '</div>';
-          });
-          html += '</div>';
-        });
-
-        listEl.innerHTML = html;
-        emptyEl.style.display = total === 0 ? 'block' : 'none';
-      }
-
-      function applyLang() {
-        root.setAttribute('data-lang', faqLang);
-        // static UI strings
-        root.querySelectorAll('[data-en]').forEach(el => {
-          const v = el.getAttribute('data-' + faqLang);
-          if (v != null) el.innerHTML = v;
-        });
-        // placeholder
-        const ph = searchEl.getAttribute('data-' + faqLang + '-ph');
-        if (ph) searchEl.placeholder = ph;
-        // lang button active state
-        root.querySelectorAll('.faq-lang-btn').forEach(b =>
-          b.classList.toggle('active', b.getAttribute('data-setlang') === faqLang));
-        render();
-      }
-
-      // ── Events (delegation) ──
-      listEl.addEventListener('click', e => {
-        const q = e.target.closest('.faq-q');
-        if (!q) return;
-        q.parentElement.classList.toggle('open');
+  function renderChips(){
+    let h='<div class="chip'+(cat==='all'?' on':'')+'" data-c="all"><span class="my" data-en="All" data-my="အားလုံး">'+(lang==='my'?'အားလုံး':'All')+'</span></div>';
+    FAQ_CATS.forEach(c=>{h+='<div class="chip'+(cat===c.key?' on':'')+'" data-c="'+c.key+'">'+esc(lang==='my'?c.my:c.en)+'</div>';});
+    chipsEl.innerHTML=h;
+  }
+  function render(){
+    let total=0,h='';
+    FAQ_CATS.forEach(c=>{
+      if(cat!=='all'&&cat!==c.key)return;
+      const items=FAQ_DATA.filter(it=>it.c===c.key&&matches(it));
+      if(!items.length)return; total+=items.length;
+      h+='<div class="cat-h">'+esc(lang==='my'?c.my:c.en)+'<span class="n">'+items.length+'</span></div>';
+      items.forEach(it=>{
+        const r=FAQ_ROLES[it.r]||FAQ_ROLES.all;
+        const q=lang==='my'?(it.qm||it.q):it.q, a=lang==='my'?(it.am||it.a):it.a;
+        const id=norm(it.q).replace(/[^a-z0-9]+/g,'-').slice(0,40);
+        const open=!!term; const voted=votes[id];
+        h+='<div class="item'+(open?' open':'')+'" data-id="'+id+'">'
+          +'<button class="q"><span class="qt my">'+hi(q)+'</span>'
+          +'<span class="badge '+r.cls+'">'+esc(lang==='my'?r.my:r.en)+'</span>'
+          +'<svg class="ic chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>'
+          +'<div class="a"><div class="a-in"><div class="a-tx my">'+hi(a)+'</div>'
+          +'<div class="help">'+(voted
+              ?'<span class="thanks my" data-en="Thanks for your feedback." data-my="အကြံပြုချက်အတွက် ကျေးဇူးတင်ပါသည်။">'+(lang==='my'?'အကြံပြုချက်အတွက် ကျေးဇူးတင်ပါသည်။':'Thanks for your feedback.')+'</span>'
+              :'<span class="lab my" data-en="Was this helpful?" data-my="ဒါ အထောက်အကူ ဖြစ်ခဲ့လား?">'+(lang==='my'?'ဒါ အထောက်အကူ ဖြစ်ခဲ့လား?':'Was this helpful?')+'</span>'
+                +'<button class="hbtn" data-v="yes"><svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 3 2l-1 6h5a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 19 20H7"/></svg>'+(lang==='my'?'ဟုတ်':'Yes')+'</button>'
+                +'<button class="hbtn" data-v="no"><svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M17 13V4h3v9zM17 13l-4 8a2 2 0 0 1-3-2l1-6H6a2 2 0 0 1-2-2.3l1.2-6A2 2 0 0 1 7 4h10"/></svg>'+(lang==='my'?'မဟုတ်':'No')+'</button>')
+          +'</div></div></div></div>';
       });
-      root.querySelector('.faq-lang').addEventListener('click', e => {
-        const b = e.target.closest('.faq-lang-btn');
-        if (!b) return;
-        faqLang = b.getAttribute('data-setlang');
-        applyLang();
-      });
-      searchEl.addEventListener('input', render);
+    });
+    listEl.innerHTML=h; emptyEl.style.display=total?'none':'block';
+    countEl.textContent=term?((lang==='my'?'ရလဒ် ':'')+total+(lang==='my'?' ခု':' result'+(total!==1?'s':'')+' found')):'';
+  }
+  function applyLang(){
+    root.setAttribute('data-lang',lang);
+    root.querySelectorAll('[data-en]').forEach(el=>{const v=el.getAttribute('data-'+lang);if(v!=null)el.innerHTML=v;});
+    qEl.placeholder=qEl.getAttribute('data-'+lang+'-ph')||qEl.placeholder;
+    document.querySelectorAll('.lang button').forEach(b=>b.classList.toggle('on',b.getAttribute('data-set')===lang));
+    renderChips(); render();
+  }
 
-      // initial paint
-      applyLang();
-    })();
-    </script>
+  // events
+  qEl.addEventListener('input',()=>{term=qEl.value.trim();clrEl.classList.toggle('show',!!term);render();});
+  clrEl.addEventListener('click',()=>{qEl.value='';term='';clrEl.classList.remove('show');qEl.focus();render();});
+  chipsEl.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;cat=c.getAttribute('data-c');renderChips();render();});
+  document.querySelector('.lang').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;lang=b.getAttribute('data-set');applyLang();});
+  listEl.addEventListener('click',e=>{
+    const v=e.target.closest('.hbtn');
+    if(v){const it=v.closest('.item');votes[it.getAttribute('data-id')]=v.getAttribute('data-v');
+      try{localStorage.setItem('pdd_faq_votes',JSON.stringify(votes))}catch(_){}
+      const row=v.closest('.help');row.innerHTML='<span class="thanks">'+(lang==='my'?'အကြံပြုချက်အတွက် ကျေးဇူးတင်ပါသည်။':'Thanks for your feedback.')+'</span>';return;}
+    const q=e.target.closest('.q'); if(q)q.parentElement.classList.toggle('open');
+  });
+  document.getElementById('contact').addEventListener('click',e=>{
+    e.preventDefault();
+    location.href='mailto:'+SUPPORT_EMAIL+'?subject='+encodeURIComponent('PDD Dashboard — Help request');
+  });
+
+  applyLang();
+})();
+</script>
 </body>
 </html>
