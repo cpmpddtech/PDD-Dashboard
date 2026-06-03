@@ -4712,6 +4712,8 @@ async function postComment(type, targetId, inputElId, listElId){
 function renderAll() {
   renderMyProfile();
   renderProgress();
+  if (canComment()) initGeneralComments();
+  if (canComment()) initGeneralComments();
   if (PROGRESS_VIEW === 'projects') renderProjectsGantt();
   renderKpi();
   renderStaff();
