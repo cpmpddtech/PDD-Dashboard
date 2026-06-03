@@ -911,6 +911,38 @@ if (typeof Chart !== 'undefined') {
   .role-finance  { background:#3b1f5e; color:#c4b5fd; }
   .role-manager { background:#14532d; color:#86efac; }
   .role-staff   { background:#f3f4f6; color:#374151; border:1px solid var(--border); }
+
+  /* ── PROFESSIONAL ICONS (inline SVG via mask, no external deps) ── */
+  i[class^="ic-"]{display:inline-block;width:1.05em;height:1.05em;vertical-align:-0.16em;background-color:currentColor;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;}
+  .ic-user{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%278%27%20r%3D%274%27%2F%3E%3Cpath%20d%3D%27M4%2021a8%208%200%200%201%2016%200%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%278%27%20r%3D%274%27%2F%3E%3Cpath%20d%3D%27M4%2021a8%208%200%200%201%2016%200%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-users{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%279%27%20cy%3D%278%27%20r%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M2.5%2020a6.5%206.5%200%200%201%2013%200%27%2F%3E%3Cpath%20d%3D%27M16%204.5a3.5%203.5%200%200%201%200%207%27%2F%3E%3Cpath%20d%3D%27M21.5%2020a6.5%206.5%200%200%200-4-6%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%279%27%20cy%3D%278%27%20r%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M2.5%2020a6.5%206.5%200%200%201%2013%200%27%2F%3E%3Cpath%20d%3D%27M16%204.5a3.5%203.5%200%200%201%200%207%27%2F%3E%3Cpath%20d%3D%27M21.5%2020a6.5%206.5%200%200%200-4-6%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-home{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2011l9-7%209%207%27%2F%3E%3Cpath%20d%3D%27M5%2010v10h14V10%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2011l9-7%209%207%27%2F%3E%3Cpath%20d%3D%27M5%2010v10h14V10%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-edit{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%2020h4L18.5%209.5l-4-4L4%2016z%27%2F%3E%3Cpath%20d%3D%27M13.5%206.5l4%204%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%2020h4L18.5%209.5l-4-4L4%2016z%27%2F%3E%3Cpath%20d%3D%27M13.5%206.5l4%204%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-clipboard{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%276%27%20y%3D%274%27%20width%3D%2712%27%20height%3D%2717%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M9%204.5V3.5h6v1%27%2F%3E%3Cpath%20d%3D%27M9%2010h6M9%2014h6%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%276%27%20y%3D%274%27%20width%3D%2712%27%20height%3D%2717%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M9%204.5V3.5h6v1%27%2F%3E%3Cpath%20d%3D%27M9%2010h6M9%2014h6%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-folder{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%207a2%202%200%200%201%202-2h4l2%202h8a2%202%200%200%201%202%202v8a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2z%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%207a2%202%200%200%201%202-2h4l2%202h8a2%202%200%200%201%202%202v8a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2z%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-lock{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%275%27%20y%3D%2711%27%20width%3D%2714%27%20height%3D%279%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M8%2011V8a4%204%200%200%201%208%200v3%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%275%27%20y%3D%2711%27%20width%3D%2714%27%20height%3D%279%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M8%2011V8a4%204%200%200%201%208%200v3%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-key{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%278%27%20cy%3D%278%27%20r%3D%274%27%2F%3E%3Cpath%20d%3D%27M11%2011l8%208M16%2016l2-2M18%2018l2-2%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%278%27%20cy%3D%278%27%20r%3D%274%27%2F%3E%3Cpath%20d%3D%27M11%2011l8%208M16%2016l2-2M18%2018l2-2%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-settings{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%273%27%2F%3E%3Cpath%20d%3D%27M12%202v3M12%2019v3M2%2012h3M19%2012h3M5%205l2.2%202.2M16.8%2016.8L19%2019M19%205l-2.2%202.2M7.2%2016.8L5%2019%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%273%27%2F%3E%3Cpath%20d%3D%27M12%202v3M12%2019v3M2%2012h3M19%2012h3M5%205l2.2%202.2M16.8%2016.8L19%2019M19%205l-2.2%202.2M7.2%2016.8L5%2019%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-file{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M7%203h7l5%205v13H7z%27%2F%3E%3Cpath%20d%3D%27M14%203v5h5%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M7%203h7l5%205v13H7z%27%2F%3E%3Cpath%20d%3D%27M14%203v5h5%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-wallet{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%276%27%20width%3D%2718%27%20height%3D%2713%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M3%2010h18%27%2F%3E%3Ccircle%20cx%3D%2717%27%20cy%3D%2714%27%20r%3D%271.2%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%276%27%20width%3D%2718%27%20height%3D%2713%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M3%2010h18%27%2F%3E%3Ccircle%20cx%3D%2717%27%20cy%3D%2714%27%20r%3D%271.2%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-megaphone{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%2010v4l11%204V6z%27%2F%3E%3Cpath%20d%3D%27M15%208.5a3.5%203.5%200%200%201%200%207%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%2010v4l11%204V6z%27%2F%3E%3Cpath%20d%3D%27M15%208.5a3.5%203.5%200%200%201%200%207%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-help{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%279%27%2F%3E%3Cpath%20d%3D%27M9.4%209a2.6%202.6%200%201%201%203.6%202.4c-1%20.5-1%201-1%202%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2716.6%27%20r%3D%27.6%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%279%27%2F%3E%3Cpath%20d%3D%27M9.4%209a2.6%202.6%200%201%201%203.6%202.4c-1%20.5-1%201-1%202%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2716.6%27%20r%3D%27.6%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-bell{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M6%2016V10a6%206%200%200%201%2012%200v6l1.5%202h-15z%27%2F%3E%3Cpath%20d%3D%27M10%2020a2%202%200%200%200%204%200%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M6%2016V10a6%206%200%200%201%2012%200v6l1.5%202h-15z%27%2F%3E%3Cpath%20d%3D%27M10%2020a2%202%200%200%200%204%200%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-chart{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%204v16h16%27%2F%3E%3Cpath%20d%3D%27M8%2016v-4M13%2016V8M18%2016v-6%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%204v16h16%27%2F%3E%3Cpath%20d%3D%27M8%2016v-4M13%2016V8M18%2016v-6%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-trending{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2017l6-6%204%204%207-7%27%2F%3E%3Cpath%20d%3D%27M16%208h5v5%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2017l6-6%204%204%207-7%27%2F%3E%3Cpath%20d%3D%27M16%208h5v5%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-mail{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%275%27%20width%3D%2718%27%20height%3D%2714%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M3.5%207l8.5%206%208.5-6%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%275%27%20width%3D%2718%27%20height%3D%2714%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M3.5%207l8.5%206%208.5-6%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-check-circle{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%279%27%2F%3E%3Cpath%20d%3D%27M8%2012l3%203%205-6%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%279%27%2F%3E%3Cpath%20d%3D%27M8%2012l3%203%205-6%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-clock{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%279%27%2F%3E%3Cpath%20d%3D%27M12%207v5l3%202%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%279%27%2F%3E%3Cpath%20d%3D%27M12%207v5l3%202%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-printer{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M7%209V4h10v5%27%2F%3E%3Crect%20x%3D%274%27%20y%3D%279%27%20width%3D%2716%27%20height%3D%277%27%20rx%3D%271%27%2F%3E%3Cpath%20d%3D%27M7%2014h10v6H7z%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M7%209V4h10v5%27%2F%3E%3Crect%20x%3D%274%27%20y%3D%279%27%20width%3D%2716%27%20height%3D%277%27%20rx%3D%271%27%2F%3E%3Cpath%20d%3D%27M7%2014h10v6H7z%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-plus{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M12%205v14M5%2012h14%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M12%205v14M5%2012h14%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-pin{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M12%2021s7-6%207-11a7%207%200%200%200-14%200c0%205%207%2011%207%2011z%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2710%27%20r%3D%272.4%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M12%2021s7-6%207-11a7%207%200%200%200-14%200c0%205%207%2011%207%2011z%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2710%27%20r%3D%272.4%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-database{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%275%27%20rx%3D%278%27%20ry%3D%273%27%2F%3E%3Cpath%20d%3D%27M4%205v14c0%201.7%203.6%203%208%203s8-1.3%208-3V5%27%2F%3E%3Cpath%20d%3D%27M4%2012c0%201.7%203.6%203%208%203s8-1.3%208-3%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cellipse%20cx%3D%2712%27%20cy%3D%275%27%20rx%3D%278%27%20ry%3D%273%27%2F%3E%3Cpath%20d%3D%27M4%205v14c0%201.7%203.6%203%208%203s8-1.3%208-3V5%27%2F%3E%3Cpath%20d%3D%27M4%2012c0%201.7%203.6%203%208%203s8-1.3%208-3%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-camera{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%277%27%20width%3D%2718%27%20height%3D%2713%27%20rx%3D%272%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2713%27%20r%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M8%207l2-3h4l2%203%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%273%27%20y%3D%277%27%20width%3D%2718%27%20height%3D%2713%27%20rx%3D%272%27%2F%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2713%27%20r%3D%273.4%27%2F%3E%3Cpath%20d%3D%27M8%207l2-3h4l2%203%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-tag{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2012V4h8l9%209-8%208z%27%2F%3E%3Ccircle%20cx%3D%277.5%27%20cy%3D%277.5%27%20r%3D%271.2%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M3%2012V4h8l9%209-8%208z%27%2F%3E%3Ccircle%20cx%3D%277.5%27%20cy%3D%277.5%27%20r%3D%271.2%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-calendar{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%274%27%20y%3D%275%27%20width%3D%2716%27%20height%3D%2716%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M4%209.5h16M8%203v4M16%203v4%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Crect%20x%3D%274%27%20y%3D%275%27%20width%3D%2716%27%20height%3D%2716%27%20rx%3D%272%27%2F%3E%3Cpath%20d%3D%27M4%209.5h16M8%203v4M16%203v4%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-zap{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M13%202L4%2014h7l-1%208%209-12h-7z%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M13%202L4%2014h7l-1%208%209-12h-7z%27%2F%3E%3C%2Fsvg%3E");}
+  .ic-menu{-webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%207h16M4%2012h16M4%2017h16%27%2F%3E%3C%2Fsvg%3E");mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M4%207h16M4%2012h16M4%2017h16%27%2F%3E%3C%2Fsvg%3E");}
+
   .user-name-badge {
     font-size:13px; font-weight:700; color:var(--gray-700);
     display:flex; align-items:center; gap:6px;
@@ -1969,7 +2001,7 @@ if (typeof Chart !== 'undefined') {
     <!-- Force password change (first login / admin reset) -->
     <div id="change-pw-form" style="display:none;">
       <div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#fcd34d;line-height:1.5;">
-        🔒 You must set a new password before continuing.
+        <i class=ic-lock></i> You must set a new password before continuing.
       </div>
       <div class="login-field">
         <div class="login-label">New Password</div>
@@ -2035,8 +2067,8 @@ if (typeof Chart !== 'undefined') {
           background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:10px;
           margin-left:2px;"></span>
       </div>
-      <button class="logout-btn" onclick="showChangePasswordModal()" style="background:transparent;border:1px solid var(--gray-200);" title="Change password">🔑</button>
-      <button class="logout-btn" onclick="showNotifPrefsModal()" style="background:transparent;border:1px solid var(--gray-200);" title="Notification preferences" id="notif-btn">🔔</button>
+      <button class="logout-btn" onclick="showChangePasswordModal()" style="background:transparent;border:1px solid var(--gray-200);" title="Change password"><i class=ic-key></i></button>
+      <button class="logout-btn" onclick="showNotifPrefsModal()" style="background:transparent;border:1px solid var(--gray-200);" title="Notification preferences" id="notif-btn"><i class=ic-bell></i></button>
       <button class="logout-btn" onclick="doLogout()">Log out</button>
     </div>
   </div>
@@ -2044,7 +2076,7 @@ if (typeof Chart !== 'undefined') {
   <!-- CHANGE PASSWORD MODAL -->
   <div id="cpw-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:none;align-items:center;justify-content:center;">
     <div style="background:var(--surface2);border-radius:16px;padding:32px;width:100%;max-width:380px;margin:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-      <div style="font-size:18px;font-weight:800;color:var(--gray-900);margin-bottom:6px;">🔑 Change Password</div>
+      <div style="font-size:18px;font-weight:800;color:var(--gray-900);margin-bottom:6px;"><i class=ic-key></i> Change Password</div>
       <div style="font-size:13px;color:var(--gray-400);margin-bottom:20px;">Your new password is stored securely and never visible to admins.</div>
       <div class="rm-field">
         <div class="rm-label">Current Password</div>
@@ -2071,7 +2103,7 @@ if (typeof Chart !== 'undefined') {
   <!-- NOTIFICATION PREFERENCES MODAL -->
   <div id="np-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
     <div style="background:var(--surface2);border-radius:16px;padding:28px;width:100%;max-width:440px;margin:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
-      <div style="font-size:17px;font-weight:800;color:var(--gray-900);margin-bottom:4px;">🔔 Notification Preferences</div>
+      <div style="font-size:17px;font-weight:800;color:var(--gray-900);margin-bottom:4px;"><i class=ic-bell></i> Notification Preferences</div>
       <div style="font-size:12px;color:var(--gray-400);margin-bottom:20px;">Choose which email notifications you receive. Your email must be set by your admin for these to work.</div>
       <div id="np-email-hint" style="font-size:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-bottom:16px;color:#1d4ed8;display:none;"></div>
       <div style="margin-bottom:20px;">
@@ -2176,21 +2208,21 @@ if (typeof Chart !== 'undefined') {
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab" id="tab-btn-profile" onclick="switchTab('profile',this)">👤 My Profile</button>
-    <button class="tab" id="tab-btn-mytasks" onclick="switchTab('mytasks',this)">🏠 My Tasks</button>
+    <button class="tab" id="tab-btn-profile" onclick="switchTab('profile',this)"><i class=ic-user></i> My Profile</button>
+    <button class="tab" id="tab-btn-mytasks" onclick="switchTab('mytasks',this)"><i class=ic-home></i> My Tasks</button>
     <button class="tab active" id="tab-btn-progress" onclick="switchTab('progress',this)">Program Progress</button>
     <button class="tab" id="tab-btn-kpi" onclick="switchTab('kpi',this)">Weekly KPI</button>
     <button class="tab" id="tab-btn-staff" onclick="switchTab('staff',this)">Staff Performance</button>
-    <button class="tab" id="tab-btn-checkin" onclick="switchTab('checkin',this)">📝 Weekly Check-in</button>
-    <button class="tab" id="tab-btn-digest" onclick="switchTab('digest',this)">📋 Manager Digest</button>
-    <button class="tab" id="tab-btn-projmgmt" onclick="switchTab('projmgmt',this)">📁 Program Management</button>
-    <button class="tab" id="tab-btn-roles" onclick="switchTab('roles',this)">🔐 Role Management</button>
-    <button class="tab" id="tab-btn-setup" onclick="switchTab('setup',this)">⚙ Setup</button>
-    <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report">📄 DCR Reports</button>
-    <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department">💰 Finance</button>
-    <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff">📢 Announcements</button>
-    <button class="tab tab-hidden" id="tab-btn-minutes" onclick="openMinutes()" title="Meeting Minutes">📋 Minutes</button>
-    <button class="tab" id="tab-btn-help" onclick="openHelp()" title="Help &amp; FAQ">❓ Help</button>
+    <button class="tab" id="tab-btn-checkin" onclick="switchTab('checkin',this)"><i class=ic-edit></i> Weekly Check-in</button>
+    <button class="tab" id="tab-btn-digest" onclick="switchTab('digest',this)"><i class=ic-clipboard></i> Manager Digest</button>
+    <button class="tab" id="tab-btn-projmgmt" onclick="switchTab('projmgmt',this)"><i class=ic-folder></i> Program Management</button>
+    <button class="tab" id="tab-btn-roles" onclick="switchTab('roles',this)"><i class=ic-lock></i> Role Management</button>
+    <button class="tab" id="tab-btn-setup" onclick="switchTab('setup',this)"><i class=ic-settings></i> Setup</button>
+    <button class="tab" id="tab-btn-dcr" onclick="openDCR()" title="Diocesan Consolidated Report"><i class=ic-file></i> DCR Reports</button>
+    <button class="tab tab-hidden" id="tab-btn-finance" onclick="openFinance()" title="Finance Department"><i class=ic-wallet></i> Finance</button>
+    <button class="tab tab-hidden" id="tab-btn-announcements" onclick="openAnnouncements()" title="Send announcements to staff"><i class=ic-megaphone></i> Announcements</button>
+    <button class="tab tab-hidden" id="tab-btn-minutes" onclick="openMinutes()" title="Meeting Minutes"><i class=ic-clipboard></i> Minutes</button>
+    <button class="tab" id="tab-btn-help" onclick="openHelp()" title="Help &amp; FAQ"><i class=ic-help></i> Help</button>
   </div>
 
   <div class="main">
@@ -2212,7 +2244,7 @@ if (typeof Chart !== 'undefined') {
       <div class="grid-2 mb16">
         <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div class="panel-title" style="margin:0;">📋 My Assigned Tasks</div>
+            <div class="panel-title" style="margin:0;"><i class=ic-clipboard></i> My Assigned Tasks</div>
             <button onclick="toggleMyTaskForm()" id="my-add-task-btn"
               style="font-size:12px;padding:5px 12px;border:1px solid var(--blue);border-radius:6px;background:#eff6ff;color:var(--blue);cursor:pointer;font-family:var(--font);font-weight:600;">
               + Add Task
@@ -2265,12 +2297,12 @@ if (typeof Chart !== 'undefined') {
           <div id="mytasks-list"></div>
         </div>
         <div>
-          <div class="panel-title" style="margin-bottom:12px;">👥 Program Team Feed</div>
+          <div class="panel-title" style="margin-bottom:12px;"><i class=ic-users></i> Program Team Feed</div>
           <div id="team-feed"></div>
         </div>
       </div>
       <div class="panel">
-        <div class="panel-title">📊 My Program Progress</div>
+        <div class="panel-title"><i class=ic-chart></i> My Program Progress</div>
         <div id="my-program-progress" style="margin-top:12px;"></div>
       </div>
     </div>
@@ -2406,14 +2438,14 @@ if (typeof Chart !== 'undefined') {
     <!-- TAB: MANAGER DIGEST -->
     <div class="tab-pane" id="tab-digest">
       <div class="manager-only-note">
-        🔐 This tab is visible to all logged-in staff. For sensitive manager data, consider using the admin password feature in Setup.
+        <i class=ic-lock></i> This tab is visible to all logged-in staff. For sensitive manager data, consider using the admin password feature in Setup.
       </div>
       <div class="digest-header">
         <div>
           <h2>Weekly Manager Digest</h2>
           <div class="digest-week" id="digest-week-label"></div>
         </div>
-        <button class="digest-print-btn" onclick="printDigest()">🖨 Print / Export PDF</button>
+        <button class="digest-print-btn" onclick="printDigest()"><i class=ic-printer></i> Print / Export PDF</button>
       </div>
 
       <!-- KPI stat cards -->
@@ -2422,11 +2454,11 @@ if (typeof Chart !== 'undefined') {
       <!-- Programs behind -->
       <div class="grid-2 mb16">
         <div>
-          <div class="panel-title" style="margin-bottom:10px;">⚠️ Programs Behind Schedule</div>
+          <div class="panel-title" style="margin-bottom:10px;">⚠ Programs Behind Schedule</div>
           <div class="behind-list" id="digest-behind"></div>
         </div>
         <div>
-          <div class="panel-title" style="margin-bottom:10px;">✅ Check-in Submissions This Week</div>
+          <div class="panel-title" style="margin-bottom:10px;"><i class=ic-check-circle></i> Check-in Submissions This Week</div>
           <div class="checkin-list" id="digest-checkins">
             <div class="checkin-list-header">Staff Reports</div>
             <div id="digest-ci-items" style="padding:16px;color:var(--gray-400);font-size:13px;text-align:center;">
@@ -2438,21 +2470,21 @@ if (typeof Chart !== 'undefined') {
 
       <!-- Overdue tasks table -->
       <div class="panel">
-        <div class="panel-title">🔴 Overdue Tasks <span id="digest-overdue-count" class="alert-badge"></span></div>
+        <div class="panel-title">Overdue Tasks <span id="digest-overdue-count" class="alert-badge"></span></div>
         <div id="digest-overdue-table" style="margin-top:12px;"></div>
       </div>
     </div>
 
     <!-- TAB: PROJECT MANAGEMENT -->
     <div class="tab-pane" id="tab-projmgmt">
-      <div class="admin-section-title">📁 Program Management</div>
+      <div class="admin-section-title"><i class=ic-folder></i> Program Management</div>
       <div class="admin-section-sub">Add new programs and tasks directly to Google Sheets. Changes reflect immediately in the dashboard.</div>
 
       <div class="grid-2 mb16">
 
         <!-- ADD NEW PROJECT -->
         <div class="panel">
-          <div class="panel-title" style="margin-bottom:16px;">➕ Add New Program</div>
+          <div class="panel-title" style="margin-bottom:16px;"><i class=ic-plus></i> Add New Program</div>
 
           <div class="rm-field">
             <div class="rm-label">Program ID <span style="color:var(--gray-400);font-weight:400;text-transform:none">(auto: P6, P7…)</span></div>
@@ -2493,7 +2525,7 @@ if (typeof Chart !== 'undefined') {
 
         <!-- ADD TASK TO PROJECT -->
         <div class="panel">
-          <div class="panel-title" style="margin-bottom:16px;">📌 Add Tasks to Program</div>
+          <div class="panel-title" style="margin-bottom:16px;"><i class=ic-pin></i> Add Tasks to Program</div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
             <div>
@@ -2533,7 +2565,7 @@ if (typeof Chart !== 'undefined') {
 
       <!-- ADD PROGRAM TO PROJECT -->
       <div class="panel" id="pm-add-project-panel">
-        <div class="panel-title" style="margin-bottom:16px;">📂 Add Project to Program</div>
+        <div class="panel-title" style="margin-bottom:16px;"><i class=ic-folder></i> Add Project to Program</div>
 
         <div class="rm-field">
           <div class="rm-label">Program</div>
@@ -2598,7 +2630,7 @@ if (typeof Chart !== 'undefined') {
 
       <!-- PROJECT TASK OVERVIEW -->
       <div class="panel">
-        <div class="panel-title" style="margin-bottom:4px;">📋 Current Programs & Projects</div>
+        <div class="panel-title" style="margin-bottom:4px;"><i class=ic-clipboard></i> Current Programs & Projects</div>
         <div style="font-size:12px;color:var(--gray-400);margin-bottom:14px;">Live from Google Sheets — reflects all programs including newly added ones.</div>
         <div id="pm-program-list"></div>
       </div>
@@ -2739,7 +2771,7 @@ if (typeof Chart !== 'undefined') {
 
       <!-- Security Overview -->
       <div class="setup-card">
-        <div class="setup-title">🔒 Security Architecture</div>
+        <div class="setup-title"><i class=ic-lock></i> Security Architecture</div>
         <div class="setup-desc">How the secure setup works — staff never see the API key or password.</div>
         <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:16px 20px;margin-bottom:16px;font-size:13px;line-height:2;">
           <strong>Staff browser</strong>
@@ -2762,7 +2794,7 @@ if (typeof Chart !== 'undefined') {
 
       <!-- Initialize Sheets -->
       <div class="setup-card">
-        <div class="setup-title">🗄️ Initialize Google Sheets</div>
+        <div class="setup-title"><i class=ic-database></i> Initialize Google Sheets</div>
         <div class="setup-desc">Creates required sheets with correct headers, and migrates any existing task sheets from the old column format (J–Q) to the correct format (A–H). Safe to run multiple times.</div>
         <p style="font-size:13px;color:var(--gray-600);margin-bottom:16px;">
           Required sheets: <code>Main Programs</code>, <code>Weekly Reports</code>, <code>Login Audit</code><br>
@@ -2774,7 +2806,7 @@ if (typeof Chart !== 'undefined') {
 
       <!-- Deployment Guide -->
       <div class="setup-card">
-        <div class="setup-title">🚀 One-Time Setup — Cloudflare Worker</div>
+        <div class="setup-title">One-Time Setup — Cloudflare Worker</div>
         <div class="setup-desc">Takes about 10 minutes. Free tier is more than enough.</div>
         <ol class="steps">
           <li>
@@ -2858,7 +2890,7 @@ if (typeof Chart !== 'undefined') {
 
       <!-- Change Password -->
       <div class="setup-card">
-        <div class="setup-title">🔑 Changing the Password</div>
+        <div class="setup-title"><i class=ic-key></i> Changing the Password</div>
         <div class="setup-desc">
           The password lives in Cloudflare — no HTML edits needed to change it.
         </div>
@@ -2878,7 +2910,7 @@ if (typeof Chart !== 'undefined') {
 ════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="checkin-modal">
   <div class="modal-box" style="max-width:600px;">
-    <div class="modal-title">📝 Weekly Check-in — <span id="ci-modal-cw"></span></div>
+    <div class="modal-title"><i class=ic-edit></i> Weekly Check-in — <span id="ci-modal-cw"></span></div>
     <div class="modal-sub">Tick tasks you completed this week. Changes update Google Sheets live.</div>
 
     <!-- Name row — pre-filled if logged in -->
@@ -2886,7 +2918,7 @@ if (typeof Chart !== 'undefined') {
       <div class="form-field" style="margin-bottom:0">
         <div class="form-label" style="display:flex;align-items:center;gap:8px;">
           Your Name
-          <span id="ci-name-lock-note" style="display:none;font-size:11px;font-weight:500;color:var(--gray-400);">🔒 locked to your account</span>
+          <span id="ci-name-lock-note" style="display:none;font-size:11px;font-weight:500;color:var(--gray-400);"><i class=ic-lock></i> locked to your account</span>
         </div>
         <select class="form-select" id="ci-name">
           <option value="">— Select —</option>
@@ -2943,7 +2975,7 @@ if (typeof Chart !== 'undefined') {
 
     <!-- KPI refresh countdown -->
     <div id="ci-refresh-countdown" style="display:none;font-size:12px;color:var(--blue);text-align:center;margin-top:8px;padding:8px;background:var(--blue-lt);border-radius:8px;">
-      ⏳ KPI will refresh in <strong id="ci-countdown-sec">30</strong>s…
+      <i class=ic-clock></i> KPI will refresh in <strong id="ci-countdown-sec">30</strong>s…
     </div>
 
     <div class="modal-actions">
@@ -2955,7 +2987,7 @@ if (typeof Chart !== 'undefined') {
 
 <script>
 // ═══════════════════════════════════════════════════
-//  ⚙ CONFIGURATION — only set your Worker URL here
+//  <i class=ic-settings></i> CONFIGURATION — only set your Worker URL here
 // ═══════════════════════════════════════════════════
 const WORKER_URL = 'https://cpmpdd.org/api/';
 // ↑ Replace with your Cloudflare Worker URL after deploying
@@ -3224,7 +3256,7 @@ async function handleAvatarUpload(input) {
     statusEl.innerHTML = `<div style="padding:8px 12px;border-radius:8px;font-size:12px;font-weight:500;background:${color === 'green' ? 'rgba(34,197,94,0.12)' : color === 'red' ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.1)'};color:${color === 'green' ? 'var(--green)' : color === 'red' ? 'var(--red)' : '#60a5fa'};">${msg}</div>`;
   };
 
-  showStatus('⏳ Uploading…', 'blue');
+  showStatus('<i class=ic-clock></i> Uploading…', 'blue');
 
   try {
     const avatarUrl = await uploadAvatarFile(file);
@@ -4001,7 +4033,7 @@ function renderMyProfile() {
             style="position:absolute;inset:0;border-radius:20px;background:rgba(0,0,0,0);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;overflow:hidden;"
             onmouseenter="this.style.background='rgba(0,0,0,0.55)';this.querySelector('span').style.opacity='1'"
             onmouseleave="this.style.background='rgba(0,0,0,0)';this.querySelector('span').style.opacity='0'">
-            <span style="opacity:0;font-size:11px;font-weight:700;color:#fff;text-align:center;line-height:1.3;transition:opacity .2s;pointer-events:none;">📷<br>Change</span>
+            <span style="opacity:0;font-size:11px;font-weight:700;color:#fff;text-align:center;line-height:1.3;transition:opacity .2s;pointer-events:none;"><i class=ic-camera></i><br>Change</span>
           </label>
           <input type="file" id="avatar-upload-input" accept="image/jpeg,image/png,image/webp" style="display:none;"
             onchange="handleAvatarUpload(this)">
@@ -4014,9 +4046,9 @@ function renderMyProfile() {
             ${u.diocese ? `<span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.12);color:#60a5fa;">${u.diocese}</span>` : ''}
           </div>
           <div class="profile-meta-row">
-            <span>🏷 <code style="background:var(--surface3);padding:2px 7px;border-radius:5px;font-size:11px;color:var(--gray-600);">${u.username}</code></span>
-            ${u.email ? `<span>✉ <a href="mailto:${u.email}" style="color:var(--blue);text-decoration:none;">${u.email}</a></span>` : '<span style="color:var(--text-dim);">✉ No email set — ask your admin</span>'}
-            <span>📅 ${today}</span>
+            <span><i class=ic-tag></i> <code style="background:var(--surface3);padding:2px 7px;border-radius:5px;font-size:11px;color:var(--gray-600);">${u.username}</code></span>
+            ${u.email ? `<span><i class=ic-mail></i> <a href="mailto:${u.email}" style="color:var(--blue);text-decoration:none;">${u.email}</a></span>` : '<span style="color:var(--text-dim);"><i class=ic-mail></i> No email set — ask your admin</span>'}
+            <span><i class=ic-calendar></i> ${today}</span>
           </div>
         </div>
         <!-- Upload status -->
@@ -4025,10 +4057,10 @@ function renderMyProfile() {
         <!-- Quick action -->
         <div class="profile-quick-btns">
           <button onclick="showChangePasswordModal()" style="padding:8px 16px;border:1px solid var(--border2);border-radius:8px;background:var(--surface3);color:var(--text);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
-            🔑 Change Password
+            <i class=ic-key></i> Change Password
           </button>
           <button onclick="showNotifPrefsModal()" style="padding:8px 16px;border:1px solid var(--border2);border-radius:8px;background:var(--surface3);color:var(--text);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
-            🔔 Notifications
+            <i class=ic-bell></i> Notifications
           </button>
         </div>
       </div>
@@ -4062,12 +4094,12 @@ function renderMyProfile() {
 
         <!-- Delivery rate -->
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">📈 Delivery Rate</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;"><i class=ic-trending></i> Delivery Rate</div>
           <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
             <div style="font-size:48px;font-weight:800;color:${rateColor};line-height:1;">${deliveryRate}%</div>
             <div>
               <div style="font-size:12px;color:var(--text-muted);">${delivered} of ${totalTasks} tasks</div>
-              <div style="font-size:11px;color:${rateColor};font-weight:600;margin-top:3px;">${deliveryRate >= 75 ? '✓ On track' : deliveryRate >= 40 ? '⚡ Moderate' : '⚠ Needs attention'}</div>
+              <div style="font-size:11px;color:${rateColor};font-weight:600;margin-top:3px;">${deliveryRate >= 75 ? '✓ On track' : deliveryRate >= 40 ? '<i class=ic-zap></i> Moderate' : '⚠ Needs attention'}</div>
             </div>
           </div>
           <div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;">
@@ -4078,7 +4110,7 @@ function renderMyProfile() {
 
         <!-- Assigned programs -->
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">📁 Assigned Programs
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;"><i class=ic-folder></i> Assigned Programs
             <span style="font-size:11px;font-weight:500;color:var(--text-muted);background:var(--surface3);padding:2px 8px;border-radius:6px;margin-left:6px;">${myProgs.length}</span>
           </div>
           ${myProgs.length === 0 ? `<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;">No programs assigned yet.</div>` :
@@ -4108,7 +4140,7 @@ function renderMyProfile() {
 
         <!-- Recent check-in history -->
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
-          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">📝 Check-in History</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;"><i class=ic-edit></i> Check-in History</div>
           ${myCheckins.length === 0
             ? `<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px 0;">No check-ins submitted yet.</div>`
             : myCheckins.slice(0,5).map(c => `
@@ -4131,11 +4163,11 @@ function renderMyProfile() {
         <!-- Notification preferences (read-only summary + open modal) -->
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-            <div style="font-size:13px;font-weight:700;color:var(--text);">🔔 Notifications</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);"><i class=ic-bell></i> Notifications</div>
             <button onclick="showNotifPrefsModal()" style="font-size:11px;padding:4px 10px;border:1px solid var(--border2);border-radius:6px;background:var(--surface3);color:var(--text-muted);cursor:pointer;font-family:var(--font);">Edit</button>
           </div>
           ${u.email
-            ? `<div style="padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:8px;font-size:12px;color:#60a5fa;margin-bottom:12px;">✉ Sending to ${u.email}</div>`
+            ? `<div style="padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:8px;font-size:12px;color:#60a5fa;margin-bottom:12px;"><i class=ic-mail></i> Sending to ${u.email}</div>`
             : `<div style="padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:12px;color:var(--amber);margin-bottom:12px;">⚠ No email — ask admin to set one</div>`
           }
           <div style="display:flex;flex-direction:column;gap:6px;">
@@ -4152,7 +4184,7 @@ function renderMyProfile() {
 
       <!-- ── ACCOUNT DETAILS ── -->
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">🔐 Account Details</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;"><i class=ic-lock></i> Account Details</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;" class="profile-acct-grid">
           ${[
             ['Full Name',   u.name],
@@ -4170,7 +4202,7 @@ function renderMyProfile() {
         </div>
         <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;">
           <button onclick="showChangePasswordModal()" style="padding:9px 18px;border:1px solid var(--border2);border-radius:8px;background:var(--surface3);color:var(--text);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;">
-            🔑 Change Password
+            <i class=ic-key></i> Change Password
           </button>
           <button onclick="doLogout()" style="padding:9px 18px;border:1px solid rgba(239,68,68,0.3);border-radius:8px;background:rgba(239,68,68,0.08);color:var(--red);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;">
             ↩ Log Out
@@ -4193,7 +4225,7 @@ function renderProgress() {
     document.getElementById('p-content').style.display = 'none';
     const l = document.getElementById('p-loading');
     if (l) l.innerHTML = `<div style="text-align:center;color:var(--gray-400);font-size:13px;line-height:1.7;">
-      <div style="font-size:32px;margin-bottom:12px;">📁</div>
+      <div style="font-size:32px;margin-bottom:12px;"><i class=ic-folder></i></div>
       <strong style="color:var(--gray-700);font-size:14px;">No programs yet</strong><br>
       Go to <strong>Program Management</strong> → Add New Program to get started.
     </div>`;
@@ -4345,7 +4377,7 @@ function renderKpi() {
     document.getElementById('k-content').style.display = 'none';
     const l = document.getElementById('k-loading');
     if (l) l.innerHTML = `<div style="text-align:center;color:var(--gray-400);font-size:13px;line-height:1.7;">
-      <div style="font-size:32px;margin-bottom:12px;">📊</div>
+      <div style="font-size:32px;margin-bottom:12px;"><i class=ic-chart></i></div>
       <strong style="color:var(--gray-700);font-size:14px;">No KPI data yet</strong><br>
       KPI is computed from task data. Add tasks to a program to see performance here.
     </div>`;
@@ -4415,7 +4447,7 @@ function renderStaff() {
     document.getElementById('s-content').style.display = 'none';
     const l = document.getElementById('s-loading');
     if (l) l.innerHTML = `<div style="text-align:center;color:var(--gray-400);font-size:13px;line-height:1.7;">
-      <div style="font-size:32px;margin-bottom:12px;">👥</div>
+      <div style="font-size:32px;margin-bottom:12px;"><i class=ic-users></i></div>
       <strong style="color:var(--gray-700);font-size:14px;">No staff performance data yet</strong><br>
       Staff performance is computed from tasks with an Owner assigned.<br>
       Add tasks and assign them to staff members to see data here.
@@ -4536,7 +4568,7 @@ async function quickUpdateTask(taskName, programId, newStatus, btn) {
   }
   const origText = btn.textContent.trim();
   btn.disabled = true;
-  btn.textContent = '⏳…';
+  btn.textContent = 'Working…';
 
   try {
     const res = await fetch(WORKER_URL, {
@@ -4703,7 +4735,7 @@ function renderCheckinTab() {
   if (submitted >= totalStaff) {
     bannerArea.innerHTML = `
       <div class="checkin-submitted">
-        <div class="ci-icon">✅</div>
+        <div class="ci-icon"><i class=ic-check-circle></i></div>
         <div style="flex:1">
           <h4>${isAdmin() || isManager() ? `All ${totalStaff} staff have submitted for CW ${cw}!` : `Your check-in for CW ${cw} is complete!`}</h4>
           <p>${isAdmin() || isManager() ? 'View the Manager Digest for a full summary.' : 'You can update your submission anytime this week.'}</p>
@@ -4714,7 +4746,7 @@ function renderCheckinTab() {
     bannerArea.innerHTML = `
       <div class="checkin-banner">
         <div class="checkin-banner-text">
-          <h3>📝 Weekly Check-in — CW ${cw}</h3>
+          <h3><i class=ic-edit></i> Weekly Check-in — CW ${cw}</h3>
           <p>${bannerSub}</p>
         </div>
         <button class="checkin-open-btn" onclick="openCheckinModal()">${btnLabel}</button>
@@ -5051,10 +5083,10 @@ async function submitCheckin() {
       if (secEl) secEl.textContent = secs;
       if (secs <= 0) {
         clearInterval(timer);
-        countdownEl.textContent = '🔄 Refreshing KPI from Google Sheets…';
+        countdownEl.textContent = 'Refreshing KPI from Google Sheets…';
         loadFromWorker().then(() => {
           renderAll();
-          countdownEl.textContent = '✅ KPI updated from Google Sheets!';
+          countdownEl.textContent = 'KPI updated from Google Sheets!';
           setTimeout(() => closeCheckinModal(), 1500);
         }).catch(() => {
           countdownEl.textContent = '⚠ Could not reach server — data updated locally.';
@@ -5119,7 +5151,7 @@ function renderDigest() {
       return actualPct < expectedPct * 0.5 && cw >= p.start;
     });
     behindEl.innerHTML = behind.length === 0
-      ? '<div class="behind-item"><span style="color:var(--green);font-size:13px;">✅ All programs on track</span></div>'
+      ? '<div class="behind-item"><span style="color:var(--green);font-size:13px;"><i class=ic-check-circle></i> All programs on track</span></div>'
       : behind.map(p => `
           <div class="behind-item">
             <div>
@@ -5154,7 +5186,7 @@ function renderDigest() {
     const tasks = getOverdueTasks();
     if (overdueCtEl) overdueCtEl.textContent = tasks.length + ' tasks';
     overdueEl.innerHTML = tasks.length === 0
-      ? '<div style="padding:16px;color:var(--green);font-size:13px;">✅ No overdue tasks.</div>'
+      ? '<div style="padding:16px;color:var(--green);font-size:13px;"><i class=ic-check-circle></i> No overdue tasks.</div>'
       : `<table class="tbl"><thead><tr><th>Program</th><th>Task</th><th>Due CW</th><th>Owner</th></tr></thead><tbody>
           ${tasks.map(t=>`<tr class="overdue-row"><td>${t.program}</td><td>${t.task}</td><td>CW ${t.cw}</td><td>${t.owner}</td></tr>`).join('')}
         </tbody></table>`;
@@ -5331,7 +5363,7 @@ function renderMyTasks() {
   // Greeting
   const greetEl = document.getElementById('mytasks-greeting');
   const subEl   = document.getElementById('mytasks-sub');
-  if (greetEl) greetEl.textContent = `Welcome back, ${name}! 👋`;
+  if (greetEl) greetEl.textContent = `Welcome back, ${name}!`;
   if (subEl)   subEl.textContent   = `CW ${cw} · ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}`;
 
   // Gather MY tasks only — always filter by logged-in user's name
@@ -5398,7 +5430,7 @@ function renderMyTasks() {
   }
 
   const overdueCount   = planned.filter(t => (parseFloat(t['CW'])||0) < cw).length;
-  const plannedEmpty   = `<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px;">All tasks delivered! 🎉</div>`;
+  const plannedEmpty   = `<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px;">All tasks delivered!</div>`;
   const deliveredEmpty = `<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px;">No delivered tasks yet.</div>`;
 
   listEl.innerHTML = `
@@ -6184,7 +6216,7 @@ function renderProjectsGantt() {
       const label   = pg['Project Name'] || '—';
       const sub     = [
         pg['Quarter'] || '',
-        pg['Responsible'] ? '👤 ' + pg['Responsible'] : '',
+        pg['Responsible'] ? '<i class=ic-user></i> ' + pg['Responsible'] : '',
         pg['Start CW'] && pg['End CW'] ? `CW ${startCW}–${endCW}` : ''
       ].filter(Boolean).join(' · ');
 
@@ -6859,12 +6891,12 @@ function toggleMobileMoreMenu() {
 
   // Build menu items from available tabs
   const tabs = [
-    { id:'progress', icon:'📈', label:'Program Progress' },
-    { id:'staff',    icon:'👥', label:'Staff Performance' },
-    { id:'digest',   icon:'📋', label:'Manager Digest',  role:'manager' },
-    { id:'pm',       icon:'🏗', label:'Program Mgmt',    role:'admin' },
-    { id:'rm',       icon:'🔑', label:'Role Mgmt',       role:'admin' },
-    { id:'um',       icon:'👤', label:'User Accounts',   role:'admin' },
+    { id:'progress', icon:'<i class=ic-trending></i>', label:'Program Progress' },
+    { id:'staff',    icon:'<i class=ic-users></i>', label:'Staff Performance' },
+    { id:'digest',   icon:'<i class=ic-clipboard></i>', label:'Manager Digest',  role:'manager' },
+    { id:'pm',       icon:'<i class=ic-folder></i>', label:'Program Mgmt',    role:'admin' },
+    { id:'rm',       icon:'<i class=ic-key></i>', label:'Role Mgmt',       role:'admin' },
+    { id:'um',       icon:'<i class=ic-user></i>', label:'User Accounts',   role:'admin' },
   ];
 
   const items = tabs.filter(t => {
@@ -7003,23 +7035,23 @@ function resetProjRespChips() {
 <!-- ═══ MOBILE BOTTOM NAV ═══ -->
 <div id="mobile-bottom-nav">
   <button class="mobile-nav-btn active" id="mnb-profile" onclick="switchTab('profile',document.getElementById('tab-btn-profile'));updateMobileNav('profile')">
-    <span class="mnb-icon">👤</span>
+    <span class="mnb-icon"><i class=ic-user></i></span>
     <span class="mnb-label">Profile</span>
   </button>
   <button class="mobile-nav-btn" id="mnb-mytasks" onclick="switchTab('mytasks',document.getElementById('tab-btn-mytasks'));updateMobileNav('mytasks')">
-    <span class="mnb-icon">✅</span>
+    <span class="mnb-icon"><i class=ic-check-circle></i></span>
     <span class="mnb-label">My Tasks</span>
   </button>
   <button class="mobile-nav-btn" id="mnb-kpi" onclick="switchTab('kpi',document.getElementById('tab-btn-kpi'));updateMobileNav('kpi')">
-    <span class="mnb-icon">📊</span>
+    <span class="mnb-icon"><i class=ic-chart></i></span>
     <span class="mnb-label">KPI</span>
   </button>
   <button class="mobile-nav-btn" id="mnb-checkin" onclick="switchTab('checkin',document.getElementById('tab-btn-checkin'));updateMobileNav('checkin')">
-    <span class="mnb-icon">📝</span>
+    <span class="mnb-icon"><i class=ic-edit></i></span>
     <span class="mnb-label">Check-in</span>
   </button>
   <button class="mobile-nav-btn" id="mnb-more" onclick="toggleMobileMoreMenu()">
-    <span class="mnb-icon">☰</span>
+    <span class="mnb-icon"><i class=ic-menu></i></span>
     <span class="mnb-label">More</span>
   </button>
 </div>
