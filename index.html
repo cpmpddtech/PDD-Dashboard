@@ -1088,6 +1088,28 @@ if (typeof Chart !== 'undefined') {
   .rm-divider { height:1px; background:var(--gray-100); margin:10px 0; }
   .rm-email-input { font-size:12px !important; padding:7px 10px !important; }
 
+  /* ── Role Management — searchable collapsible list ── */
+  #rm-cards.rm-list { display:flex; flex-direction:column; gap:8px; }
+  .rm-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:16px 0 2px; }
+  .rm-search-wrap { position:relative; flex:1; min-width:200px; }
+  .rm-search { width:100%; padding:9px 12px 9px 36px; border:1.5px solid var(--border2); border-radius:9px; background:var(--surface3); color:var(--text); font-family:var(--font); font-size:13px; outline:none; }
+  .rm-search:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
+  .rm-rolefilter { padding:9px 12px; border:1.5px solid var(--border2); border-radius:9px; background:var(--surface3); color:var(--text); font-family:var(--font); font-size:13px; outline:none; cursor:pointer; }
+  .rm-count { font-size:12px; color:var(--text-muted); white-space:nowrap; }
+  .rm-row { background:var(--surface2); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color .15s; }
+  .rm-row.open { border-color:var(--border2); }
+  .rm-row-head { display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer; user-select:none; }
+  .rm-row-head:hover { background:var(--surface3); }
+  .rm-row-id { min-width:0; flex:1; }
+  .rm-row-name { font-size:14px; font-weight:700; color:var(--text); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rm-row-user { font-size:11px; color:var(--text-muted); font-family:monospace; margin-top:1px; }
+  .rm-row-diocese { font-size:11px; font-weight:600; color:#7dd3fc; background:rgba(59,130,246,0.12); padding:2px 8px; border-radius:10px; white-space:nowrap; flex-shrink:0; }
+  .rm-row-chev { width:16px; height:16px; color:var(--text-muted); transition:transform .15s; flex-shrink:0; }
+  .rm-row.open .rm-row-chev { transform:rotate(180deg); }
+  .rm-row-body { display:none; border-top:1px solid var(--border); padding:14px 16px 16px; }
+  .rm-row.open .rm-row-body { display:block; }
+  .rm-empty-search { text-align:center; color:var(--text-muted); font-size:13px; padding:24px; }
+
   /* ── User table ── */
   .um-table { width:100%; border-collapse:collapse; font-size:13px; }
   .um-table th {
@@ -2833,7 +2855,24 @@ if (typeof Chart !== 'undefined') {
       </div>
       <div class="admin-section-sub">Click program pills to toggle access. Save each card individually.</div>
 
-      <div class="rm-grid" id="rm-cards"></div>
+      <div class="rm-toolbar">
+        <div class="rm-search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.2-4.2"/></svg>
+          <input class="rm-search" id="rm-search" type="text" placeholder="Search by name, username, or role…" oninput="rmFilter()" autocomplete="off">
+        </div>
+        <select class="rm-rolefilter" id="rm-rolefilter" onchange="rmFilter()">
+          <option value="">All roles</option>
+          <option value="admin">Admin</option>
+          <option value="manager">Manager</option>
+          <option value="staff">Staff</option>
+          <option value="finance_manager">Finance Manager</option>
+          <option value="finance_staff">Finance Staff</option>
+          <option value="bishop">Bishop</option>
+          <option value="external">External</option>
+        </select>
+        <span class="rm-count" id="rm-count-label"></span>
+      </div>
+      <div class="rm-grid rm-list" id="rm-cards"></div>
 
       <div class="panel" style="margin-top:20px;">
         <div class="panel-title" style="margin-bottom:10px;">Save Configuration</div>
@@ -6739,19 +6778,23 @@ function _renderRoleManagementCards(grid) {
     // username from USERS_LIST if available
     const userEntry = (typeof USERS_LIST !== 'undefined' ? USERS_LIST : []).find(u => u.name === name);
     const usernameLabel = userEntry ? `<div class="rm-username">${userEntry.username}</div>` : '';
+    const _rcls = cfg.role==='admin'?'role-admin':cfg.role==='manager'?'role-manager':cfg.role==='bishop'?'role-bishop':['finance','finance_staff','finance_manager'].includes(cfg.role)?'role-finance':'role-staff';
+    const _uname = userEntry ? userEntry.username : '';
+    const _search = (name+' '+_uname+' '+cfg.role).toLowerCase().replace(/"/g,'&quot;');
 
     return `
-      <div class="rm-card" id="rm-card-${name}">
-        <div class="rm-card-top">
-          ${avatarImg(name,40,10)}
-          <div style="flex:1;min-width:0;">
-            <div class="rm-name">${name}</div>
-            ${usernameLabel}
+      <div class="rm-row" id="rm-card-${name}" data-role="${cfg.role}" data-search="${_search}">
+        <div class="rm-row-head" onclick="toggleRmRow(this)">
+          ${avatarImg(name,34,9)}
+          <div class="rm-row-id">
+            <div class="rm-row-name">${name}</div>
+            ${_uname ? `<div class="rm-row-user">${_uname}</div>` : ''}
           </div>
-          <span class="role-badge ${cfg.role==='admin'?'role-admin':cfg.role==='manager'?'role-manager':['finance','finance_staff','finance_manager'].includes(cfg.role)?'role-finance':'role-staff'}" id="rm-badge-${name}">
-            ${cfg.role}
-          </span>
+          ${cfg.diocese ? `<span class="rm-row-diocese">${cfg.diocese}</span>` : ''}
+          <span class="role-badge ${_rcls}" id="rm-badge-${name}">${cfg.role}</span>
+          <svg class="rm-row-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
         </div>
+        <div class="rm-row-body">
         <div class="rm-card-body">
           <div class="rm-field">
             <div class="rm-label">Email Address</div>
@@ -6823,10 +6866,41 @@ function _renderRoleManagementCards(grid) {
           <button class="rm-save-btn" onclick="saveIndividualRole('${name}')">Save changes</button>
           <div class="rm-saved-msg" id="rm-saved-${name}">✓ Saved successfully</div>
         </div>
+        </div>
       </div>`;
   }).join('');
 
+  if (typeof rmFilter === 'function') rmFilter();
   updateConfigJSON();
+}
+
+function toggleRmRow(headEl) {
+  const row = headEl.closest('.rm-row');
+  if (!row) return;
+  const willOpen = !row.classList.contains('open');
+  document.querySelectorAll('#rm-cards .rm-row.open').forEach(r => { if (r !== row) r.classList.remove('open'); });
+  row.classList.toggle('open', willOpen);
+}
+
+function rmFilter() {
+  const q  = (document.getElementById('rm-search')?.value || '').trim().toLowerCase();
+  const rf = document.getElementById('rm-rolefilter')?.value || '';
+  let shown = 0, total = 0;
+  document.querySelectorAll('#rm-cards .rm-row').forEach(row => {
+    total++;
+    const hay  = row.getAttribute('data-search') || '';
+    const role = row.getAttribute('data-role')   || '';
+    const ok = (!q || hay.includes(q)) && (!rf || role === rf);
+    row.style.display = ok ? '' : 'none';
+    if (ok) shown++;
+  });
+  const lbl = document.getElementById('rm-count-label');
+  if (lbl) lbl.textContent = total ? (shown === total ? `${total} user${total===1?'':'s'}` : `${shown} of ${total}`) : '';
+  let empty = document.getElementById('rm-empty-search');
+  if (shown === 0 && total > 0) {
+    if (!empty) { empty = document.createElement('div'); empty.id = 'rm-empty-search'; empty.className = 'rm-empty-search'; document.getElementById('rm-cards')?.appendChild(empty); }
+    empty.textContent = 'No users match your search.'; empty.style.display = '';
+  } else if (empty) { empty.style.display = 'none'; }
 }
 
 function buildBudgetSection(name) {
