@@ -6829,6 +6829,25 @@ function _renderRoleManagementCards(grid) {
   updateConfigJSON();
 }
 
+function buildBudgetSection(name) {
+  const b = (ROLE_CONFIG[name] && ROLE_CONFIG[name].budgets) || [];
+  const tags = b.map(bid => `<span class="rm-toggle on" style="display:inline-flex;align-items:center;gap:4px;">${bid}<span onclick="removeBudgetFromUser('${name}','${bid}')" style="cursor:pointer;font-size:13px;line-height:1;margin-left:2px;opacity:.7;">×</span></span>`).join('') || '<span style="font-size:11px;color:var(--gray-400);">No budgets assigned</span>';
+  return `<div class="rm-field" id="rm-budget-section-${name}">
+            <div class="rm-label">Assigned Budgets <span style="font-size:10px;color:var(--gray-400);font-weight:400;">(Finance access)</span></div>
+            <div class="rm-budget-input-wrap" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+              <input type="text" id="rm-budget-input-${name}" placeholder="Budget ID e.g. B001" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface3);color:var(--text);width:140px;" onkeydown="if(event.key==='Enter'){addBudgetToUser('${name}');event.preventDefault();}">
+              <button style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface3);color:var(--text);cursor:pointer;" onclick="addBudgetToUser('${name}')">+ Add</button>
+            </div>
+            <div class="rm-toggle-row" id="rm-budget-tags-${name}">${tags}</div>
+          </div>`;
+}
+
+async function saveIndividualRole(name) {
+  await saveRoleConfig();
+  const m = document.getElementById('rm-saved-' + name);
+  if (m) { m.style.display = 'block'; setTimeout(() => { m.style.display = 'none'; }, 2500); }
+}
+
 function onRoleChange(name, selectEl) {
   const role   = selectEl.value;
   const badge  = document.getElementById(`rm-badge-${name}`);
@@ -6844,6 +6863,16 @@ function onRoleChange(name, selectEl) {
   // Show/hide diocese section based on role
   const diocSecEl = document.getElementById(`rm-diocese-section-${name}`);
   if (diocSecEl) diocSecEl.style.display = DIOCESE_SCOPE_ROLES.includes(role) ? '' : 'none';
+
+  // Show/hide Assigned Budgets section live
+  const isFin = ['finance_staff','finance','finance_manager'].includes(role);
+  const budSec = document.getElementById(`rm-budget-section-${name}`);
+  if (isFin && !budSec) {
+    const featSecEl = document.getElementById(`rm-feat-section-${name}`);
+    if (featSecEl) featSecEl.insertAdjacentHTML('afterend', buildBudgetSection(name));
+  } else if (!isFin && budSec) {
+    budSec.remove();
+  }
 
   // Admin/manager get all features automatically
   if (role === 'admin' || role === 'manager') {
