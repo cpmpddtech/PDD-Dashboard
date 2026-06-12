@@ -6879,16 +6879,18 @@ function onRoleChange(name, selectEl) {
     ROLE_CONFIG[name].features = [...ALL_FEATURES];
     ROLE_CONFIG[name].programs = [...ALL_PROJECTS]; // dynamic
     ROLE_CONFIG[name].diocese  = null; // province-wide
-    document.querySelectorAll(`#rm-proj-${name} .rm-toggle`).forEach(t => t.classList.add('on'));
-    document.querySelectorAll(`#rm-feat-${name} .rm-toggle`).forEach(t => t.classList.add('on'));
+    const _esc = (window.CSS && CSS.escape) ? CSS.escape(name) : name.replace(/[^a-zA-Z0-9_-]/g,'\\$&');
+    document.querySelectorAll(`#rm-proj-${_esc} .rm-toggle`).forEach(t => t.classList.add('on'));
+    document.querySelectorAll(`#rm-feat-${_esc} .rm-toggle`).forEach(t => t.classList.add('on'));
   }
   updateConfigJSON();
 }
 
 function setDiocese(name, diocese, el) {
   if (!ROLE_CONFIG[name]) ROLE_CONFIG[name] = { role:'staff', programs:[], features:[], diocese: null };
-  // Single-select — deselect all others first
-  document.querySelectorAll(`#rm-diocese-${name} .rm-diocese-toggle`).forEach(t => t.classList.remove('on'));
+  // Single-select — deselect all others first (scope to this row so names with spaces work)
+  const _row = el.closest('.rm-toggle-row') || el.parentNode;
+  _row.querySelectorAll('.rm-diocese-toggle').forEach(t => t.classList.remove('on'));
   if (ROLE_CONFIG[name].diocese === diocese) {
     // Toggle off — no diocese selected
     ROLE_CONFIG[name].diocese = null;
