@@ -3737,7 +3737,7 @@ function completeLogin(data, username, password) {
       data.users.forEach(u => {
         if (!ROLE_CONFIG[u.name]) ROLE_CONFIG[u.name] = {};
         if (u.email)   ROLE_CONFIG[u.name].email   = u.email || null;
-        if (u.budgets) ROLE_CONFIG[u.name].budgets  = u.budgets || [];
+        if (u.budgets && u.budgets.length) ROLE_CONFIG[u.name].budgets = u.budgets;
       });
     }
     sessionStorage.setItem('pdp_role_config', JSON.stringify(ROLE_CONFIG));
@@ -6709,7 +6709,7 @@ function renderRoleManagement() {
         if (u.email)   ROLE_CONFIG[u.name].email   = u.email;
         if (u.diocese) ROLE_CONFIG[u.name].diocese = u.diocese;
         if (u.programs) ROLE_CONFIG[u.name].programs = u.programs;
-        if (u.budgets)  ROLE_CONFIG[u.name].budgets  = u.budgets;
+        if (u.budgets && u.budgets.length) ROLE_CONFIG[u.name].budgets = u.budgets;
       });
       sessionStorage.setItem('pdp_role_config', JSON.stringify(ROLE_CONFIG));
 
