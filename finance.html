@@ -1753,7 +1753,7 @@ function renderBudgets() {
 
   let budgets = FIN.budgets;
   if (filterProg)    budgets = budgets.filter(b => b['Programme ID'] === filterProg);
-  if (filterDiocese) budgets = budgets.filter(b => b['Diocese'] === filterDiocese);
+  if (filterDiocese) { const _fd = String(filterDiocese).trim().toLowerCase(); budgets = budgets.filter(b => String(b['Diocese']||'').trim().toLowerCase() === _fd); }
 
   const el = document.getElementById('budgets-list');
   if (!budgets.length) {
