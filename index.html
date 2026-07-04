@@ -6308,25 +6308,32 @@ function renderProgramManagement() {
   });
 
   // Populate program dropdowns for task add + project add
+  // Preserve current selections — auto-refresh re-renders must not wipe user input
+  const _keepSel = (el, html) => {
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = html;
+    if (cur && [...el.options].some(o => o.value === cur)) el.value = cur;
+    return el.value === cur;
+  };
+  const _progOpts = '<option value="">— Select program —</option>' +
+    DATA.programs.map(p => `<option value="${p.id}">${p.id} — ${p.name}</option>`).join('');
   const sel = document.getElementById('nt-program');
   if (sel) {
-    sel.innerHTML = '<option value="">— Select program —</option>' +
-      DATA.programs.map(p => `<option value="${p.id}">${p.id} — ${p.name}</option>`).join('');
+    const restored = _keepSel(sel, _progOpts);
+    // If the selected program no longer exists, reset the dependent project list
+    if (!restored && sel.value === '' && typeof onTaskProgramChange === 'function') onTaskProgramChange('');
   }
-  const pmProgSel = document.getElementById('pm-prog-program');
-  if (pmProgSel) {
-    pmProgSel.innerHTML = '<option value="">— Select program —</option>' +
-      DATA.programs.map(p => `<option value="${p.id}">${p.id} — ${p.name}</option>`).join('');
-  }
-  // Populate responsible staff chips — fetch fresh from worker
-  loadAndRenderProjStaffChips();
+  _keepSel(document.getElementById('pm-prog-program'), _progOpts);
+  // Populate responsible staff chips — only fetch once, so refresh doesn't wipe selections
+  if (typeof PROJ_STAFF_LOADED === 'undefined' || !PROJ_STAFF_LOADED) loadAndRenderProjStaffChips();
 
   // Populate owner dropdown dynamically from users list
   const ownerSel = document.getElementById('nt-owner');
   if (ownerSel) {
     const names = getStaffNames();
-    ownerSel.innerHTML = '<option value="">— Select staff —</option>' +
-      names.map(n => `<option value="${n}">${n}</option>`).join('');
+    _keepSel(ownerSel, '<option value="">— Select staff —</option>' +
+      names.map(n => `<option value="${n}">${n}</option>`).join(''));
   }
 
   // Auto-suggest next program ID
