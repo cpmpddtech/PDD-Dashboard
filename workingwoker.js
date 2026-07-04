@@ -955,6 +955,7 @@ export default {
       return await getUsers();
     }
 
+    function dioEq(a, b) { return String(a||'').trim().toLowerCase() === String(b||'').trim().toLowerCase(); }
     async function validateUser(username, password) {
       // Sanitise inputs before lookup
       if (!username || !password) return null;
@@ -1021,6 +1022,33 @@ export default {
 
 
     // ── Sync all users from CF secret to Drive (admin one-time fix) ───────
+    // ── Migrate lh3 avatar URLs to stable drive.google.com/uc format ──────
+    if (action === 'migrate_avatar_urls') {
+      const u = await validateUser(body.username, body.password);
+      if (!u) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
+      const users = await getUsers();
+      let fixed = 0;
+      Object.keys(users).forEach(uname => {
+        const u = users[uname];
+        if (u.avatarUrl && (u.avatarUrl.includes('lh3.googleusercontent.com/d/') || u.avatarUrl.includes('drive.google.com/uc?export=view'))) {
+          let fileId = null;
+          if (u.avatarUrl.includes('lh3.googleusercontent.com/d/')) {
+            fileId = u.avatarUrl.split('/d/')[1]?.split('?')[0];
+          } else if (u.avatarUrl.includes('drive.google.com/uc?export=view')) {
+            fileId = new URLSearchParams(u.avatarUrl.split('?')[1]).get('id');
+          } else if (u.avatarUrl.includes('drive.google.com/thumbnail')) {
+            fileId = new URLSearchParams(u.avatarUrl.split('?')[1]).get('id');
+          }
+          if (fileId) {
+            users[uname].avatarUrl = 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w400';
+            fixed++;
+          }
+        }
+      });
+      if (fixed > 0) await saveUsers(users);
+      return new Response(JSON.stringify({ ok: true, fixed, message: 'Migrated ' + fixed + ' avatar URLs' }), { status: 200, headers });
+    }
+
     if (action === 'auth') {
       const { username, password } = body;
       const ip       = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -1093,6 +1121,7 @@ export default {
             programs: usr.programs || [],
             features: usr.features || [],
             diocese:  usr.diocese  || null,
+            budgets:  usr.budgets  || [],
             email:      usr.email      || null,
             notifOptOut: usr.notifOptOut || [],
           };
@@ -1540,6 +1569,7 @@ export default {
         assignedBy:  body.username,
       }).catch(e => console.error('[Notify add_task]', e.message));
 
+      try { await caches.default.delete('https://pdp-sheets-cache.internal/data'); } catch(e) {}
       return new Response(JSON.stringify({ ok: true, taskId, sheetName, row }), { status: 200, headers });
     }
 
@@ -1588,8 +1618,13 @@ export default {
         const err = await res.json().catch(() => ({}));
         return new Response(JSON.stringify({ error: err.error?.message || res.status }), { status: 500, headers });
       }
+      // Invalidate Sheets cache so next data fetch gets fresh status
+      try {
+        await caches.default.delete('https://pdp-sheets-cache.internal/data');
+      } catch(e) { /* non-fatal */ }
+
       // Fire notification — non-blocking
-      await sendNotification(env, 'task_updated', {
+      sendNotification(env, 'task_updated', {
         taskName:  taskName,
         programId: programId,
         status:    newStatus,
@@ -1683,6 +1718,7 @@ export default {
         users[key].programs = cfg.programs || [];
         users[key].features = cfg.features || [];
         if (cfg.diocese !== undefined) users[key].diocese = cfg.diocese  || null;
+        if (cfg.budgets !== undefined) users[key].budgets = cfg.budgets || [];
         if (cfg.email   !== undefined) users[key].email   = cfg.email?.trim().toLowerCase() || null;
         changed++;
       }
@@ -1809,6 +1845,7 @@ export default {
         }).catch(e => console.error('[Notify checkin]', e.message));
       }
 
+      try { await caches.default.delete('https://pdp-sheets-cache.internal/data'); } catch(e) {}
       return new Response(JSON.stringify({ ok: true, taskErrors }), { status: 200, headers });
     }
 
@@ -2315,7 +2352,9 @@ export default {
         const selfUsername = user._key || body.username;
         const filtered = (user.role === 'staff')
           ? valid.filter(r => r.pdpUsername === selfUsername)
-          : valid;
+          : (user.role === 'bishop' && user.diocese)
+            ? valid.filter(r => (r.diocese || '') === user.diocese)
+            : valid;
 
         return new Response(JSON.stringify({ ok: true, reports: filtered }), { status: 200, headers });
       } catch (e) {
@@ -2480,7 +2519,7 @@ export default {
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_finance_v2') {
       const u = await validateUser(body.username, body.password);
-      if (!u || !FIN_ROLES.includes(u.role))
+      if (!u || !(FIN_ROLES.includes(u.role) || u.role === 'bishop'))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
       const token = await getDriveToken(env);
@@ -2493,10 +2532,17 @@ export default {
         readFinSheet(token, 'Donations'),
       ]);
 
-      // Diocese staff: filter budgets to their diocese only
+      // Finance staff: restricted to budgets explicitly assigned to them in Role Management.
+      // No assignment => no budgets visible. Other finance roles (manager/admin) see all.
       let filteredBudgets = budgets;
-      if (u.role === 'finance_staff' && u.diocese) {
-        filteredBudgets = budgets.filter(b => !b['Diocese'] || b['Diocese'] === u.diocese);
+      if (u.role === 'finance_staff' || u.role === 'finance') {
+        const assigned = new Set((Array.isArray(u.budgets) ? u.budgets : [])
+          .map(x => String(x).trim().toUpperCase()).filter(Boolean));
+        filteredBudgets = assigned.size
+          ? budgets.filter(b => assigned.has(String(b['Budget ID']).trim().toUpperCase()))
+          : [];
+      } else if (u.role === 'bishop' && u.diocese) {
+        filteredBudgets = budgets.filter(b => dioEq(b['Diocese'], u.diocese)); // strict: own diocese only
       }
       const allowedBudgetIds = new Set(filteredBudgets.map(b => b['Budget ID']));
 
@@ -2915,9 +2961,9 @@ export default {
         console.log('[Worker] avatar permission set OK for', fileId);
       }
 
-      // Use thumbnail URL — works reliably without extra auth and renders in browsers
-      // lh3 URL requires file to be publicly shared which we just set above
-      const avatarUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+      // Use stable public URL — works after setting anyone+reader permission above
+      // uc?export=view is the reliable public-facing URL for Drive images
+      const avatarUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
 
       // Save avatarUrl + fileId to user record in USERS_CONFIG
       const usersW = await getUsers();
@@ -2945,10 +2991,41 @@ export default {
       if (!fileBase64)
         return new Response(JSON.stringify({ error: 'fileBase64 required' }), { status: 400, headers });
 
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      const safeMime = allowedTypes.includes(mimeType) ? mimeType : 'image/jpeg';
-      const ext = safeMime === 'image/png' ? 'png' : safeMime === 'image/gif' ? 'gif' : safeMime === 'image/webp' ? 'webp' : 'jpg';
-      const uploadName = `ann_img_${u.username}_${Date.now()}.${ext}`;
+      // Allow images and common document/file types
+      const imageTypes = ['image/jpeg','image/png','image/gif','image/webp'];
+      const docTypes   = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain','text/csv',
+        'application/zip','application/x-zip-compressed',
+      ];
+      const isImage = imageTypes.includes(mimeType);
+      const isDoc   = docTypes.includes(mimeType);
+      if (!isImage && !isDoc) {
+        return new Response(JSON.stringify({ error: 'File type not allowed' }), { status: 400, headers });
+      }
+      const safeMime = mimeType;
+      // Derive extension from fileName or mimeType
+      const extMap = {
+        'image/jpeg':'jpg','image/png':'png','image/gif':'gif','image/webp':'webp',
+        'application/pdf':'pdf',
+        'application/msword':'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx',
+        'application/vnd.ms-excel':'xls',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx',
+        'application/vnd.ms-powerpoint':'ppt',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation':'pptx',
+        'text/plain':'txt','text/csv':'csv',
+        'application/zip':'zip','application/x-zip-compressed':'zip',
+      };
+      const ext = extMap[mimeType] || (fileName?.split('.').pop() || 'bin');
+      const safeFileName = (fileName || 'attachment').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const uploadName = `ann_file_${u.username}_${Date.now()}_${safeFileName}`;
 
       const folderId = env.ANNOUNCEMENTS_FOLDER_ID || env.DRIVE_JSON_FOLDER_ID || env.DRIVE_FOLDER_ID;
       if (!folderId)
@@ -3007,7 +3084,10 @@ export default {
       }).catch(() => {});
 
       const imageUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
-      return new Response(JSON.stringify({ ok: true, imageUrl, fileId }), { status: 200, headers });
+      return new Response(JSON.stringify({
+        ok: true, imageUrl, fileId, isImage,
+        fileName: safeFileName, mimeType: safeMime,
+      }), { status: 200, headers });
     }
 
     if (action === 'upload_voucher') {
@@ -3139,7 +3219,7 @@ export default {
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_vouchers') {
       const u = await validateUser(body.username, body.password);
-      if (!u || !FIN_ROLES.includes(u.role))
+      if (!u || !(FIN_ROLES.includes(u.role) || u.role === 'bishop'))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
       const { expId } = body;
@@ -3209,13 +3289,18 @@ export default {
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_budget_detail') {
       const u = await validateUser(body.username, body.password);
-      if (!u || !FIN_ROLES.includes(u.role))
+      if (!u || !(FIN_ROLES.includes(u.role) || u.role === 'bishop'))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
       const { budgetId } = body;
       if (!budgetId) return new Response(JSON.stringify({ error: 'Missing budgetId' }), { status: 400, headers });
 
       const token = await getDriveToken(env);
+      if (u.role === 'bishop' && u.diocese) {
+        const _b = (await readFinSheet(token, 'Budgets')).find(x => x['Budget ID'] === budgetId);
+        if (!_b || (_b['Diocese'] && !dioEq(_b['Diocese'], u.diocese)))
+          return new Response(JSON.stringify({ error: 'Access denied to this diocese' }), { status: 403, headers });
+      }
       const [budgetDonors, lineItems, expenditures] = await Promise.all([
         readFinSheet(token, 'Budget_Donors'),
         readFinSheet(token, 'Line_Items'),
@@ -3257,15 +3342,21 @@ export default {
     // ════════════════════════════════════════════════════════════════
     if (action === 'get_finance_summary') {
       const u = await validateUser(body.username, body.password);
-      if (!u || !FIN_ROLES.includes(u.role))
+      if (!u || !(FIN_ROLES.includes(u.role) || u.role === 'bishop'))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
       const token = await getDriveToken(env);
-      const [budgets, budgetDonors, expenditures] = await Promise.all([
+      let [budgets, budgetDonors, expenditures] = await Promise.all([
         readFinSheet(token, 'Budgets'),
         readFinSheet(token, 'Budget_Donors'),
         readFinSheet(token, 'Expenditures'),
       ]);
+      if (u.role === 'bishop' && u.diocese) {
+        const _ids = new Set(budgets.filter(b => dioEq(b['Diocese'], u.diocese)).map(b => b['Budget ID']));
+        budgets = budgets.filter(b => dioEq(b['Diocese'], u.diocese));
+        budgetDonors = budgetDonors.filter(bd => _ids.has(bd['Budget ID']));
+        expenditures = expenditures.filter(e => _ids.has(e['Budget ID']));
+      }
 
       // Total allocated across all budgets
       const totalAllocated = budgetDonors.reduce((s, bd) => s + parseFloat(bd['Allocated MMK'] || 0), 0);
@@ -3332,7 +3423,7 @@ export default {
     // ════════════════════════════════════════════════════════════════
     if (action === 'generate_report') {
       let u = await validateUser(body.username, body.password);
-      if (!u || !FIN_ROLES.includes(u.role))
+      if (!u || !(FIN_ROLES.includes(u.role) || u.role === 'bishop'))
         return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
 
       let { reportType, budgetId, donorId, diocese } = body;
@@ -3341,6 +3432,8 @@ export default {
       // Role gate per report type
       if ((reportType === 'consolidated' || reportType === 'donor') && !IS_MGR)
         return new Response(JSON.stringify({ error: 'Finance Manager or Admin only' }), { status: 403, headers });
+      if (u.role === 'bishop' && reportType !== 'diocese')
+        return new Response(JSON.stringify({ error: 'Bishops can export their diocese report only' }), { status: 403, headers });
 
       if (!env.FINANCE_REPORTS_FOLDER_ID)
         return new Response(JSON.stringify({ error: 'FINANCE_REPORTS_FOLDER_ID secret not set. Create a "Finance Reports" folder in Drive and add its ID.' }), { status: 500, headers });
@@ -3770,7 +3863,7 @@ export default {
         if (!budget) return new Response(JSON.stringify({ error: 'Budget not found' }), { status: 404, headers });
 
         // Diocese staff can only access their own diocese
-        if (!IS_MGR && u.diocese && budget['Diocese'] && budget['Diocese'] !== u.diocese)
+        if (!IS_MGR && u.diocese && budget['Diocese'] && !dioEq(budget['Diocese'], u.diocese))
           return new Response(JSON.stringify({ error: 'Access denied to this diocese' }), { status: 403, headers });
 
         let bds  = budgetDonors.filter(bd => bd['Budget ID'] === budgetId);
@@ -4006,7 +4099,7 @@ export default {
         let targetDiocese = IS_MGR ? (diocese || u.diocese) : u.diocese;
         if (!targetDiocese) return new Response(JSON.stringify({ error: 'Diocese not specified' }), { status: 400, headers });
 
-        let dioceseBudgets = budgets.filter(b => b['Diocese'] === targetDiocese);
+        let dioceseBudgets = budgets.filter(b => dioEq(b['Diocese'], targetDiocese));
         let dioceseBudgetIds = new Set(dioceseBudgets.map(b => b['Budget ID']));
         let dioceseBDs  = budgetDonors.filter(bd => dioceseBudgetIds.has(bd['Budget ID']));
         let dioceseExps = expenditures.filter(e => dioceseBudgetIds.has(e['Budget ID']));
@@ -4103,9 +4196,81 @@ export default {
         avatarUrl: usr.avatarUrl || null,
         programs:  usr.programs  || [],
         features:  usr.features  || [],
+        budgets:   usr.budgets   || [],
       })).sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
-      return new Response(JSON.stringify({ ok: true, staff }), { status: 200, headers });
+      const staffOut = (u.role === 'bishop' && u.diocese) ? staff.filter(s => dioEq(s.diocese, u.diocese)) : staff;
+      return new Response(JSON.stringify({ ok: true, staff: staffOut }), { status: 200, headers });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  COMMENTS  (Bishop ↔ Admin/Manager, two-way)
+    //  Sheet "Comments": ID | Target Type | Target ID | Diocese | Author | Author Role | Parent ID | Comment | Created At
+    // ════════════════════════════════════════════════════════════════
+    if (action === 'add_comment') {
+      const u = await validateUser(body.username, body.password);
+      const COMMENT_ROLES = ['bishop','admin','manager','finance_manager'];
+      if (!u || !COMMENT_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
+
+      const TYPES = ['dcr','program','finance','general'];
+      const targetType = TYPES.includes(body.targetType) ? body.targetType : 'general';
+      const text = String(body.comment || '').trim();
+      if (!text) return new Response(JSON.stringify({ error: 'Empty comment' }), { status: 400, headers });
+      if (text.length > 4000) return new Response(JSON.stringify({ error: 'Comment too long' }), { status: 400, headers });
+
+      // Diocese: bishops are always scoped to their own; admin/manager may pass one
+      const diocese = (u.role === 'bishop') ? (u.diocese || '') : (body.diocese || '');
+      const now = new Date().toISOString();
+      const id  = 'C-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,6).toUpperCase();
+      const row = [id, targetType, String(body.targetId||''), diocese, u.name, u.role, String(body.parentId||''), text, now];
+
+      const token = await getDriveToken(env);
+      await createSheetTab(token, env.SPREADSHEET_ID, 'Comments');
+      const existing = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, 'Comments');
+      if (!existing.length)
+        await appendToSheet(token, env.SPREADSHEET_ID, 'Comments',
+          ['ID','Target Type','Target ID','Diocese','Author','Author Role','Parent ID','Comment','Created At']);
+      await appendToSheet(token, env.SPREADSHEET_ID, 'Comments', row);
+
+      return new Response(JSON.stringify({ ok: true, comment: {
+        id, targetType, targetId: String(body.targetId||''), diocese,
+        author: u.name, authorRole: u.role, parentId: String(body.parentId||''), text, createdAt: now
+      }}), { status: 200, headers });
+    }
+
+    if (action === 'list_comments') {
+      const u = await validateUser(body.username, body.password);
+      const COMMENT_ROLES = ['bishop','admin','manager','finance_manager'];
+      if (!u || !COMMENT_ROLES.includes(u.role))
+        return new Response(JSON.stringify({ error: 'Access denied' }), { status: 403, headers });
+
+      const rows = await fetchSheet(env.GOOGLE_API_KEY, env.SPREADSHEET_ID, 'Comments');
+      let comments = [];
+      if (rows.length > 1) {
+        const [hdr, ...data] = rows;
+        const idx = name => hdr.indexOf(name);
+        comments = data.filter(r => r && r.length).map(r => ({
+          id:         r[idx('ID')]          || '',
+          targetType: r[idx('Target Type')] || '',
+          targetId:   r[idx('Target ID')]   || '',
+          diocese:    r[idx('Diocese')]     || '',
+          author:     r[idx('Author')]      || '',
+          authorRole: r[idx('Author Role')] || '',
+          parentId:   r[idx('Parent ID')]   || '',
+          text:       r[idx('Comment')]     || '',
+          createdAt:  r[idx('Created At')]   || '',
+        }));
+      }
+
+      // Scope: bishops only see their own diocese thread; admin/manager/finance_manager see all
+      if (u.role === 'bishop') comments = comments.filter(c => dioEq(c.diocese, u.diocese));
+      // Optional filters
+      if (body.targetType) comments = comments.filter(c => c.targetType === body.targetType);
+      if (body.targetId)   comments = comments.filter(c => c.targetId === String(body.targetId));
+
+      comments.sort((a,b) => (a.createdAt||'').localeCompare(b.createdAt||''));
+      return new Response(JSON.stringify({ ok: true, comments }), { status: 200, headers });
     }
 
     // ── get_announcement_perms ───────────────────────────────────────
@@ -4213,7 +4378,7 @@ export default {
         <div style="background:#fff;border:1px solid #e5e7eb;border-top:none;padding:28px;border-radius:0 0 10px 10px;">
           <h2 style="margin:0 0 8px;font-size:18px;color:#0f1e38;">${subject}</h2>
           <p style="color:#64748b;font-size:12px;margin:0 0 20px;">From: ${senderName||u.name||'PDD Dashboard'} · ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p>
-          <div style="font-size:14px;color:#374151;line-height:1.8;white-space:pre-wrap;">${msgBody.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          <div style="font-size:14px;color:#374151;line-height:1.8;">${msgBody}</div>
           ${imageHtml || ''}
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
           <p style="font-size:11px;color:#94a3b8;margin:0;">This is an official announcement from the PDD Dashboard. Do not reply to this email.</p>
@@ -4315,6 +4480,7 @@ export default {
       console.error('Worker unhandled error:', e.message);
       return new Response(JSON.stringify({ error: 'Internal error: ' + e.message }), { status: 500, headers });
     }
+    
   }
 
 };

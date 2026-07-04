@@ -1007,6 +1007,32 @@ if (typeof Chart !== 'undefined') {
   }
 
   /* ── MY TASKS WIDGET ── */
+  /* ── My Tasks: time-range pills & group headers ── */
+  .mt-range-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .mt-range-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 12px; border-radius:999px;
+    border:1.5px solid var(--border2); background:var(--surface3);
+    color:var(--gray-500); font-family:var(--font); font-size:12px; font-weight:600;
+    cursor:pointer; transition:all .13s;
+  }
+  .mt-range-pill:hover { border-color:var(--blue); color:var(--blue); }
+  .mt-range-pill.active { background:rgba(59,130,246,0.12); border-color:rgba(59,130,246,0.5); color:var(--blue); }
+  .mt-range-count { background:rgba(255,255,255,0.08); border-radius:10px; padding:0 7px; font-size:11px; line-height:16px; }
+  .mt-range-pill.active .mt-range-count { background:rgba(59,130,246,0.2); }
+  .mt-group-hdr {
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--gray-500); margin:16px 0 8px; padding-bottom:5px;
+    border-bottom:1px solid var(--border);
+  }
+  .mt-group-hdr:first-child { margin-top:2px; }
+  .mt-group-tag {
+    font-size:10px; font-weight:700; text-transform:none; letter-spacing:.02em;
+    background:rgba(59,130,246,0.15); color:#60a5fa;
+    border-radius:10px; padding:2px 8px;
+  }
+
   .mytasks-header {
     display:flex; align-items:center; justify-content:space-between;
     margin-bottom:16px; flex-wrap:wrap; gap:10px;
@@ -5508,7 +5534,8 @@ async function submitMyTasks() {
     const name = document.getElementById(`mt-name-${i}`)?.value.trim();
     const cw   = parseInt(document.getElementById(`mt-cw-${i}`)?.value) || 0;
     const q    = document.getElementById(`mt-q-${i}`)?.value || '';
-    if (name && cw) tasks.push({ name, cw, quarter: q });
+    const d    = document.getElementById(`mt-date-${i}`)?.value || '';
+    if (name && cw) tasks.push({ name, cw, quarter: q, date: d });
   });
 
   if (!tasks.length) {
@@ -5529,7 +5556,7 @@ async function submitMyTasks() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add_task', username: SESSION_USERNAME, password: SESSION_PASSWORD,
           task: { programId, programName: progName, projectName: projectName || '', name: t.name,
-                  quarter: t.quarter, cw: t.cw, status: 'Planned', owner: CURRENT_USER.name } }),
+                  quarter: t.quarter, cw: t.cw, dueDate: t.date || '', status: 'Planned', owner: CURRENT_USER.name } }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -5553,6 +5580,7 @@ async function submitMyTasks() {
 
 
 function switchMyTaskTab(tab) {
+  MT_SUBTAB = tab;
   const isPlanned = tab === 'planned';
   document.getElementById('mt-tab-planned-content').style.display  = isPlanned ? '' : 'none';
   document.getElementById('mt-tab-delivered-content').style.display = isPlanned ? 'none' : '';
@@ -5566,6 +5594,30 @@ function switchMyTaskTab(tab) {
     dBtn.style.color       = isPlanned ? 'var(--gray-400)' : 'var(--green)';
     dBtn.style.borderBottom = isPlanned ? '2px solid transparent' : '2px solid var(--green)';
   }
+}
+
+// ── My Tasks: time-range filter state (survives auto-refresh) ──
+let MT_RANGE  = 'week';    // 'week' | 'month' | 'quarter' | 'all'
+let MT_SUBTAB = 'planned'; // 'planned' | 'delivered'
+function setMyTaskRange(r) { MT_RANGE = r; renderMyTasks(); }
+// Month/year that an ISO calendar week belongs to (its Thursday)
+// Format a stored due date ('2026-07-08') as 'Due 8 Jul'
+function fmtDueDate(v) {
+  if (!v) return '';
+  const str = String(v).trim();
+  let d = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) d = new Date(str + 'T00:00:00');
+  else { const p = new Date(str); if (!isNaN(p)) d = p; }
+  if (!d || isNaN(d)) return '';
+  return 'Due ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+function cwMonthInfo(cwNum, year) {
+  const y    = year || new Date().getFullYear();
+  const jan4 = new Date(Date.UTC(y, 0, 4));
+  const day  = jan4.getUTCDay() || 7;
+  const mon1 = new Date(jan4); mon1.setUTCDate(jan4.getUTCDate() - day + 1);
+  const thu  = new Date(mon1); thu.setUTCDate(mon1.getUTCDate() + (cwNum - 1) * 7 + 3);
+  return { month: thu.getUTCMonth(), year: thu.getUTCFullYear() };
 }
 
 function renderMyTasks() {
@@ -5634,7 +5686,7 @@ function renderMyTasks() {
         </div>
         <div style="text-align:center;margin-right:8px;">
           <span class="${cwClass}">CW ${taskCW}</span>
-          <div style="font-size:10px;color:var(--gray-400);margin-top:2px;white-space:nowrap;">${taskCW ? cwToDateRange(taskCW) : ''}</div>
+          <div style="font-size:10px;margin-top:2px;white-space:nowrap;${fmtDueDate(t['Due Date']) ? (overdue ? 'color:var(--red);font-weight:600;' : 'color:var(--gray-500);font-weight:600;') : 'color:var(--gray-400);'}">${fmtDueDate(t['Due Date']) || (taskCW ? cwToDateRange(taskCW) : '')}</div>
         </div>
         <button style="${btnStyle}" onclick="quickUpdateTask('${t['Task Name']?.replace(/'/g,"\'")}','${t.programId}','${newStat}',this)">
           ${btnLabel}
@@ -5642,26 +5694,89 @@ function renderMyTasks() {
       </div>`;
   }
 
-  const overdueCount   = planned.filter(t => (parseFloat(t['CW'])||0) < cw).length;
-  const plannedEmpty   = `<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px;">All tasks delivered!</div>`;
-  const deliveredEmpty = `<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px;">No delivered tasks yet.</div>`;
+  // ── Time-range filtering: This Week / This Month / This Quarter / All ──
+  const nowM = new Date().getMonth();
+  const nowY = new Date().getFullYear();
+  const nowQ = Math.floor(nowM / 3);
+  const inRange = t => {
+    const tcw = parseFloat(t['CW']) || 0;
+    if (!tcw) return MT_RANGE === 'all';
+    if (MT_RANGE === 'week')    return tcw === cw;
+    if (MT_RANGE === 'month')   { const m = cwMonthInfo(tcw); return m.month === nowM && m.year === nowY; }
+    if (MT_RANGE === 'quarter') { const m = cwMonthInfo(tcw); return Math.floor(m.month/3) === nowQ && m.year === nowY; }
+    return true;
+  };
+  const counts = {
+    week:    myTasks.filter(t => (parseFloat(t['CW'])||0) === cw).length,
+    month:   myTasks.filter(t => { const c = parseFloat(t['CW'])||0; if (!c) return false; const m = cwMonthInfo(c); return m.month === nowM && m.year === nowY; }).length,
+    quarter: myTasks.filter(t => { const c = parseFloat(t['CW'])||0; if (!c) return false; const m = cwMonthInfo(c); return Math.floor(m.month/3) === nowQ && m.year === nowY; }).length,
+    all:     myTasks.length,
+  };
+  const fPlanned     = planned.filter(inRange);
+  const fDelivered   = delivered.filter(inRange);
+  const overdueCount = fPlanned.filter(t => (parseFloat(t['CW'])||0) < cw).length;
 
+  // ── Grouped rendering: month view → week by week, quarter/all → month by month ──
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const groupHdr = (label, tag) =>
+    `<div class="mt-group-hdr">${label}${tag ? `<span class="mt-group-tag">${tag}</span>` : ''}</div>`;
+  function renderGrouped(tasks, emptyHtml) {
+    if (!tasks.length) return emptyHtml;
+    if (MT_RANGE === 'week') return tasks.map(taskCard).join('');
+    if (MT_RANGE === 'month') {
+      const byCW = {};
+      tasks.forEach(t => { const c = parseFloat(t['CW'])||0; (byCW[c] = byCW[c]||[]).push(t); });
+      return Object.keys(byCW).map(Number).sort((a,b)=>a-b).map(c =>
+        groupHdr(`CW ${c} · ${cwToDateRange(c)}`, c === cw ? 'This week' : '') +
+        byCW[c].map(taskCard).join('')
+      ).join('');
+    }
+    // quarter / all → group by month
+    const byMonth = {};
+    tasks.forEach(t => {
+      const c  = parseFloat(t['CW'])||0;
+      const mi = c ? cwMonthInfo(c) : { month: 12, year: 9999 };
+      const key = mi.year * 100 + mi.month;
+      (byMonth[key] = byMonth[key]||[]).push(t);
+    });
+    return Object.keys(byMonth).map(Number).sort((a,b)=>a-b).map(key => {
+      const mIdx = key % 100, yr = Math.floor(key/100);
+      const label = mIdx === 12 ? 'No date' : MONTHS[mIdx] + (MT_RANGE === 'all' && yr !== nowY && yr !== 9999 ? ' ' + yr : '');
+      const tag   = (mIdx === nowM && yr === nowY) ? 'This month' : '';
+      const items = byMonth[key].sort((a,b)=>(parseFloat(a['CW'])||99)-(parseFloat(b['CW'])||99));
+      return groupHdr(label, tag) + items.map(taskCard).join('');
+    }).join('');
+  }
+
+  const rangeWord  = { week:'this week', month:'this month', quarter:'this quarter', all:'' }[MT_RANGE];
+  const rangeEmpty = kind =>
+    `<div style="text-align:center;padding:28px;color:var(--gray-400);font-size:13px;">No ${kind} tasks ${rangeWord}.${MT_RANGE !== 'all' ? '<br><span style="font-size:12px;">Try a wider range above.</span>' : ''}</div>`;
+
+  const pill = (key, label) => `
+      <button class="mt-range-pill ${MT_RANGE === key ? 'active' : ''}" onclick="setMyTaskRange('${key}')">
+        ${label}<span class="mt-range-count">${counts[key]}</span>
+      </button>`;
+
+  const isPl = MT_SUBTAB === 'planned';
   listEl.innerHTML = `
+    <div class="mt-range-row">
+      ${pill('week','This Week')}${pill('month','This Month')}${pill('quarter','This Quarter')}${pill('all','All')}
+    </div>
     <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--gray-100);">
       <button id="mt-tab-planned" onclick="switchMyTaskTab('planned')"
-        style="padding:7px 16px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;font-family:var(--font);color:var(--blue);border-bottom:2px solid var(--blue);margin-bottom:-2px;">
-        Planned <span style="background:#eff6ff;color:var(--blue);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">${planned.length}${overdueCount ? ' · ⚠ ' + overdueCount + ' overdue' : ''}</span>
+        style="padding:7px 16px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;font-family:var(--font);color:${isPl ? 'var(--blue)' : 'var(--gray-400)'};border-bottom:2px solid ${isPl ? 'var(--blue)' : 'transparent'};margin-bottom:-2px;">
+        Planned <span style="background:#eff6ff;color:var(--blue);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">${fPlanned.length}${overdueCount ? ' · ⚠ ' + overdueCount + ' overdue' : ''}</span>
       </button>
       <button id="mt-tab-delivered" onclick="switchMyTaskTab('delivered')"
-        style="padding:7px 16px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;font-family:var(--font);color:var(--gray-400);border-bottom:2px solid transparent;margin-bottom:-2px;">
-        Delivered <span style="background:var(--surface3);color:var(--gray-500);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">${delivered.length}</span>
+        style="padding:7px 16px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;font-family:var(--font);color:${isPl ? 'var(--gray-400)' : 'var(--green)'};border-bottom:2px solid ${isPl ? 'transparent' : 'var(--green)'};margin-bottom:-2px;">
+        Delivered <span style="background:var(--surface3);color:var(--gray-500);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">${fDelivered.length}</span>
       </button>
     </div>
-    <div id="mt-tab-planned-content">
-      ${planned.length ? planned.map(taskCard).join('') : plannedEmpty}
+    <div id="mt-tab-planned-content" style="display:${isPl ? '' : 'none'};">
+      ${renderGrouped(fPlanned, rangeEmpty('planned'))}
     </div>
-    <div id="mt-tab-delivered-content" style="display:none;">
-      ${delivered.length ? delivered.map(taskCard).join('') : deliveredEmpty}
+    <div id="mt-tab-delivered-content" style="display:${isPl ? 'none' : ''};">
+      ${renderGrouped(fDelivered, rangeEmpty('delivered'))}
     </div>`;
 
   // My program progress bars
@@ -6242,6 +6357,7 @@ async function addNewTasks() {
   const tasks = rows.map(row => ({
     name:    row.querySelector('[data-field=name]')?.value.trim() || '',
     cw:      parseInt(row.querySelector('[data-field=cw]')?.value) || 0,
+    date:    row.querySelector('[data-field=date]')?.value || '',
     quarter: row.querySelector('[data-field=quarter]')?.value || '',
     owner:   row.querySelector('[data-field=owner]')?.value || '',
     status:  row.querySelector('[data-field=status]')?.value || 'Planned',
@@ -6262,7 +6378,7 @@ async function addNewTasks() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'add_task', username: SESSION_USERNAME, password: SESSION_PASSWORD,
-          task: { programId, programName: progName, projectName: projectName || '', name: t.name, quarter: t.quarter, cw: t.cw, status: t.status, owner: t.owner }
+          task: { programId, programName: progName, projectName: projectName || '', name: t.name, quarter: t.quarter, cw: t.cw, dueDate: t.date || '', status: t.status, owner: t.owner }
         })
       });
       const data = await res.json();
