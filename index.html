@@ -656,14 +656,20 @@ if (typeof Chart !== 'undefined') {
   }
   /* Task row responsive layout */
   .task-add-row {
-    display:grid;
-    grid-template-columns: 1fr 130px 90px 110px 80px 28px;
-    gap:6px; margin-bottom:6px; align-items:start;
+    display:flex; flex-direction:column; gap:9px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
   }
-  @media (max-width:900px) {
-    .task-add-row { grid-template-columns: 1fr 120px 90px 110px 28px; }
-    .task-col-hdrs > .tc-status { display:none; }
-    .task-add-row  .ta-status   { display:none; }
+  .task-add-row .ta-del-btn { position:absolute; top:10px; right:10px; }
+  .task-add-row > div:first-child { padding-right:36px; }
+  .task-add-row input, .task-add-row select, .task-add-row textarea { width:100%; }
+  .task-add-row .ta-field-label {
+    font-size:10px; font-weight:600; letter-spacing:.06em;
+    text-transform:uppercase; color: var(--gray-400); margin-bottom:4px;
   }
   @media (max-width:768px) {
     /* ── Add Task rows — stacked card layout on mobile ── */
@@ -2645,7 +2651,7 @@ if (typeof Chart !== 'undefined') {
             </div>
           </div>
           <!-- Column headers -->
-          <div class="task-col-hdrs" style="display:grid;grid-template-columns:1fr 130px 100px 120px 90px 28px;gap:6px;margin-bottom:4px;padding:0 2px;">
+          <div class="task-col-hdrs" style="display:none;">
             <div class="rm-label">Task Name</div>
             <div class="rm-label">Due Date</div>
             <div class="rm-label">Quarter</div>
@@ -6173,29 +6179,42 @@ function ntAddRow() {
   const staffOpts = getStaffNames().map(n => `<option value="${n}">${n}</option>`).join('');
 
   row.innerHTML = `
-    <textarea class="form-input ta-name" placeholder="Task name…" rows="1" data-field="name"
-      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';"
-      style="font-family:var(--font);font-size:13px;line-height:1.5;padding:9px 10px;min-height:38px;resize:none;overflow:hidden;white-space:pre-wrap;word-break:break-word;"></textarea>
+    <div>
+      <div class="ta-field-label">Task Name</div>
+      <textarea class="form-input ta-name" placeholder="Task name…" rows="1" data-field="name"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';"
+        style="font-family:var(--font);font-size:13px;line-height:1.5;padding:9px 10px;min-height:38px;resize:none;overflow:hidden;white-space:pre-wrap;word-break:break-word;"></textarea>
+    </div>
     <div class="ta-date-wrap">
-      <input class="form-input" type="date" style="font-family:var(--font);font-size:12px;" data-field="date">
-      <div style="font-size:10px;color:var(--gray-400);margin-top:2px;"></div>
+      <div class="ta-field-label">Due Date</div>
+      <input class="form-input" type="date" style="font-family:var(--font);font-size:13px;" data-field="date">
+      <div class="ta-cw-hint" style="font-size:10px;color:var(--gray-400);margin-top:2px;"></div>
       <input type="hidden" data-field="cw">
     </div>
-    <select class="rm-select ta-quarter" style="font-size:12px;" data-field="quarter">${quarterOptions()}</select>
-    <select class="rm-select ta-owner" style="font-size:12px;" data-field="owner">
-      <option value="">— Staff —</option>${staffOpts}
-    </select>
-    <select class="rm-select ta-status" style="font-size:12px;" data-field="status">
-      <option value="Planned">Planned</option>
-      <option value="Delivered">Delivered</option>
-    </select>
+    <div>
+      <div class="ta-field-label">Quarter</div>
+      <select class="rm-select ta-quarter" style="font-size:13px;" data-field="quarter">${quarterOptions()}</select>
+    </div>
+    <div>
+      <div class="ta-field-label">Assign To</div>
+      <select class="rm-select ta-owner" style="font-size:13px;" data-field="owner">
+        <option value="">— Staff —</option>${staffOpts}
+      </select>
+    </div>
+    <div>
+      <div class="ta-field-label">Status</div>
+      <select class="rm-select ta-status" style="font-size:13px;" data-field="status">
+        <option value="Planned">Planned</option>
+        <option value="Delivered">Delivered</option>
+      </select>
+    </div>
     <button class="ta-del-btn" onclick="this.closest('[id^=task-row]').remove()"
       style="width:28px;height:28px;border:1px solid rgba(239,68,68,0.35);border-radius:6px;background:rgba(239,68,68,0.08);color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0;flex-shrink:0;">×</button>
   `;
 
   const dateInput = row.querySelector('[data-field=date]');
   const cwInput   = row.querySelector('[data-field=cw]');
-  const hintEl    = row.querySelector('.ta-date-wrap div');
+  const hintEl    = row.querySelector('.ta-cw-hint');
   const qSel      = row.querySelector('[data-field=quarter]');
   dateInput?.addEventListener('change', () => {
     const cw = dateToCW(dateInput.value);
