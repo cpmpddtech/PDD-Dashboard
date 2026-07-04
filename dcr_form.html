@@ -621,6 +621,23 @@
     .section-title{ font-size: 12px; }
   }
 
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 72px; left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: #0a1628; color: #fff;
+    padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    border: 1px solid rgba(255,255,255,.15);
+    box-shadow: 0 4px 16px rgba(0,0,0,.45);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 500; max-width: 90vw; text-align: center;
+  }
+  .toast.show  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.green { border-color: rgba(34,197,94,.55); }
+  .toast.red   { border-color: rgba(239,68,68,.55); }
+
   /* ── Admin reports panel ── */
   #admin-panel {
     padding: 0 32px 80px;
@@ -1140,7 +1157,7 @@
 // ══════════════════════════════════════════════════════
 
 // ── Worker URL — set this to your Cloudflare Worker URL ──────────────────
-const WORKER_URL = 'https://pdd-dashboard.cpmpdd-tech.workers.dev/';
+const WORKER_URL = 'https://cpmpdd.org/api/';
 
 // ── Worker call helper ────────────────────────────────────────────────────
 async function workerCall(action, extra = {}) {
@@ -1574,6 +1591,11 @@ function collectFormData() {
 }
 
 async function saveDraft() {
+  if (!PDP_USER?.username || !sessionStorage.getItem('pdp_pw')) {
+    toast('Session expired — log in on the Dashboard, then reopen DCR', 'red');
+    document.getElementById('save-status').textContent = 'Not logged in';
+    return;
+  }
   const data = collectFormData();
   const btn  = document.querySelector('.save-bar .btn-secondary');
   if (btn) { btn.disabled = true; btn.textContent = '💾 Saving…'; }
@@ -1629,7 +1651,7 @@ async function renderDrafts() {
             </div>
             ${statusPill}
             <div class="report-row-actions">
-              <button class="btn btn-secondary" onclick='loadDriveReport(${JSON.stringify(d)})' style="font-size:11px;padding:5px 10px;">${btnLabel}</button>
+              <button class="btn btn-secondary" onclick="loadDriveReportById('${dcrKey(d)}')" style="font-size:11px;padding:5px 10px;">${btnLabel}</button>
               ${canDelete ? `<button class="btn" onclick="deleteDriveReport('${d._fileId}')" style="font-size:11px;padding:5px 10px;color:var(--red);">Delete</button>` : ''}
             </div>
           </div>`;
@@ -1638,6 +1660,17 @@ async function renderDrafts() {
     list.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px 0;">Network error loading reports.</div>`;
   }
 }
+
+// ── Report registry: pass IDs into onclick, never raw JSON (quotes in
+// report text would break the HTML attribute and the buttons would die) ──
+const DCR_CACHE = {};
+function dcrKey(d) {
+  const k = String(d._fileId || d.id || Math.random().toString(36).slice(2));
+  DCR_CACHE[k] = d;
+  return k;
+}
+function loadDriveReportById(k)        { loadDriveReport(DCR_CACHE[k]); }
+function downloadDriveReportPDFById(k) { downloadDriveReportPDF(DCR_CACHE[k]); }
 
 // Track submitted state of currently loaded report
 let LOADED_REPORT_SUBMITTED = false;
@@ -1659,7 +1692,7 @@ function applySubmitSection() {
 }
 
 function loadDriveReport(data) {
-  if (!data) return;
+  if (!data) { toast('Could not load report', 'red'); return; }
 
   // Track submitted state BEFORE startReport resets anything
   LOADED_REPORT_SUBMITTED = data.status === 'submitted';
@@ -1686,6 +1719,31 @@ function loadDriveReport(data) {
   // Apply resubmit UI — 300ms to let DOM fully settle after startReport
   if (LOADED_REPORT_SUBMITTED) {
     setTimeout(applySubmitSection, 300);
+  }
+
+  // Ensure the form is visible when previewing from Admin view
+  if (MODE === 'admin') {
+    if (IS_BISHOP) {
+      // Bishops: read-only preview with a way back to the reports list
+      document.getElementById('admin-panel').classList.remove('visible');
+      document.getElementById('main-form').style.display = 'block';
+      document.getElementById('sidebar').style.display = 'block';
+      document.getElementById('save-bar').style.display = 'none';
+      setTimeout(() => {
+        document.querySelectorAll('#form-area input, #form-area select, #form-area textarea').forEach(el => el.disabled = true);
+        const ss = document.getElementById('submit-section'); if (ss) ss.style.display = 'none';
+      }, 350);
+      if (!document.getElementById('bishop-back-btn')) {
+        const bb = document.createElement('button');
+        bb.id = 'bishop-back-btn'; bb.className = 'btn btn-primary';
+        bb.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:300;';
+        bb.textContent = '\u2190 Back to Reports';
+        bb.onclick = () => { bb.remove(); setMode('admin'); };
+        document.body.appendChild(bb);
+      }
+    } else {
+      setMode('staff');
+    }
   }
 
   toast('Report loaded', 'green');
@@ -2023,6 +2081,10 @@ function buildReportHTML(data) {
 }
 
 async function submitReport() {
+  if (!PDP_USER?.username || !sessionStorage.getItem('pdp_pw')) {
+    toast('Session expired — log in on the Dashboard, then reopen DCR', 'red');
+    return;
+  }
   const data = collectFormData();
   const btn = document.querySelector('#submit-section .btn-success');
   if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
@@ -2100,8 +2162,8 @@ async function renderAdminList() {
         </div>
         <div class="report-row-actions">
           <span class="pill ${d.status === 'submitted' ? 'pill-saved' : 'pill-draft'}">${d.status === 'submitted' ? 'Submitted' : 'Draft'}</span>
-          <button class="btn btn-secondary" onclick='loadDriveReport(${JSON.stringify(d)})' style="font-size:11px;padding:5px 10px;">👁 Preview</button>
-          <button class="btn btn-primary" onclick='downloadDriveReportPDF(${JSON.stringify(d)})' style="font-size:11px;padding:5px 10px;">⬇ PDF</button>
+          <button class="btn btn-secondary" onclick="loadDriveReportById('${dcrKey(d)}')" style="font-size:11px;padding:5px 10px;">👁 Preview</button>
+          <button class="btn btn-primary" onclick="downloadDriveReportPDFById('${dcrKey(d)}')" style="font-size:11px;padding:5px 10px;">⬇ PDF</button>
           ${isAdmin ? `<button class="btn" onclick="deleteDriveReport('${d._fileId}')" style="font-size:11px;padding:5px 10px;color:var(--red);">🗑</button>` : ''}
         </div>
       </div>`).join('') + '</div>';
