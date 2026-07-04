@@ -1020,6 +1020,15 @@ if (typeof Chart !== 'undefined') {
   .mt-range-pill.active { background:rgba(59,130,246,0.12); border-color:rgba(59,130,246,0.5); color:var(--blue); }
   .mt-range-count { background:rgba(255,255,255,0.08); border-radius:10px; padding:0 7px; font-size:11px; line-height:16px; }
   .mt-range-pill.active .mt-range-count { background:rgba(59,130,246,0.2); }
+  .mt-filter-sel {
+    font-size:12px !important; padding:6px 10px !important;
+    max-width:220px; min-width:120px;
+    border-radius:999px !important;
+  }
+  @media (max-width:768px) {
+    .mt-range-row { gap:6px; }
+    .mt-filter-sel { max-width:100%; flex:1 1 46%; }
+  }
   .mt-group-hdr {
     display:flex; align-items:center; gap:8px;
     font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
@@ -5600,6 +5609,10 @@ function switchMyTaskTab(tab) {
 let MT_RANGE  = 'week';    // 'week' | 'month' | 'quarter' | 'all'
 let MT_SUBTAB = 'planned'; // 'planned' | 'delivered'
 function setMyTaskRange(r) { MT_RANGE = r; renderMyTasks(); }
+let MT_PROG = ''; // '' = all programs
+let MT_PROJ = ''; // '' = all projects, '__none' = program-level tasks only
+function setMyTaskProg(v) { MT_PROG = v; MT_PROJ = ''; renderMyTasks(); }
+function setMyTaskProj(v) { MT_PROJ = v; renderMyTasks(); }
 // Month/year that an ISO calendar week belongs to (its Thursday)
 // Format a stored due date ('2026-07-08') as 'Due 8 Jul'
 function fmtDueDate(v) {
@@ -5706,14 +5719,23 @@ function renderMyTasks() {
     if (MT_RANGE === 'quarter') { const m = cwMonthInfo(tcw); return Math.floor(m.month/3) === nowQ && m.year === nowY; }
     return true;
   };
+  // ── Program / Project filter ──
+  if (MT_PROG && !myTasks.some(t => t.programId === MT_PROG)) { MT_PROG = ''; MT_PROJ = ''; }
+  const inProg = t =>
+    (!MT_PROG || t.programId === MT_PROG) &&
+    (!MT_PROJ || (MT_PROJ === '__none'
+      ? !String(t['Project Name']||'').trim()
+      : String(t['Project Name']||'').trim() === MT_PROJ));
+  const baseTasks = myTasks.filter(inProg);
+
   const counts = {
-    week:    myTasks.filter(t => (parseFloat(t['CW'])||0) === cw).length,
-    month:   myTasks.filter(t => { const c = parseFloat(t['CW'])||0; if (!c) return false; const m = cwMonthInfo(c); return m.month === nowM && m.year === nowY; }).length,
-    quarter: myTasks.filter(t => { const c = parseFloat(t['CW'])||0; if (!c) return false; const m = cwMonthInfo(c); return Math.floor(m.month/3) === nowQ && m.year === nowY; }).length,
-    all:     myTasks.length,
+    week:    baseTasks.filter(t => (parseFloat(t['CW'])||0) === cw).length,
+    month:   baseTasks.filter(t => { const c = parseFloat(t['CW'])||0; if (!c) return false; const m = cwMonthInfo(c); return m.month === nowM && m.year === nowY; }).length,
+    quarter: baseTasks.filter(t => { const c = parseFloat(t['CW'])||0; if (!c) return false; const m = cwMonthInfo(c); return Math.floor(m.month/3) === nowQ && m.year === nowY; }).length,
+    all:     baseTasks.length,
   };
-  const fPlanned     = planned.filter(inRange);
-  const fDelivered   = delivered.filter(inRange);
+  const fPlanned     = planned.filter(t => inProg(t) && inRange(t));
+  const fDelivered   = delivered.filter(t => inProg(t) && inRange(t));
   const overdueCount = fPlanned.filter(t => (parseFloat(t['CW'])||0) < cw).length;
 
   // ── Grouped rendering: month view → week by week, quarter/all → month by month ──
@@ -5750,17 +5772,34 @@ function renderMyTasks() {
 
   const rangeWord  = { week:'this week', month:'this month', quarter:'this quarter', all:'' }[MT_RANGE];
   const rangeEmpty = kind =>
-    `<div style="text-align:center;padding:28px;color:var(--gray-400);font-size:13px;">No ${kind} tasks ${rangeWord}.${MT_RANGE !== 'all' ? '<br><span style="font-size:12px;">Try a wider range above.</span>' : ''}</div>`;
+    `<div style="text-align:center;padding:28px;color:var(--gray-400);font-size:13px;">No ${kind} tasks ${rangeWord}${MT_PROG ? ' in this program' : ''}${MT_PROJ && MT_PROJ !== '__none' ? ' / project' : ''}.${MT_RANGE !== 'all' || MT_PROG || MT_PROJ ? '<br><span style="font-size:12px;">Try a wider range or clear the filters above.</span>' : ''}</div>`;
 
   const pill = (key, label) => `
       <button class="mt-range-pill ${MT_RANGE === key ? 'active' : ''}" onclick="setMyTaskRange('${key}')">
         ${label}<span class="mt-range-count">${counts[key]}</span>
       </button>`;
 
+  // ── Program / Project dropdowns (built from the user's own tasks) ──
+  const escA = v => String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const myProgs = [...new Map(myTasks.map(t => [t.programId, t.programName])).entries()]
+    .sort((a,b) => String(a[0]).localeCompare(String(b[0]), undefined, { numeric: true }));
+  const progOpts = '<option value="">All programs</option>' +
+    myProgs.map(([id,nm]) => `<option value="${escA(id)}" ${MT_PROG === id ? 'selected' : ''}>${escA(id)} — ${escA(nm)}</option>`).join('');
+  const projPool  = myTasks.filter(t => !MT_PROG || t.programId === MT_PROG)
+                           .map(t => String(t['Project Name']||'').trim());
+  const projNamed = [...new Set(projPool.filter(Boolean))].sort();
+  const hasNoProj = projPool.includes('');
+  const projOpts  = '<option value="">All projects</option>' +
+    projNamed.map(p => `<option value="${escA(p)}" ${MT_PROJ === p ? 'selected' : ''}>${escA(p)}</option>`).join('') +
+    (hasNoProj && projNamed.length ? `<option value="__none" ${MT_PROJ === '__none' ? 'selected' : ''}>No project (program-level)</option>` : '');
+
   const isPl = MT_SUBTAB === 'planned';
   listEl.innerHTML = `
     <div class="mt-range-row">
       ${pill('week','This Week')}${pill('month','This Month')}${pill('quarter','This Quarter')}${pill('all','All')}
+      <span style="flex:1;min-width:8px;"></span>
+      ${myProgs.length > 1 ? `<select class="rm-select mt-filter-sel" onchange="setMyTaskProg(this.value)" title="Filter by program">${progOpts}</select>` : ''}
+      ${projNamed.length ? `<select class="rm-select mt-filter-sel" onchange="setMyTaskProj(this.value)" title="Filter by project">${projOpts}</select>` : ''}
     </div>
     <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--gray-100);">
       <button id="mt-tab-planned" onclick="switchMyTaskTab('planned')"
