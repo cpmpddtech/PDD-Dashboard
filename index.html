@@ -699,6 +699,7 @@ if (typeof Chart !== 'undefined') {
 
     /* Inputs and selects — proper size */
     .task-add-row input,
+    .task-add-row textarea,
     .task-add-row select {
       font-size: 15px !important;
       min-height: 44px !important;
@@ -6172,7 +6173,9 @@ function ntAddRow() {
   const staffOpts = getStaffNames().map(n => `<option value="${n}">${n}</option>`).join('');
 
   row.innerHTML = `
-    <input class="form-input" placeholder="Task name…" style="font-family:var(--font);font-size:12px;" data-field="name">
+    <textarea class="form-input ta-name" placeholder="Task name…" rows="1" data-field="name"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';"
+      style="font-family:var(--font);font-size:13px;line-height:1.5;padding:9px 10px;min-height:38px;resize:none;overflow:hidden;white-space:pre-wrap;word-break:break-word;"></textarea>
     <div class="ta-date-wrap">
       <input class="form-input" type="date" style="font-family:var(--font);font-size:12px;" data-field="date">
       <div style="font-size:10px;color:var(--gray-400);margin-top:2px;"></div>
