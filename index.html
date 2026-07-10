@@ -4871,9 +4871,10 @@ const AI_SUGGESTIONS = [
   'How many tasks are there in total?',
   'Which staff has the most tasks?',
   'What is overdue right now?',
-  'What projects are running?',
+  'How was performance in the last 4 weeks?',
   'Summarize this week',
   'Which program is furthest behind?',
+  'What is a good way to reduce overdue tasks?',
 ];
 
 function initAskAI() {
@@ -4898,6 +4899,7 @@ function initAskAI() {
 
   // Restore this session's conversation, otherwise show the welcome message
   const saved = sessionStorage.getItem('pdp_ai_chat');
+  try { AI_CONVO = JSON.parse(sessionStorage.getItem('pdp_ai_convo') || '[]'); } catch(_) { AI_CONVO = []; }
   if (saved) {
     try {
       JSON.parse(saved).forEach(m => aiAppend(m.k, m.h, null, true));
@@ -4905,6 +4907,14 @@ function initAskAI() {
     } catch(_) {}
   }
   aiWelcome();
+}
+
+// Conversation memory sent to the model (prior turns only, plain text)
+let AI_CONVO = [];
+function aiRemember(role, content) {
+  AI_CONVO.push({ role, content: String(content || '').slice(0, 800) });
+  if (AI_CONVO.length > 8) AI_CONVO = AI_CONVO.slice(-8);
+  try { sessionStorage.setItem('pdp_ai_convo', JSON.stringify(AI_CONVO)); } catch(_) {}
 }
 
 function aiWelcome() {
@@ -4916,13 +4926,15 @@ function aiWelcome() {
     const staff = new Set((DATA.programs||[]).flatMap(p => (p.taskList||[]).map(t => String(t['Owner']||'').trim()).filter(Boolean))).size;
     if (tasks) stats = `<div class="ai-welcome-stats"><span class="ai-stat-chip">${progs} programs</span><span class="ai-stat-chip">${projs} projects</span><span class="ai-stat-chip">${tasks} tasks</span><span class="ai-stat-chip">${staff} staff</span></div>`;
   } catch(_) {}
-  aiAppend('bot', 'Hi! I can answer questions about your programs, projects, tasks and staff using live dashboard data. Try a suggestion below, or type your own question.' + stats);
+  aiAppend('bot', 'Hi! I can answer questions about your programs, projects, tasks, staff, KPIs and finance using live dashboard data — and general questions too (definitions, best practices, advice). I remember the conversation, so follow-ups like \u201cand for P3?\u201d work. Try a suggestion below, or type your own question.' + stats);
 }
 
 function aiClearChat() {
   const chat = document.getElementById('ai-chat');
   if (chat) chat.innerHTML = '';
+  AI_CONVO = [];
   sessionStorage.removeItem('pdp_ai_chat');
+  sessionStorage.removeItem('pdp_ai_convo');
   aiWelcome();
 }
 
@@ -5038,6 +5050,23 @@ function buildAIContext(question) {
     L.push('(Individual task lines omitted for this question — all totals above are complete and authoritative.)');
   }
 
+  // ── Tier 1: weekly KPI history (for trend questions) ──
+  const wk = (DATA.weekly || []).slice(-12);
+  if (wk.length) {
+    L.push('');
+    L.push('WEEKLY KPI HISTORY, last ' + wk.length + ' weeks (CW | tasks due | delivered | delivery rate):');
+    wk.forEach(r => L.push(`CW${r.cw} | ${r.t} | ${r.d} | ${Math.round((r.p||0)*100)}%`));
+  }
+
+  // ── Tier 1: recent check-ins (who reported what, blockers) ──
+  const ck = (DATA.checkins || []).slice(-12);
+  if (ck.length) {
+    L.push('');
+    L.push('RECENT CHECK-INS (date | CW | staff | program | done | missed | blockers):');
+    ck.forEach(c => L.push(
+      `${c.date||''} | CW${c.cw||'?'} | ${c.name||''} | ${c.program||''} | ${c.done||0} | ${c.missed||0} | ${String(c.blockers||'').slice(0,80) || '—'}`));
+  }
+
   return L.join('\n').slice(0, 15000);
 }
 
@@ -5099,11 +5128,14 @@ async function aiAsk(preset) {
         username: SESSION_USERNAME, password: SESSION_PASSWORD,
         question: q,
         context: buildAIContext(q),
+        history: AI_CONVO,
       }),
     });
     clearTimeout(timer);
     const data = await res.json();
     if (data.ok && data.answer) {
+      aiRemember('user', q);
+      aiRemember('assistant', data.answer);
       thinkingEl.classList.remove('thinking');
       thinkingEl.innerHTML = '<button class="ai-copy" title="Copy answer">Copy</button>' + aiFormat(data.answer) +
         (data.ms ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px;">${(data.ms/1000).toFixed(1)}s · ${String(data.model||'').replace('@cf/','')}</div>` : '');
