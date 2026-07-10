@@ -5041,15 +5041,35 @@ async function aiSaveActiveChat() {
     });
     const data = await res.json();
     if (data.ok && data.fileId) {
-      const isNew = !AI_ACTIVE.fileId;
       AI_ACTIVE.fileId = data.fileId;
       const entry = { fileId: data.fileId, title: AI_ACTIVE.title || 'Untitled chat', updatedAt: new Date().toISOString() };
       const idx = AI_CHATS.findIndex(c => c.fileId === data.fileId);
       if (idx >= 0) { AI_CHATS[idx] = entry; AI_CHATS.unshift(AI_CHATS.splice(idx,1)[0]); }
       else AI_CHATS.unshift(entry);
       renderAIChatList();
+      aiSaveNote('');
+    } else {
+      // Surface the reason — silent failures made this undebuggable
+      console.error('[ai chat save]', data.error || data);
+      aiSaveNote(data.noFolder ? 'Chat storage not configured' : ('Chat not saved: ' + (data.error || 'unknown error')));
     }
-  } catch(_) { /* saving is best-effort — never block the conversation */ }
+  } catch(e) {
+    console.error('[ai chat save]', e);
+    aiSaveNote('Chat not saved: network error');
+  }
+}
+
+function aiSaveNote(msg) {
+  let el = document.getElementById('ai-save-note');
+  if (!el) {
+    const hdr = document.querySelector('.ai-main-header > div[style*="flex:1"]');
+    if (!hdr) return;
+    el = document.createElement('div');
+    el.id = 'ai-save-note';
+    el.style.cssText = 'font-size:10px;color:#fca5a5;margin-top:1px;';
+    hdr.appendChild(el);
+  }
+  el.textContent = msg || '';
 }
 
 async function deleteAIChat(fileId) {
