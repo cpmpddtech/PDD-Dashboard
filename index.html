@@ -4878,12 +4878,12 @@ function buildAIContext() {
 
   L.push('');
   L.push('TASKS (program | task | owner | CW | status | project | due date):');
-  const cap = 250;
+  const cap = 150;
   allTasks.slice(0, cap).forEach(({ p, t }) => L.push(
     `${p.id} | ${t['Task Name']||''} | ${t['Owner']||''} | CW${t['CW']||'?'} | ${t['Status']||''} | ${t['Project Name']||''} | ${t['Due Date']||''}`));
   if (allTasks.length > cap) L.push(`(+${allTasks.length - cap} more tasks not listed — totals above include them)`);
 
-  return L.join('\n').slice(0, 29000);
+  return L.join('\n').slice(0, 15000);
 }
 
 // Local instant answers when AI binding isn't set up yet
@@ -4928,9 +4928,12 @@ async function aiAsk(preset) {
   if (sendBtn) sendBtn.disabled = true;
 
   try {
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 75000);
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: ctrl.signal,
       body: JSON.stringify({
         action: 'ask_ai',
         username: SESSION_USERNAME, password: SESSION_PASSWORD,
@@ -4938,6 +4941,7 @@ async function aiAsk(preset) {
         context: buildAIContext(),
       }),
     });
+    clearTimeout(timer);
     const data = await res.json();
     if (data.ok && data.answer) {
       thinkingEl.classList.remove('thinking');
@@ -4960,7 +4964,9 @@ async function aiAsk(preset) {
   } catch(e) {
     thinkingEl.classList.remove('thinking');
     thinkingEl.classList.add('err');
-    thinkingEl.textContent = 'Network error — could not reach the server.';
+    thinkingEl.textContent = e.name === 'AbortError'
+      ? 'The AI took too long to respond (75s). Try a shorter/simpler question, or try again — the first request after deploy can be slow.'
+      : 'Network error — could not reach the server.';
   } finally {
     AI_BUSY = false;
     if (sendBtn) sendBtn.disabled = false;
