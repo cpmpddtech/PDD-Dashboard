@@ -44,6 +44,8 @@ if (typeof Chart !== 'undefined') {
 }
 </script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+
   :root {
     --blue:    #3b82f6;
     --blue-lt: rgba(59,130,246,0.12);
@@ -76,7 +78,6 @@ if (typeof Chart !== 'undefined') {
   body { font-family: var(--font); background:var(--surface); color:var(--text); min-height:100vh; transition: background 0.3s; }
 
   /* ── LOGIN SCREEN ── */
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
 
   #login-screen {
     position: fixed; inset: 0;
@@ -2358,6 +2359,7 @@ if (typeof Chart !== 'undefined') {
     <button class="tab" id="tab-btn-mytasks" onclick="switchTab('mytasks',this)"><i class=ic-home></i> My Tasks</button>
     <button class="tab active" id="tab-btn-progress" onclick="switchTab('progress',this)"><i class=ic-trending></i> Program Progress</button>
     <button class="tab" id="tab-btn-checkin" onclick="switchTab('checkin',this)"><i class=ic-edit></i> Weekly Check-in</button>
+    <button class="tab tab-hidden" id="tab-btn-askai" onclick="switchTab('askai',this)"><i class=ic-chart></i> Ask AI</button>
 
     <div class="tab-group" id="grp-performance">
       <button type="button" class="tab-grp-btn" onclick="toggleTabGroup('performance')"><i class=ic-chart></i> Performance <i class="ic-chevron tg-chev"></i></button>
@@ -2365,7 +2367,6 @@ if (typeof Chart !== 'undefined') {
         <button class="tab" id="tab-btn-kpi" onclick="switchTab('kpi',this)"><i class=ic-chart></i> Weekly KPI</button>
         <button class="tab" id="tab-btn-staff" onclick="switchTab('staff',this)"><i class=ic-users></i> Staff Performance</button>
         <button class="tab" id="tab-btn-digest" onclick="switchTab('digest',this)"><i class=ic-clipboard></i> Manager Digest</button>
-        <button class="tab tab-hidden" id="tab-btn-askai" onclick="switchTab('askai',this)"><i class=ic-chart></i> Ask AI</button>
       </div>
     </div>
 
@@ -2976,7 +2977,7 @@ if (typeof Chart !== 'undefined') {
           <div id="ai-chat" class="ai-chat"></div>
           <div id="ai-chips" class="ai-chips"></div>
           <div class="ai-input-row">
-            <textarea id="ai-input" rows="1" placeholder="e.g. Which staff has the most overdue tasks?"
+            <textarea id="ai-input" name="ai-question" rows="1" placeholder="e.g. Which staff has the most overdue tasks?"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiAsk();}"
               oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
             <button class="ai-send-btn" id="ai-send" onclick="aiAsk()">Ask →</button>

@@ -1438,7 +1438,7 @@ export default {
 
       // 2. Add headers to new sheet only if it was just created
       //    (safe to call even if row 1 exists — Sheets appends after last row)
-      const sheetHeaders = ['Task ID','Program ID','Program Name','Task Name','Quarter','CW','Status','Owner','Project Name'];
+      const sheetHeaders = ['Task ID','Program ID','Program Name','Task Name','Quarter','CW','Status','Owner','Project Name','Due Date'];
       try {
         await appendToSheet(token, spreadsheetId, sheetName, sheetHeaders);
       } catch(e) {
@@ -1517,7 +1517,17 @@ export default {
       const dataRows = rows.slice(1).filter(r => r[0] && String(r[0]).trim());
       const taskId   = `T${dataRows.length + 1}`;
 
-      // 8 clean data columns — all KPI computed by dashboard from these
+      // Ensure 'Due Date' header exists (column J) on older task sheets
+      const _hdrRow = rows[0] || [];
+      if (!_hdrRow.some(h => String(h).trim() === 'Due Date')) {
+        try {
+          const _sqH = "'" + sheetName.replace(/'/g, "''") + "'";
+          const hdrUrl = `https://sheets.googleapis.com/v4/spreadsheets/${env.SPREADSHEET_ID}/values/${encodeURIComponent(_sqH)}!J1?valueInputOption=RAW`;
+          await fetch(hdrUrl, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ values: [['Due Date']] }) });
+        } catch(_) { /* non-fatal */ }
+      }
+
+      // Clean data columns — all KPI computed by dashboard from these
       const row = [
         taskId,                    // col A — Task ID
         task.programId,            // col B — Program ID
@@ -1527,7 +1537,8 @@ export default {
         cwNum,                     // col F — CW (number)
         task.status || 'Planned',  // col G — Status
         task.owner,                // col H — Owner
-        task.projectName || '',    // col I — Project Name      // col H — Owner
+        task.projectName || '',    // col I — Project Name
+        task.dueDate ? "'" + task.dueDate : '', // col J — Due Date (exact date, ISO)
       ];
 
       await appendToSheet(token, env.SPREADSHEET_ID, sheetName, row);
@@ -4480,7 +4491,5 @@ export default {
       console.error('Worker unhandled error:', e.message);
       return new Response(JSON.stringify({ error: 'Internal error: ' + e.message }), { status: 500, headers });
     }
-    
   }
-
 };
