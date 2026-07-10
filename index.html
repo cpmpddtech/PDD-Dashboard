@@ -5378,7 +5378,7 @@ function getOverdueTasks() {
       const taskCW = parseFloat(t['CW']) || 0;
       const status = String(t['Status'] || '');
       if (taskCW < cw && status === 'Planned') {
-        overdue.push({ program: p.name, task: t['Task Name'], cw: taskCW, owner: t['Owner'] || '—' });
+        overdue.push({ program: p.name, task: t['Task Name'], cw: taskCW, owner: t['Owner'] || '—', due: t['Due Date'] || '' });
       }
     });
   });
@@ -5625,7 +5625,9 @@ function loadTasksForName(name) {
         <div style="flex:1">
           <div class="ci-task-name">${t['Task Name'] || 'Unnamed'}</div>
           <div class="ci-task-detail">
-            ${t.programName} · CW ${taskCW} (${taskCW ? cwToDateRange(taskCW) : ""})
+            ${t.programName} · CW ${taskCW}${fmtDueDate(t['Due Date'])
+              ? ` · <b style="color:${overdue ? 'var(--red)' : 'var(--gray-500)'};">${fmtDueDate(t['Due Date'])}</b>`
+              : (taskCW ? ` (${cwToDateRange(taskCW)})` : '')}
             ${overdue ? '<span class="ci-task-overdue"> · ⚠ Overdue</span>' : ''}
           </div>
         </div>
@@ -5893,7 +5895,7 @@ function renderDigest() {
     overdueEl.innerHTML = tasks.length === 0
       ? '<div style="padding:16px;color:var(--green);font-size:13px;"><i class=ic-check-circle></i> No overdue tasks.</div>'
       : `<table class="tbl"><thead><tr><th>Program</th><th>Task</th><th>Due CW</th><th>Owner</th></tr></thead><tbody>
-          ${tasks.map(t=>`<tr class="overdue-row"><td>${t.program}</td><td>${t.task}</td><td>CW ${t.cw}</td><td>${t.owner}</td></tr>`).join('')}
+          ${tasks.map(t=>`<tr class="overdue-row"><td>${t.program}</td><td>${t.task}</td><td>CW ${t.cw}${fmtDueDate(t.due) ? `<div style="font-size:10px;color:var(--red);font-weight:600;white-space:nowrap;">${fmtDueDate(t.due)}</div>` : ''}</td><td>${t.owner}</td></tr>`).join('')}
         </tbody></table>`;
   }
 }
