@@ -1022,7 +1022,42 @@ if (typeof Chart !== 'undefined') {
   .mt-range-count { background:rgba(255,255,255,0.08); border-radius:10px; padding:0 7px; font-size:11px; line-height:16px; }
   .mt-range-pill.active .mt-range-count { background:rgba(59,130,246,0.2); }
   /* ── Ask AI tab ── */
-  .ai-chat { min-height:240px; max-height:54vh; overflow-y:auto; padding:16px 16px 6px; display:flex; flex-direction:column; gap:12px; scroll-behavior:smooth; }
+  .ai-shell { display:flex; gap:14px; max-width:1200px; margin:0 auto; height:calc(100vh - 210px); min-height:480px; }
+  .ai-sidebar {
+    width:232px; flex-shrink:0; display:flex; flex-direction:column; gap:10px;
+    background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:12px;
+  }
+  .ai-new-btn {
+    background:var(--blue); color:#fff; border:none; border-radius:10px;
+    padding:9px 12px; font-family:var(--font); font-size:12.5px; font-weight:700;
+    cursor:pointer; transition:background .15s; width:100%;
+  }
+  .ai-new-btn:hover { background:#2563eb; }
+  .ai-chat-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px; min-height:0; }
+  .ai-list-empty { font-size:11.5px; color:var(--gray-400); padding:10px 6px; text-align:center; }
+  .ai-chat-item {
+    position:relative; padding:8px 26px 8px 10px; border-radius:9px; cursor:pointer;
+    font-size:12px; color:var(--gray-500); line-height:1.4;
+    border:1px solid transparent; transition:all .12s;
+  }
+  .ai-chat-item:hover { background:var(--surface3); color:var(--text); }
+  .ai-chat-item.active { background:rgba(59,130,246,0.12); border-color:rgba(59,130,246,0.35); color:var(--text); }
+  .ai-chat-item .ai-chat-item-title { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ai-chat-item .ai-chat-item-date  { font-size:10px; color:var(--gray-400); margin-top:1px; }
+  .ai-chat-del {
+    position:absolute; top:6px; right:6px; display:none;
+    background:none; border:none; color:var(--gray-400); font-size:12px;
+    cursor:pointer; padding:2px 4px; border-radius:5px; font-family:var(--font);
+  }
+  .ai-chat-item:hover .ai-chat-del { display:block; }
+  .ai-chat-del:hover { color:#fca5a5; background:rgba(239,68,68,0.12); }
+  .ai-main {
+    flex:1; min-width:0; display:flex; flex-direction:column;
+    background:var(--surface2); border:1px solid var(--border); border-radius:14px; overflow:hidden;
+  }
+  .ai-main-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .ai-mobile-select { display:none; font-size:12px !important; padding:6px 8px !important; max-width:150px; }
+  .ai-chat { flex:1; min-height:0; overflow-y:auto; padding:16px 16px 6px; display:flex; flex-direction:column; gap:12px; scroll-behavior:smooth; }
   .ai-row { display:flex; gap:9px; align-items:flex-end; max-width:88%; }
   .ai-row.user { align-self:flex-end; flex-direction:row-reverse; }
   .ai-row.bot  { align-self:flex-start; }
@@ -1089,8 +1124,13 @@ if (typeof Chart !== 'undefined') {
   }
   .ai-send-btn:hover { background:#2563eb; }
   .ai-send-btn:disabled { opacity:.5; cursor:not-allowed; }
+  @media (max-width:900px) {
+    .ai-shell { height:calc(100vh - 170px); min-height:420px; }
+    .ai-sidebar { display:none; }
+    .ai-mobile-select { display:block; }
+  }
   @media (max-width:768px) {
-    .ai-chat { max-height:58vh; padding:12px 10px 4px; }
+    .ai-chat { padding:12px 10px 4px; }
     .ai-row { max-width:94%; }
     .ai-input-row { padding:8px 10px 10px; }
     .ai-input-row textarea { font-size:16px !important; }
@@ -3011,15 +3051,19 @@ if (typeof Chart !== 'undefined') {
 
     <!-- TAB: SETUP -->
     <div class="tab-pane" id="tab-askai">
-      <div style="max-width:840px;margin:0 auto;">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
-          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
-            <div style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">✦</div>
+      <div class="ai-shell">
+        <aside class="ai-sidebar">
+          <button class="ai-new-btn" onclick="newAIChat()">＋ New Chat</button>
+          <div class="ai-chat-list" id="ai-chat-list"><div class="ai-list-empty">Loading chats…</div></div>
+        </aside>
+        <div class="ai-main">
+          <div class="ai-main-header">
+            <div style="width:34px;height:34px;border-radius:10px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">✦</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:15px;font-weight:800;color:var(--text);">Ask AI</div>
-              <div style="font-size:11px;color:var(--text-muted);">Ask anything about programs, projects, tasks and staff — answered from live dashboard data</div>
+              <div id="ai-chat-title" style="font-size:14px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Ask AI</div>
+              <div style="font-size:10.5px;color:var(--text-muted);">Live dashboard data · chats saved to Drive</div>
             </div>
-            <button class="ai-clear-btn" onclick="aiClearChat()" title="Clear conversation">Clear</button>
+            <select id="ai-chat-select" class="rm-select ai-mobile-select" onchange="if(this.value==='__new'){newAIChat();}else if(this.value){openAIChat(this.value);}" title="Your chats"></select>
           </div>
           <div id="ai-chat" class="ai-chat"></div>
           <div id="ai-chips" class="ai-chips"></div>
@@ -4897,24 +4941,138 @@ function initAskAI() {
     });
   });
 
-  // Restore this session's conversation, otherwise show the welcome message
-  const saved = sessionStorage.getItem('pdp_ai_chat');
-  try { AI_CONVO = JSON.parse(sessionStorage.getItem('pdp_ai_convo') || '[]'); } catch(_) { AI_CONVO = []; }
-  if (saved) {
-    try {
-      JSON.parse(saved).forEach(m => aiAppend(m.k, m.h, null, true));
-      return;
-    } catch(_) {}
-  }
-  aiWelcome();
+  newAIChat();          // start on a fresh chat immediately
+  loadAIChatList();     // fetch saved chats in the background
 }
 
-// Conversation memory sent to the model (prior turns only, plain text)
-let AI_CONVO = [];
-function aiRemember(role, content) {
-  AI_CONVO.push({ role, content: String(content || '').slice(0, 800) });
-  if (AI_CONVO.length > 8) AI_CONVO = AI_CONVO.slice(-8);
-  try { sessionStorage.setItem('pdp_ai_convo', JSON.stringify(AI_CONVO)); } catch(_) {}
+// ── Multi-chat state ──────────────────────────────────────
+let AI_CHATS  = [];    // [{fileId, title, updatedAt}] — saved chats in Drive
+let AI_ACTIVE = null;  // { id, fileId, title, messages:[{role,content,ts,model?}] }
+let AI_CONVO  = [];    // model memory — derived from the active chat
+
+async function loadAIChatList() {
+  const listEl = document.getElementById('ai-chat-list');
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'list_ai_chats', username: SESSION_USERNAME, password: SESSION_PASSWORD }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      AI_CHATS = data.chats || [];
+      renderAIChatList();
+    } else if (listEl) {
+      listEl.innerHTML = `<div class="ai-list-empty">${data.noFolder ? 'Chat storage not set up yet — chats will not be saved.' : aiEsc(data.error || 'Could not load chats')}</div>`;
+    }
+  } catch(_) {
+    if (listEl) listEl.innerHTML = '<div class="ai-list-empty">Could not load chats</div>';
+  }
+}
+
+function renderAIChatList() {
+  const listEl = document.getElementById('ai-chat-list');
+  const sel    = document.getElementById('ai-chat-select');
+  const fmtD   = iso => { try { return new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short' }); } catch(_) { return ''; } };
+  if (listEl) {
+    listEl.innerHTML = AI_CHATS.length
+      ? AI_CHATS.map(c => `
+        <div class="ai-chat-item ${AI_ACTIVE?.fileId === c.fileId ? 'active' : ''}" onclick="openAIChat('${c.fileId}')">
+          <div class="ai-chat-item-title">${aiEsc(c.title)}</div>
+          <div class="ai-chat-item-date">${fmtD(c.updatedAt)}</div>
+          <button class="ai-chat-del" title="Delete chat" onclick="event.stopPropagation();deleteAIChat('${c.fileId}')">✕</button>
+        </div>`).join('')
+      : '<div class="ai-list-empty">No saved chats yet.<br>Your conversations will appear here.</div>';
+  }
+  if (sel) {
+    sel.innerHTML = '<option value="__new">＋ New Chat</option>' +
+      AI_CHATS.map(c => `<option value="${c.fileId}" ${AI_ACTIVE?.fileId === c.fileId ? 'selected' : ''}>${aiEsc(c.title).slice(0,40)}</option>`).join('');
+    if (!AI_ACTIVE?.fileId) sel.value = '__new';
+  }
+}
+
+function newAIChat() {
+  AI_ACTIVE = { id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), fileId: null, title: '', messages: [] };
+  AI_CONVO  = [];
+  const chatEl = document.getElementById('ai-chat');
+  if (chatEl) chatEl.innerHTML = '';
+  const titleEl = document.getElementById('ai-chat-title');
+  if (titleEl) titleEl.textContent = 'New Chat';
+  renderAIChatList();
+  aiWelcome();
+  document.getElementById('ai-input')?.focus();
+}
+
+async function openAIChat(fileId) {
+  if (!fileId || AI_ACTIVE?.fileId === fileId) return;
+  const chatEl = document.getElementById('ai-chat');
+  if (chatEl) chatEl.innerHTML = '<div class="ai-list-empty" style="padding:30px;">Loading chat…</div>';
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_ai_chat', username: SESSION_USERNAME, password: SESSION_PASSWORD, fileId }),
+    });
+    const data = await res.json();
+    if (!data.ok || !data.chat) throw new Error(data.error || 'load failed');
+    AI_ACTIVE = { id: data.chat.id, fileId, title: data.chat.title || 'Untitled chat', messages: data.chat.messages || [] };
+    AI_CONVO  = AI_ACTIVE.messages.slice(-8).map(m => ({ role: m.role, content: String(m.content||'').slice(0,800) }));
+    if (chatEl) chatEl.innerHTML = '';
+    const titleEl = document.getElementById('ai-chat-title');
+    if (titleEl) titleEl.textContent = AI_ACTIVE.title;
+    AI_ACTIVE.messages.forEach(m => {
+      if (m.role === 'user') aiAppend('user', m.content);
+      else aiAppend('bot', '<button class="ai-copy" title="Copy answer">Copy</button>' + aiFormat(m.content));
+    });
+    renderAIChatList();
+  } catch(e) {
+    if (chatEl) chatEl.innerHTML = '<div class="ai-list-empty" style="padding:30px;">Could not load this chat.</div>';
+  }
+}
+
+async function aiSaveActiveChat() {
+  if (!AI_ACTIVE || !AI_ACTIVE.messages.length) return;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'save_ai_chat', username: SESSION_USERNAME, password: SESSION_PASSWORD,
+        fileId: AI_ACTIVE.fileId || undefined,
+        chat: { id: AI_ACTIVE.id, title: AI_ACTIVE.title || 'Untitled chat', messages: AI_ACTIVE.messages },
+      }),
+    });
+    const data = await res.json();
+    if (data.ok && data.fileId) {
+      const isNew = !AI_ACTIVE.fileId;
+      AI_ACTIVE.fileId = data.fileId;
+      const entry = { fileId: data.fileId, title: AI_ACTIVE.title || 'Untitled chat', updatedAt: new Date().toISOString() };
+      const idx = AI_CHATS.findIndex(c => c.fileId === data.fileId);
+      if (idx >= 0) { AI_CHATS[idx] = entry; AI_CHATS.unshift(AI_CHATS.splice(idx,1)[0]); }
+      else AI_CHATS.unshift(entry);
+      renderAIChatList();
+    }
+  } catch(_) { /* saving is best-effort — never block the conversation */ }
+}
+
+async function deleteAIChat(fileId) {
+  if (!confirm('Delete this chat? It will be moved to Drive trash.')) return;
+  try {
+    await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_ai_chat', username: SESSION_USERNAME, password: SESSION_PASSWORD, fileId }),
+    });
+  } catch(_) {}
+  AI_CHATS = AI_CHATS.filter(c => c.fileId !== fileId);
+  if (AI_ACTIVE?.fileId === fileId) newAIChat();
+  else renderAIChatList();
+}
+
+function aiRecord(role, content, model) {
+  if (!AI_ACTIVE) return;
+  AI_ACTIVE.messages.push({ role, content: String(content||''), ts: new Date().toISOString(), ...(model ? { model } : {}) });
+  if (role === 'user' && !AI_ACTIVE.title) {
+    AI_ACTIVE.title = String(content||'').slice(0, 60);
+    const titleEl = document.getElementById('ai-chat-title');
+    if (titleEl) titleEl.textContent = AI_ACTIVE.title;
+  }
 }
 
 function aiWelcome() {
@@ -4926,28 +5084,13 @@ function aiWelcome() {
     const staff = new Set((DATA.programs||[]).flatMap(p => (p.taskList||[]).map(t => String(t['Owner']||'').trim()).filter(Boolean))).size;
     if (tasks) stats = `<div class="ai-welcome-stats"><span class="ai-stat-chip">${progs} programs</span><span class="ai-stat-chip">${projs} projects</span><span class="ai-stat-chip">${tasks} tasks</span><span class="ai-stat-chip">${staff} staff</span></div>`;
   } catch(_) {}
-  aiAppend('bot', 'Hi! I can answer questions about your programs, projects, tasks, staff, KPIs and finance using live dashboard data — and general questions too (definitions, best practices, advice). I remember the conversation, so follow-ups like \u201cand for P3?\u201d work. Try a suggestion below, or type your own question.' + stats);
+  aiAppend('bot', 'Hi! I can answer questions about your programs, projects, tasks, staff, KPIs and finance using live dashboard data — and general questions too. I remember each conversation, and your chats are saved so you can come back to them anytime.' + stats);
 }
 
-function aiClearChat() {
-  const chat = document.getElementById('ai-chat');
-  if (chat) chat.innerHTML = '';
-  AI_CONVO = [];
-  sessionStorage.removeItem('pdp_ai_chat');
-  sessionStorage.removeItem('pdp_ai_convo');
-  aiWelcome();
-}
-
-function aiSaveHistory() {
-  try {
-    const chat = document.getElementById('ai-chat');
-    if (!chat) return;
-    const msgs = [...chat.querySelectorAll('.ai-msg')]
-      .filter(m => !m.classList.contains('thinking'))
-      .map(m => ({ k: m.closest('.ai-row')?.classList.contains('user') ? 'user' : 'bot', h: m.innerHTML }))
-      .slice(-30);
-    sessionStorage.setItem('pdp_ai_chat', JSON.stringify(msgs));
-  } catch(_) {}
+// Conversation memory sent to the model (prior turns only, plain text)
+function aiRemember(role, content) {
+  AI_CONVO.push({ role, content: String(content || '').slice(0, 800) });
+  if (AI_CONVO.length > 8) AI_CONVO = AI_CONVO.slice(-8);
 }
 
 function aiEsc(x) { return String(x||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
@@ -5119,7 +5262,9 @@ async function aiAsk(preset) {
       ? `Hello ${CURRENT_USER?.name ? CURRENT_USER.name.split(' ')[0] : ''}! 👋 What would you like to know about your programs, tasks, staff or finances?`.replace('  ',' ')
       : 'You\'re welcome! Anything else you\'d like to check?';
     aiAppend('bot', reply);
-    aiSaveHistory();
+    aiRecord('user', q);
+    aiRecord('assistant', reply.replace(/<[^>]+>/g,''));
+    aiSaveActiveChat();
     document.getElementById('ai-input')?.focus();
     return;
   }
@@ -5154,6 +5299,9 @@ async function aiAsk(preset) {
     if (data.ok && data.answer) {
       aiRemember('user', q);
       aiRemember('assistant', data.answer);
+      aiRecord('user', q);
+      aiRecord('assistant', data.answer, data.model);
+      aiSaveActiveChat();
       thinkingEl.classList.remove('thinking');
       thinkingEl.innerHTML = '<button class="ai-copy" title="Copy answer">Copy</button>' + aiFormat(data.answer) +
         (data.ms ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px;">${(data.ms/1000).toFixed(1)}s · ${String(data.model||'').replace('@cf/','')}</div>` : '');
@@ -5184,7 +5332,6 @@ async function aiAsk(preset) {
     if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Ask →'; }
     const chat = document.getElementById('ai-chat');
     if (chat) chat.scrollTop = chat.scrollHeight;
-    aiSaveHistory();
     document.getElementById('ai-input')?.focus();
   }
 }
