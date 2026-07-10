@@ -4871,6 +4871,17 @@ function buildAIContext(question) {
   const isCancelled = t => String(t['Status']||'') === 'Cancelled';
   const tcw = t => parseFloat(t['CW']) || 0;
 
+  // Authoritative totals — computed here so the model never has to count lines
+  {
+    const tot  = allTasks.length;
+    const del  = allTasks.filter(({t}) => isDone(t)).length;
+    const canc = allTasks.filter(({t}) => isCancelled(t)).length;
+    const open = tot - del - canc;
+    const ov   = allTasks.filter(({t}) => !isDone(t) && !isCancelled(t) && tcw(t) > 0 && tcw(t) < cw).length;
+    L.push('');
+    L.push(`TOTALS (authoritative — use these numbers, do not recount task lines): ${tot} tasks total, ${del} delivered, ${open} open${canc ? ', ' + canc + ' cancelled' : ''}, ${ov} overdue.`);
+  }
+
   L.push('');
   L.push('PROGRAMS (id | name | total tasks | delivered | open | overdue):');
   (DATA.programs || []).forEach(p => {
