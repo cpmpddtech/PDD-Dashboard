@@ -1036,7 +1036,7 @@ if (typeof Chart !== 'undefined') {
   .ai-chat-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px; min-height:0; }
   .ai-list-empty { font-size:11.5px; color:var(--gray-400); padding:10px 6px; text-align:center; }
   .ai-chat-item {
-    position:relative; padding:8px 26px 8px 10px; border-radius:9px; cursor:pointer;
+    position:relative; padding:8px 44px 8px 10px; border-radius:9px; cursor:pointer;
     font-size:12px; color:var(--gray-500); line-height:1.4;
     border:1px solid transparent; transition:all .12s;
   }
@@ -1044,13 +1044,14 @@ if (typeof Chart !== 'undefined') {
   .ai-chat-item.active { background:rgba(59,130,246,0.12); border-color:rgba(59,130,246,0.35); color:var(--text); }
   .ai-chat-item .ai-chat-item-title { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .ai-chat-item .ai-chat-item-date  { font-size:10px; color:var(--gray-400); margin-top:1px; }
-  .ai-chat-del {
-    position:absolute; top:6px; right:6px; display:none;
-    background:none; border:none; color:var(--gray-400); font-size:12px;
-    cursor:pointer; padding:2px 4px; border-radius:5px; font-family:var(--font);
+  .ai-chat-actions { position:absolute; top:5px; right:5px; display:none; gap:2px; }
+  .ai-chat-item:hover .ai-chat-actions { display:flex; }
+  .ai-chat-act {
+    background:none; border:none; color:var(--gray-400); font-size:11px;
+    cursor:pointer; padding:2px 5px; border-radius:5px; font-family:var(--font);
   }
-  .ai-chat-item:hover .ai-chat-del { display:block; }
-  .ai-chat-del:hover { color:#fca5a5; background:rgba(239,68,68,0.12); }
+  .ai-chat-act.ren:hover { color:var(--blue);  background:rgba(59,130,246,0.12); }
+  .ai-chat-act.del:hover { color:#fca5a5; background:rgba(239,68,68,0.12); }
   .ai-main {
     flex:1; min-width:0; display:flex; flex-direction:column;
     background:var(--surface2); border:1px solid var(--border); border-radius:14px; overflow:hidden;
@@ -4979,7 +4980,10 @@ function renderAIChatList() {
         <div class="ai-chat-item ${AI_ACTIVE?.fileId === c.fileId ? 'active' : ''}" onclick="openAIChat('${c.fileId}')">
           <div class="ai-chat-item-title">${aiEsc(c.title)}</div>
           <div class="ai-chat-item-date">${fmtD(c.updatedAt)}</div>
-          <button class="ai-chat-del" title="Delete chat" onclick="event.stopPropagation();deleteAIChat('${c.fileId}')">✕</button>
+          <span class="ai-chat-actions">
+            <button class="ai-chat-act ren" title="Rename chat" onclick="event.stopPropagation();renameAIChat('${c.fileId}')">✎</button>
+            <button class="ai-chat-act del" title="Delete chat" onclick="event.stopPropagation();deleteAIChat('${c.fileId}')">✕</button>
+          </span>
         </div>`).join('')
       : '<div class="ai-list-empty">No saved chats yet.<br>Your conversations will appear here.</div>';
   }
@@ -5070,6 +5074,32 @@ function aiSaveNote(msg) {
     hdr.appendChild(el);
   }
   el.textContent = msg || '';
+}
+
+async function renameAIChat(fileId) {
+  const cur = AI_CHATS.find(x => x.fileId === fileId);
+  const t = prompt('Rename chat:', cur?.title || '');
+  if (t === null) return;
+  const title = t.trim().slice(0, 120);
+  if (!title) return;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'rename_ai_chat', username: SESSION_USERNAME, password: SESSION_PASSWORD, fileId, title }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (cur) cur.title = title;
+      if (AI_ACTIVE?.fileId === fileId) {
+        AI_ACTIVE.title = title;
+        const titleEl = document.getElementById('ai-chat-title');
+        if (titleEl) titleEl.textContent = title;
+      }
+      renderAIChatList();
+    } else {
+      alert(data.error || 'Rename failed');
+    }
+  } catch(_) { alert('Network error — could not rename.'); }
 }
 
 async function deleteAIChat(fileId) {
