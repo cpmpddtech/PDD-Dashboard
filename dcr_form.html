@@ -915,7 +915,7 @@
               <div class="tip"><b>Guidance:</b> State community contributions precisely. Avoid vague phrases like 'the community cooperated well'.</div>
               <table class="data-table">
                 <thead><tr><th>Contribution Type</th><th>Description / Amount</th></tr></thead>
-                <tbody>
+                <tbody id="community-body">
                   <tr><td class="label-cell" style="width:40%">Financial (MMK or in-kind value):</td><td><input type="text" placeholder="Amount and description..."></td></tr>
                   <tr><td class="label-cell">Volunteer labour (person-days):</td><td><input type="text" placeholder="Number of person-days..."></td></tr>
                   <tr><td class="label-cell">Infrastructure / premises:</td><td><input type="text" placeholder="Description..."></td></tr>
@@ -1024,7 +1024,7 @@
           <div class="tip"><b>Guidance:</b> Briefly reflect on the following questions. Honest reporting of data gaps or delays increases the credibility of this report.</div>
           <table class="data-table">
             <thead><tr><th>Monitoring Question</th><th style="width:14%">Yes / No</th><th>Notes / Details</th></tr></thead>
-            <tbody>
+            <tbody id="monitoring-body">
               <tr>
                 <td style="padding:8px 10px;">Were all community reports received on time?</td>
                 <td><select><option value="">—</option><option>Yes</option><option>No</option><option>Partial</option></select></td>
@@ -1581,6 +1581,55 @@ function collectFormData() {
     challenge: document.getElementById('exec-challenge')?.value,
   };
 
+  // ── Sections 3–9: full capture (v2 drafts) ──
+  data.v = 2;
+  const gv = id => document.getElementById(id)?.value || '';
+  const tableRows = tbodyId => {
+    const tb = document.getElementById(tbodyId);
+    if (!tb) return [];
+    return [...tb.querySelectorAll('tr')]
+      .filter(tr => !tr.classList.contains('total-row'))
+      .map(tr => [...tr.querySelectorAll('input,textarea,select')].map(c => c.value))
+      .filter(row => row.some(v => String(v).trim() !== ''));
+  };
+
+  // S3 — objectives (dynamic)
+  data.objectives = [...document.querySelectorAll('#objectives-container > .subsection')].map(div => {
+    const n = div.id.replace('obj-','');
+    return {
+      title:           gv(`obj-${n}-title`),
+      planned:         gv(`obj-${n}-planned`),
+      implemented:     gv(`obj-${n}-implemented`),
+      indicators:      tableRows(`obj-${n}-indicators`),
+      dataExplanation: gv(`obj-${n}-data-explanation`),
+      results:         gv(`obj-${n}-results`),
+      evidence:        gv(`obj-${n}-evidence`),
+    };
+  });
+
+  // S4 — cross-cutting
+  data.gender     = tableRows('gender-table-body');
+  data.vulnerable = { idps: gv('vg-idps'), ethnic: gv('vg-ethnic'), disability: gv('vg-disability'), other: gv('vg-other') };
+  data.community  = tableRows('community-body');
+
+  // S5 — challenges
+  data.challenges      = tableRows('challenges-body');
+  data.adaptiveActions = gv('adaptive-actions');
+
+  // S6 — finance
+  data.finance          = tableRows('finance-body');
+  data.financeVariances = gv('finance-variances');
+
+  // S7 — monitoring
+  data.monitoring = tableRows('monitoring-body');
+
+  // S8 — lessons
+  data.lessons = tableRows('lessons-body');
+
+  // S9 — checklist state
+  data.checklist = [...document.querySelectorAll('#checklist-items .check-item.checked')]
+    .map(el => el.id.replace('ci-',''));
+
   // Store status, title
   data.diocese     = data.basicInfo.diocese    || '';
   data.period      = data.basicInfo.month || data.basicInfo.halfYear || data.basicInfo.year || '';
@@ -1714,6 +1763,70 @@ function loadDriveReport(data) {
       const el = document.getElementById('exec-' + k);
       if (el && data.exec[k]) el.value = data.exec[k];
     });
+  }
+
+  // ── Restore sections 3–9 (v2 drafts; older drafts simply skip) ──
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+  const fillTable = (tbodyId, rows, ensureRow) => {
+    const tb = document.getElementById(tbodyId);
+    if (!tb || !Array.isArray(rows) || !rows.length) return;
+    const bodyRows = () => [...tb.querySelectorAll('tr')].filter(tr => !tr.classList.contains('total-row'));
+    let guard = 0;
+    while (bodyRows().length < rows.length && typeof ensureRow === 'function' && guard++ < 60) ensureRow();
+    const trs = bodyRows();
+    rows.forEach((row, i) => {
+      if (!trs[i]) return;
+      const ctrls = [...trs[i].querySelectorAll('input,textarea,select')];
+      row.forEach((v, j) => { if (ctrls[j] != null) ctrls[j].value = v; });
+    });
+  };
+
+  // S3 — objectives (recreate the right count, then fill)
+  if (Array.isArray(data.objectives) && data.objectives.length) {
+    while (document.querySelectorAll('#objectives-container > .subsection').length < data.objectives.length) addObjective();
+    const objDivs = [...document.querySelectorAll('#objectives-container > .subsection')];
+    data.objectives.forEach((o, i) => {
+      const div = objDivs[i];
+      if (!div) return;
+      const n = div.id.replace('obj-','');
+      setVal(`obj-${n}-title`, o.title);
+      setVal(`obj-${n}-planned`, o.planned);
+      setVal(`obj-${n}-implemented`, o.implemented);
+      fillTable(`obj-${n}-indicators`, o.indicators, () => addTableRow(`obj-${n}-indicators`, 5));
+      setVal(`obj-${n}-data-explanation`, o.dataExplanation);
+      setVal(`obj-${n}-results`, o.results);
+      setVal(`obj-${n}-evidence`, o.evidence);
+    });
+  }
+
+  // S4 — cross-cutting
+  fillTable('gender-table-body', data.gender, () => addTableRow('gender-table-body', 5));
+  if (data.vulnerable) {
+    setVal('vg-idps', data.vulnerable.idps);
+    setVal('vg-ethnic', data.vulnerable.ethnic);
+    setVal('vg-disability', data.vulnerable.disability);
+    setVal('vg-other', data.vulnerable.other);
+  }
+  fillTable('community-body', data.community, null);
+
+  // S5 — challenges
+  fillTable('challenges-body', data.challenges, addChallengeRow);
+  setVal('adaptive-actions', data.adaptiveActions);
+
+  // S6 — finance
+  fillTable('finance-body', data.finance, addFinanceRow);
+  setVal('finance-variances', data.financeVariances);
+  if (typeof updateFinanceTotal === 'function') updateFinanceTotal();
+
+  // S7 — monitoring
+  fillTable('monitoring-body', data.monitoring, null);
+
+  // S8 — lessons
+  fillTable('lessons-body', data.lessons, null);
+
+  // S9 — checklist
+  if (Array.isArray(data.checklist)) {
+    data.checklist.forEach(k => document.getElementById('ci-' + k)?.classList.add('checked'));
   }
 
   // Apply resubmit UI — 300ms to let DOM fully settle after startReport
