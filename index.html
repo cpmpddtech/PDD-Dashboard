@@ -1022,13 +1022,51 @@ if (typeof Chart !== 'undefined') {
   .mt-range-count { background:rgba(255,255,255,0.08); border-radius:10px; padding:0 7px; font-size:11px; line-height:16px; }
   .mt-range-pill.active .mt-range-count { background:rgba(59,130,246,0.2); }
   /* ── Ask AI tab ── */
-  .ai-chat { min-height:220px; max-height:52vh; overflow-y:auto; padding:16px 16px 6px; display:flex; flex-direction:column; gap:10px; }
-  .ai-msg { max-width:85%; padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
-  .ai-msg.user { align-self:flex-end; background:var(--blue); color:#fff; border-bottom-right-radius:4px; }
-  .ai-msg.bot  { align-self:flex-start; background:var(--surface3); border:1px solid var(--border); color:var(--text); border-bottom-left-radius:4px; }
+  .ai-chat { min-height:240px; max-height:54vh; overflow-y:auto; padding:16px 16px 6px; display:flex; flex-direction:column; gap:12px; scroll-behavior:smooth; }
+  .ai-row { display:flex; gap:9px; align-items:flex-end; max-width:88%; }
+  .ai-row.user { align-self:flex-end; flex-direction:row-reverse; }
+  .ai-row.bot  { align-self:flex-start; }
+  .ai-avatar {
+    width:26px; height:26px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; margin-bottom:2px;
+  }
+  .ai-row.bot  .ai-avatar { background:rgba(59,130,246,0.18); color:#60a5fa; }
+  .ai-row.user .ai-avatar { background:var(--surface4); color:var(--gray-500); font-size:10px; }
+  .ai-msg { position:relative; padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.65; white-space:pre-wrap; word-break:break-word; min-width:0; }
+  .ai-msg.user { background:var(--blue); color:#fff; border-bottom-right-radius:4px; }
+  .ai-msg.bot  { background:var(--surface3); border:1px solid var(--border); color:var(--text); border-bottom-left-radius:4px; }
   .ai-msg.bot b { color:#93c5fd; }
-  .ai-msg.thinking { color:var(--text-muted); font-style:italic; }
+  .ai-msg.thinking { color:var(--text-muted); }
   .ai-msg.err { border-color:rgba(239,68,68,0.4); color:#fca5a5; }
+  .ai-dots { display:inline-flex; gap:4px; align-items:center; margin-right:8px; }
+  .ai-dots span {
+    width:6px; height:6px; border-radius:50%; background:var(--gray-500);
+    animation:aiBounce 1.2s infinite ease-in-out;
+  }
+  .ai-dots span:nth-child(2) { animation-delay:.15s; }
+  .ai-dots span:nth-child(3) { animation-delay:.3s; }
+  @keyframes aiBounce { 0%,60%,100% { transform:translateY(0); opacity:.4; } 30% { transform:translateY(-4px); opacity:1; } }
+  .ai-copy {
+    position:absolute; top:6px; right:6px;
+    background:var(--surface4); border:1px solid var(--border2); border-radius:6px;
+    color:var(--gray-500); font-size:10px; font-family:var(--font); font-weight:600;
+    padding:2px 7px; cursor:pointer; opacity:0; transition:opacity .15s;
+  }
+  .ai-msg.bot:hover .ai-copy { opacity:1; }
+  .ai-copy:hover { color:var(--blue); border-color:var(--blue); }
+  .ai-clear-btn {
+    background:none; border:1px solid var(--border2); border-radius:8px;
+    color:var(--gray-500); font-size:11px; font-weight:600; font-family:var(--font);
+    padding:5px 11px; cursor:pointer; transition:all .13s; flex-shrink:0;
+  }
+  .ai-clear-btn:hover { color:#fca5a5; border-color:rgba(239,68,68,0.4); }
+  .ai-welcome-stats { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .ai-stat-chip {
+    font-size:11px; font-weight:700; color:#93c5fd;
+    background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25);
+    border-radius:8px; padding:3px 9px;
+  }
   .ai-chips { display:flex; flex-wrap:wrap; gap:8px; padding:8px 16px 4px; }
   .ai-chip {
     font-size:11px; font-weight:600; color:var(--gray-500);
@@ -1051,6 +1089,14 @@ if (typeof Chart !== 'undefined') {
   }
   .ai-send-btn:hover { background:#2563eb; }
   .ai-send-btn:disabled { opacity:.5; cursor:not-allowed; }
+  @media (max-width:768px) {
+    .ai-chat { max-height:58vh; padding:12px 10px 4px; }
+    .ai-row { max-width:94%; }
+    .ai-input-row { padding:8px 10px 10px; }
+    .ai-input-row textarea { font-size:16px !important; }
+    .ai-chips { padding:6px 10px 2px; }
+    .ai-copy { opacity:1; }
+  }
 
   .mt-filter-sel {
     font-size:12px !important; padding:6px 10px !important;
@@ -2969,10 +3015,11 @@ if (typeof Chart !== 'undefined') {
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
           <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
             <div style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">✦</div>
-            <div>
+            <div style="flex:1;min-width:0;">
               <div style="font-size:15px;font-weight:800;color:var(--text);">Ask AI</div>
               <div style="font-size:11px;color:var(--text-muted);">Ask anything about programs, projects, tasks and staff — answered from live dashboard data</div>
             </div>
+            <button class="ai-clear-btn" onclick="aiClearChat()" title="Clear conversation">Clear</button>
           </div>
           <div id="ai-chat" class="ai-chat"></div>
           <div id="ai-chips" class="ai-chips"></div>
@@ -4835,7 +4882,60 @@ function initAskAI() {
   const chips = document.getElementById('ai-chips');
   if (chips) chips.innerHTML = AI_SUGGESTIONS.map(q =>
     `<button class="ai-chip" onclick="aiAsk(${JSON.stringify(q).replace(/"/g,'&quot;')})">${q}</button>`).join('');
-  aiAppend('bot', 'Hi! I can answer questions about your programs, projects, tasks and staff using live dashboard data. Try one of the suggestions below, or type your own question.');
+
+  // Copy buttons — one delegated listener
+  const chat = document.getElementById('ai-chat');
+  if (chat) chat.addEventListener('click', e => {
+    const btn = e.target.closest('.ai-copy');
+    if (!btn) return;
+    const bubble = btn.closest('.ai-msg');
+    const text = bubble ? bubble.innerText.replace(/^Copy\n?/,'').replace(/\nCopied!$/,'').trim() : '';
+    navigator.clipboard?.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
+    });
+  });
+
+  // Restore this session's conversation, otherwise show the welcome message
+  const saved = sessionStorage.getItem('pdp_ai_chat');
+  if (saved) {
+    try {
+      JSON.parse(saved).forEach(m => aiAppend(m.k, m.h, null, true));
+      return;
+    } catch(_) {}
+  }
+  aiWelcome();
+}
+
+function aiWelcome() {
+  let stats = '';
+  try {
+    const progs = (DATA.programs || []).length;
+    const tasks = (DATA.programs || []).reduce((n,p) => n + (p.taskList||[]).length, 0);
+    const projs = (DATA.projects || []).length;
+    const staff = new Set((DATA.programs||[]).flatMap(p => (p.taskList||[]).map(t => String(t['Owner']||'').trim()).filter(Boolean))).size;
+    if (tasks) stats = `<div class="ai-welcome-stats"><span class="ai-stat-chip">${progs} programs</span><span class="ai-stat-chip">${projs} projects</span><span class="ai-stat-chip">${tasks} tasks</span><span class="ai-stat-chip">${staff} staff</span></div>`;
+  } catch(_) {}
+  aiAppend('bot', 'Hi! I can answer questions about your programs, projects, tasks and staff using live dashboard data. Try a suggestion below, or type your own question.' + stats);
+}
+
+function aiClearChat() {
+  const chat = document.getElementById('ai-chat');
+  if (chat) chat.innerHTML = '';
+  sessionStorage.removeItem('pdp_ai_chat');
+  aiWelcome();
+}
+
+function aiSaveHistory() {
+  try {
+    const chat = document.getElementById('ai-chat');
+    if (!chat) return;
+    const msgs = [...chat.querySelectorAll('.ai-msg')]
+      .filter(m => !m.classList.contains('thinking'))
+      .map(m => ({ k: m.closest('.ai-row')?.classList.contains('user') ? 'user' : 'bot', h: m.innerHTML }))
+      .slice(-30);
+    sessionStorage.setItem('pdp_ai_chat', JSON.stringify(msgs));
+  } catch(_) {}
 }
 
 function aiEsc(x) { return String(x||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
@@ -4848,13 +4948,22 @@ function aiFormat(text) {
   return t;
 }
 
-function aiAppend(kind, html, cls) {
+function aiAppend(kind, html, cls, raw) {
   const chat = document.getElementById('ai-chat');
   if (!chat) return null;
+  const row = document.createElement('div');
+  row.className = `ai-row ${kind}`;
+  const avatar = document.createElement('div');
+  avatar.className = 'ai-avatar';
+  avatar.textContent = kind === 'user'
+    ? (CURRENT_USER?.name || 'U').trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase()
+    : '✦';
   const div = document.createElement('div');
   div.className = `ai-msg ${kind}${cls ? ' ' + cls : ''}`;
-  div.innerHTML = kind === 'user' ? aiEsc(html) : html;
-  chat.appendChild(div);
+  div.innerHTML = (kind === 'user' && !raw) ? aiEsc(html) : html;
+  row.appendChild(avatar);
+  row.appendChild(div);
+  chat.appendChild(row);
   chat.scrollTop = chat.scrollHeight;
   return div;
 }
@@ -4968,14 +5077,15 @@ async function aiAsk(preset) {
   if (input && !preset) { input.value = ''; input.style.height = 'auto'; }
 
   aiAppend('user', q);
-  const thinkingEl = aiAppend('bot', 'Thinking…', 'thinking');
+  const DOTS = '<span class="ai-dots"><span></span><span></span><span></span></span>';
+  const thinkingEl = aiAppend('bot', DOTS + 'Thinking…', 'thinking');
   const hintTimer = setTimeout(() => {
     if (thinkingEl && thinkingEl.classList.contains('thinking'))
-      thinkingEl.textContent = 'Thinking… (the first question after a deploy can take ~20s; later ones are faster)';
+      thinkingEl.innerHTML = DOTS + 'Still thinking… (the first question after a deploy can take ~20s; later ones are faster)';
   }, 6000);
   AI_BUSY = true;
   const sendBtn = document.getElementById('ai-send');
-  if (sendBtn) sendBtn.disabled = true;
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '…'; }
 
   try {
     const ctrl  = new AbortController();
@@ -4995,7 +5105,7 @@ async function aiAsk(preset) {
     const data = await res.json();
     if (data.ok && data.answer) {
       thinkingEl.classList.remove('thinking');
-      thinkingEl.innerHTML = aiFormat(data.answer) +
+      thinkingEl.innerHTML = '<button class="ai-copy" title="Copy answer">Copy</button>' + aiFormat(data.answer) +
         (data.ms ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px;">${(data.ms/1000).toFixed(1)}s · ${String(data.model||'').replace('@cf/','')}</div>` : '');
     } else if (data.noBinding) {
       // AI not configured — try local quick answers so the tab is still useful
@@ -5021,9 +5131,11 @@ async function aiAsk(preset) {
   } finally {
     clearTimeout(hintTimer);
     AI_BUSY = false;
-    if (sendBtn) sendBtn.disabled = false;
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Ask →'; }
     const chat = document.getElementById('ai-chat');
     if (chat) chat.scrollTop = chat.scrollHeight;
+    aiSaveHistory();
+    document.getElementById('ai-input')?.focus();
   }
 }
 
