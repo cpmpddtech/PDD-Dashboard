@@ -3984,14 +3984,24 @@ function parseSheetData(sheets) {
     row && row.some(cell => String(cell).trim() === 'Program ID')
   );
   const projRows = projHeaderIdx >= 0 ? rawProjRows.slice(projHeaderIdx) : rawProjRows;
-  const projObjs = toObjects(projRows).filter(r => {
+  let projObjs = toObjects(projRows).filter(r => {
     const id = String(r['Program ID'] || '').trim();
     // Skip blank rows, formula cells, and instruction notes
     return id && !id.startsWith('=') && !id.startsWith('MAIN') && id.length < 20;
   });
 
+  // De-duplicate programs — a program listed twice in Main Programs would
+  // double its sheet fetch and double every one of its task counts
+  const _seenPids = new Set();
+  projObjs = projObjs.filter(r => {
+    const id = String(r['Program ID']||'').trim();
+    if (_seenPids.has(id)) return false;
+    _seenPids.add(id);
+    return true;
+  });
+
   // Update ALL_PROJECTS dynamically
-  ALL_PROJECTS = projObjs.map(r => r['Program ID']);
+  ALL_PROJECTS = projObjs.map(r => String(r['Program ID']).trim());
 
   // Collect tasks from ALL program sheets found in the data
   const allTasks = ALL_PROJECTS.flatMap(pid => {
@@ -4012,13 +4022,29 @@ function parseSheetData(sheets) {
         .filter(r => r[9] !== undefined && r[9] !== null && r[9] !== '')
         .map(r => Object.fromEntries(TASK_COLS.map((k,i) => [k, r[9+i] ?? ''])));
     }
-    // Filter valid rows — must have Task Name and Program ID, no formula errors
+    // Filter valid rows — must have Task Name and Program ID, no formula errors,
+    // no stray header rows, and the row must belong to THIS sheet's program
     return rows.filter(r => {
-      const name = String(r['Task Name'] || '').trim();
-      const pid  = String(r['Program ID'] || '').trim();
-      return name && pid && !name.startsWith('#') && !name.startsWith('=') && !pid.startsWith('=');
+      const name   = String(r['Task Name']  || '').trim();
+      const rowPid = String(r['Program ID'] || '').trim();
+      if (!name || !rowPid) return false;
+      if (name === 'Task Name' || String(r['Task ID']||'').trim() === 'Task ID') return false; // header re-appended as data
+      if (name.startsWith('#') || name.startsWith('=') || rowPid.startsWith('=')) return false;
+      if (rowPid !== String(pid).trim()) return false; // row copied into the wrong program sheet
+      return true;
     });
   });
+
+  // Remove exact duplicates (same program + task id + name + CW) — protects
+  // against copy-pasted rows and double-fetched sheets
+  {
+    const _seenT = new Set();
+    for (let i = allTasks.length - 1; i >= 0; i--) {
+      const t = allTasks[i];
+      const k = [t['Program ID'], t['Task ID'], t['Task Name'], t['CW']].map(x => String(x||'').trim().toLowerCase()).join('|');
+      if (_seenT.has(k)) allTasks.splice(i, 1); else _seenT.add(k);
+    }
+  }
 
   DATA.programs = projObjs.map((r,i) => {
     const id = (r['Program ID'] || '').trim();
