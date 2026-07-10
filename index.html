@@ -5106,6 +5106,24 @@ async function aiAsk(preset) {
   if (input && !preset) { input.value = ''; input.style.height = 'auto'; }
 
   aiAppend('user', q);
+
+  // Small talk → instant local reply, no AI call needed
+  const smallTalk = q.toLowerCase().replace(/[!.?,\s]+$/,'');
+  const GREET = {
+    'hi': true, 'hello': true, 'hey': true, 'mingalaba': true, 'good morning': true,
+    'good afternoon': true, 'good evening': true, 'hi there': true, 'hello there': true,
+  };
+  const THANKS = { 'thanks': true, 'thank you': true, 'thx': true, 'ok': true, 'okay': true, 'great': true, 'good': true, 'nice': true };
+  if (GREET[smallTalk] || THANKS[smallTalk]) {
+    const reply = GREET[smallTalk]
+      ? `Hello ${CURRENT_USER?.name ? CURRENT_USER.name.split(' ')[0] : ''}! 👋 What would you like to know about your programs, tasks, staff or finances?`.replace('  ',' ')
+      : 'You\'re welcome! Anything else you\'d like to check?';
+    aiAppend('bot', reply);
+    aiSaveHistory();
+    document.getElementById('ai-input')?.focus();
+    return;
+  }
+
   const DOTS = '<span class="ai-dots"><span></span><span></span><span></span></span>';
   const thinkingEl = aiAppend('bot', DOTS + 'Thinking…', 'thinking');
   const hintTimer = setTimeout(() => {
